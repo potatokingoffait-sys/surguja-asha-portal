@@ -16,9 +16,6 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+Devanagari:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
-    /* ========================================================================
-       1. EXECUTIVE CIVIC COLOR PALETTE & 3-MODE CONTRAST DESIGN TOKENS
-       ======================================================================== */
     :root, [data-theme="light"] {
       --bg-canvas: #eef2f6;
       --bg-shell: #f8fafc;
@@ -145,28 +142,12 @@
       border-color: var(--civic-slate-blue);
       box-shadow: 0 0 0 3px rgba(40, 82, 122, 0.18);
     }
-    [data-theme="light"] select,
-    [data-theme="light"] select option {
-      color-scheme: light;
-    }
-    [data-theme="light"] select option {
-      background-color: #ffffff !important;
-      color: #0f172a !important;
-    }
-    [data-theme="dark"] select,
-    [data-theme="dark"] select option,
-    [data-theme="contrast"] select,
-    [data-theme="contrast"] select option {
-      color-scheme: dark;
-    }
-    [data-theme="dark"] select option {
-      background-color: #182130 !important;
-      color: #f1f5f9 !important;
-    }
-    [data-theme="contrast"] select option {
-      background-color: #0a0a0a !important;
-      color: #ffffff !important;
-    }
+    [data-theme="light"] select, [data-theme="light"] select option { color-scheme: light; }
+    [data-theme="light"] select option { background-color: #ffffff !important; color: #0f172a !important; }
+    [data-theme="dark"] select, [data-theme="dark"] select option,
+    [data-theme="contrast"] select, [data-theme="contrast"] select option { color-scheme: dark; }
+    [data-theme="dark"] select option { background-color: #182130 !important; color: #f1f5f9 !important; }
+    [data-theme="contrast"] select option { background-color: #0a0a0a !important; color: #ffffff !important; }
     .civic-input.input-error {
       border-color: var(--civic-crimson) !important;
       background-color: var(--civic-crimson-soft) !important;
@@ -231,7 +212,7 @@
 <div class="app-shell relative">
 
   <!-- ===================================================================== -->
-  <!-- 1. UNIFIED MOBILE-STYLE AUTHENTICATION PORTAL (SIGN IN & SIGN UP)     -->
+  <!-- 1. AUTHENTICATION & DEVICE QUICK-PIN / BIOMETRIC LOCK SCREEN          -->
   <!-- ===================================================================== -->
   <div id="auth-screen" class="fixed inset-0 z-50 flex items-center justify-center p-3 overflow-y-auto" style="background: rgba(9, 13, 20, 0.92);">
     <div class="w-full max-w-[440px] civic-card overflow-hidden my-auto">
@@ -254,7 +235,7 @@
           <p id="auth-subtitle" class="text-[11px] text-emerald-100 mt-0.5">बिना सर्वर एवं शून्य लागत एन्क्रिप्टेड वेब पोर्टल व मोबाइल ऐप</p>
         </div>
 
-        <div class="grid grid-cols-2 gap-1.5 p-1 rounded-xl bg-black/25 border border-white/15">
+        <div id="auth-mode-tabs" class="grid grid-cols-2 gap-1.5 p-1 rounded-xl bg-black/25 border border-white/15">
           <button type="button" id="tab-auth-signin" onclick="switchAuthTab('signin')" class="py-2 rounded-lg text-xs font-extrabold bg-white text-slate-900 transition">
             🔐 साइन इन (Sign In)
           </button>
@@ -264,9 +245,52 @@
         </div>
       </div>
 
-      <!-- SIGN IN PANEL -->
+      <!-- DEVICE SAVED ACCOUNT QUICK-UNLOCK PANEL (SHOWN AFTER 1ST LOGIN WHEN LOCKED) -->
+      <div id="panel-quicklock" class="hidden p-4 space-y-3 text-xs">
+        <div class="p-3.5 rounded-2xl civic-muted flex items-center gap-3">
+          <div id="ql-avatar" class="w-12 h-12 rounded-full bg-civic-teal text-amber-200 font-black text-xs flex items-center justify-center shrink-0 overflow-hidden border-2 border-emerald-500/30">
+            ID
+          </div>
+          <div class="min-w-0 flex-1">
+            <div class="text-[10px] font-extrabold text-civic-emerald uppercase tracking-wide" id="ql-badge">SAVED DEVICE ACCOUNT</div>
+            <div class="text-sm font-extrabold truncate" id="ql-name">User Name</div>
+            <div class="text-[11px] text-muted-var truncate" id="ql-meta">User ID • Designation</div>
+          </div>
+        </div>
+
+        <form onsubmit="handleQuickPinUnlock(event)" class="space-y-3">
+          <div>
+            <label id="lbl-ql-pin" class="block font-bold mb-1.5 text-center text-sec-var">4-अंकों का सुरक्षा पिन (4-Digit PIN) दर्ज करें *</label>
+            <input type="password" id="ql-pin-input" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" required placeholder="• • • •" class="w-full px-4 py-3 civic-input text-center text-lg tracking-[0.6em] font-black" />
+          </div>
+          <button type="submit" id="btn-ql-unlock" class="w-full py-3 btn-civic bg-civic-teal text-xs shadow-sm">
+            🔓 पिन से तुरंत खोलें (Unlock with PIN)
+          </button>
+        </form>
+
+        <button type="button" onclick="triggerSavedBiometricUnlock()" id="btn-ql-bio" class="w-full py-2.5 btn-civic bg-civic-blue text-xs">
+          👆 फिंगरप्रिंट / Face ID से अनलॉक करें
+        </button>
+
+        <div class="pt-2 border-t border-slate-200/60 flex items-center justify-between text-[11px]">
+          <button type="button" onclick="switchToFullPasswordLogin()" id="btn-ql-usepass" class="font-bold text-civic-blue underline">
+            🔑 पासवर्ड से खोलें / पिन रीसेट
+          </button>
+          <button type="button" onclick="switchAccountCompletely()" id="btn-ql-switch" class="font-bold text-muted-var underline">
+            🔄 खाता बदलें (Switch User)
+          </button>
+        </div>
+      </div>
+
+      <!-- FULL SIGN IN PANEL -->
       <div id="panel-signin" class="p-4 space-y-3 text-xs">
         <div id="login-lockout-banner" class="hidden p-3 rounded-xl bg-civic-crimson text-white font-bold text-center"></div>
+
+        <div id="ql-return-banner" class="hidden">
+          <button type="button" onclick="showQuickLockScreen()" class="w-full py-2 px-3 rounded-xl civic-muted text-[11px] font-extrabold text-civic-emerald flex items-center justify-center gap-1.5">
+            ← <span id="ql-return-text">सहेजे गए खाते (PIN / Fingerprint) पर वापस जाएं</span>
+          </button>
+        </div>
 
         <div>
           <label id="lbl-signin-role" class="block font-bold mb-1.5 text-sec-var">1. पोर्टल भूमिका चुनें *</label>
@@ -304,17 +328,9 @@
             🔐 सुरक्षित साइन इन करें
           </button>
         </form>
-
-        <div id="biometric-login-box" class="pt-2 border-t border-slate-200/60 space-y-2">
-          <div class="text-[11px] font-bold text-muted-var text-center" id="bio-or-text">— या बायोमेट्रिक से तुरंत खोलें —</div>
-          <div id="biometric-enrolled-list" class="space-y-1.5"></div>
-          <button type="button" onclick="triggerBiometricLogin()" id="btn-bio-unlock" class="w-full py-2.5 btn-civic bg-civic-blue text-xs">
-            👆 फिंगरप्रिंट / Face ID से अनलॉक करें
-          </button>
-        </div>
       </div>
 
-      <!-- FIRST-TIME SIGN UP PANEL -->
+      <!-- FIRST-TIME SIGN UP PANEL (PROTECTED BY DISTRICT INVITE CODE) -->
       <div id="panel-signup" class="hidden p-4 space-y-3 text-xs max-h-[75dvh] overflow-y-auto">
         <form onsubmit="handleFirstTimeSignUp(event)" class="space-y-2.5">
           <div>
@@ -342,6 +358,10 @@
               <label id="lbl-su-shgname" class="block font-bold mb-1 text-sec-var">4. स्व-सहायता समूह (SHG) का नाम *</label>
               <input type="text" id="su-shgname" placeholder="उदा. माँ महामाया महिला स्व-सहायता समूह" class="w-full px-3 py-2 civic-input font-semibold" />
             </div>
+            <div>
+              <label id="lbl-su-shgcode" class="block font-bold mb-1 text-sec-var">5. NRLM आमंत्रण कोड (SHG Invite Code) *</label>
+              <input type="password" id="su-shgcode" required placeholder="BPO / DMMU द्वारा प्रदत्त कोड दर्ज करें" class="w-full px-3 py-2 civic-input font-bold" />
+            </div>
           </div>
 
           <div id="su-officer-fields" class="hidden space-y-2">
@@ -354,8 +374,8 @@
               </select>
             </div>
             <div>
-              <label id="lbl-su-offcode" class="block font-bold mb-1 text-sec-var">जिला सत्यापन कोड *</label>
-              <input type="password" id="su-offcode" placeholder="DMMU / NRLM कोड दर्ज करें" class="w-full px-3 py-2 civic-input font-bold" />
+              <label id="lbl-su-offcode" class="block font-bold mb-1 text-sec-var">जिला सत्यापन कोड (District Auth Code) *</label>
+              <input type="password" id="su-offcode" placeholder="DMMU जिला सत्यापन कोड दर्ज करें" class="w-full px-3 py-2 civic-input font-bold" />
             </div>
           </div>
 
@@ -444,7 +464,7 @@
         <button type="button" onclick="toggleLang()" id="hdr-lang-btn" class="px-2.5 py-1.5 rounded-lg bg-amber-200 text-slate-900 text-[11px] font-extrabold">
           English
         </button>
-        <button type="button" onclick="lockSessionNow()" id="hdr-lock-btn" title="Lock Session" class="px-2.5 py-1.5 rounded-lg bg-rose-900/80 border border-rose-300/30 text-white text-[11px] font-extrabold">
+        <button type="button" onclick="lockSessionNow()" id="hdr-lock-btn" title="Lock with PIN / Biometric" class="px-2.5 py-1.5 rounded-lg bg-rose-900/80 border border-rose-300/30 text-white text-[11px] font-extrabold">
           🔒
         </button>
       </div>
@@ -488,7 +508,7 @@
   </nav>
 
   <!-- ===================================================================== -->
-  <!-- 5. UNIVERSAL MODAL (DRILL-DOWN INSPECTOR, BIOMETRIC PROMPT, QR EDIT)  -->
+  <!-- 5. UNIVERSAL MODAL (DRILL-DOWN INSPECTOR, PIN SETUP, QR EDIT)         -->
   <!-- ===================================================================== -->
   <div id="universal-modal" class="hidden fixed inset-0 z-50 flex items-end sm:items-center justify-center p-2 sm:p-4" style="background: rgba(9, 13, 20, 0.78);">
     <div class="w-full max-w-lg civic-card overflow-hidden max-h-[88dvh] flex flex-col">
@@ -507,9 +527,11 @@
 
 <script type="text/plain" id="asha-app-code">
 // ============================================================================
-// SECTION A: MASTER DATA & DEFAULT APPS SCRIPT ENDPOINT
+// SECTION A: MASTER DATA, HARDCODED APPS SCRIPT ENDPOINT & ACCESS CODES
 // ============================================================================
 const DEFAULT_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyDRx28ZQLFu0d-sH_cQjudAGSAy-mIkYQEVPY7XMS8WEXlF2nlZ_ICNpdnMPEUZyDpjA/exec";
+const DISTRICT_OFFICER_SIGNUP_CODE = "SURGUJA26";
+const SHG_INVITE_SIGNUP_CODE = "ASHA26";
 
 const BLOCKS = [
   { id: "Ambikapur", en: "Ambikapur", hi: "अंबिकापुर" },
@@ -577,9 +599,9 @@ const MASTER_CHECKLIST_ITEMS = [
 ];
 
 // ============================================================================
-// SECTION B: CRYPTOGRAPHIC VAULT, SECURITY & DEFAULT ACCOUNTS
+// SECTION B: CRYPTOGRAPHIC VAULT, PERSISTENT SESSION & 4-DIGIT PIN LOCK
 // ============================================================================
-const VAULT_STORAGE_KEY = "SURGUJA_ASHA_SECURE_VAULT_PROD_V2";
+const VAULT_STORAGE_KEY = "SURGUJA_ASHA_SECURE_VAULT_PROD_V3";
 const VAULT_SALT = "SURGUJA-NRLM-ASHA-2026-ZERO-SERVER";
 
 let lang = "hi";
@@ -708,6 +730,16 @@ async function decryptVaultJSON(rawStr) {
   return parsed;
 }
 
+function bufToBase64Url(buf) {
+  return btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
+function base64UrlToUint8(str) {
+  const pad = "=".repeat((4 - (str.length % 4)) % 4);
+  const b64 = (str + pad).replace(/-/g, "+").replace(/_/g, "/");
+  return Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+}
+
 function buildDefaultAccounts() {
   const list = [];
   INITIAL_UNITS.forEach((u, idx) => {
@@ -771,6 +803,8 @@ function buildSeedState() {
   return {
     units: JSON.parse(JSON.stringify(INITIAL_UNITS)),
     accounts: buildDefaultAccounts(),
+    blockedUsers: [],
+    deletedIds: [],
     customChecklistItems: [],
     checklistStatus,
     rmLogs: [],
@@ -778,7 +812,12 @@ function buildSeedState() {
     salesLogs: [],
     weeklyReports: [],
     auditLogs: [],
-    biometricUsers: [],
+    deviceSecurity: {
+      rememberedUserId: "",
+      activeSessionUserId: "",
+      pinHash: "",
+      credentialId: ""
+    },
     snoozedExpiryUntil: 0,
     cloudConfig: {
       appsScriptUrl: DEFAULT_APPS_SCRIPT_URL,
@@ -806,6 +845,9 @@ async function loadVault() {
       if (dec && Array.isArray(dec.units) && Array.isArray(dec.accounts)) {
         if (!dec.cloudConfig) dec.cloudConfig = { appsScriptUrl: DEFAULT_APPS_SCRIPT_URL, masterSheetUrl: "", lastSyncedAt: "" };
         if (!dec.cloudConfig.appsScriptUrl) dec.cloudConfig.appsScriptUrl = DEFAULT_APPS_SCRIPT_URL;
+        if (!dec.deviceSecurity) dec.deviceSecurity = { rememberedUserId: "", activeSessionUserId: "", pinHash: "", credentialId: "" };
+        if (!Array.isArray(dec.blockedUsers)) dec.blockedUsers = [];
+        if (!Array.isArray(dec.deletedIds)) dec.deletedIds = [];
         await ensurePasswordHashes(dec);
         return dec;
       }
@@ -864,6 +906,10 @@ function isDistrictTopAuthority(u = getEffectiveUser()) {
 function isOfficerOrDev(u = getEffectiveUser()) {
   if (!u) return false;
   return u.role === "officer" || u.role === "dev";
+}
+
+function isUserBlocked(userId) {
+  return Array.isArray(vault.blockedUsers) && vault.blockedUsers.includes(userId);
 }
 
 function getAllChecklistItems() {
@@ -997,8 +1043,182 @@ function snoozeShelfLifeWatch() {
 }
 
 // ============================================================================
-// SECTION E: AUTHENTICATION, BIOMETRIC & SIGN-UP FLOW
+// SECTION E: PERSISTENT LOGIN, 4-DIGIT PIN, BIOMETRIC & INVITE-GATED SIGNUP
 // ============================================================================
+function showQuickLockScreen() {
+  const ds = vault.deviceSecurity || {};
+  const acc = ds.rememberedUserId ? vault.accounts.find(a => a.userId === ds.rememberedUserId) : null;
+  if (!acc || isUserBlocked(acc.userId)) {
+    switchToFullPasswordLogin(true);
+    return;
+  }
+
+  document.getElementById("auth-mode-tabs").classList.add("hidden");
+  document.getElementById("panel-signin").classList.add("hidden");
+  document.getElementById("panel-signup").classList.add("hidden");
+  document.getElementById("panel-quicklock").classList.remove("hidden");
+
+  const qlAv = document.getElementById("ql-avatar");
+  if (acc.photo) {
+    qlAv.innerHTML = `<img src="${escapeHTML(acc.photo)}" alt="" class="w-full h-full object-cover" />`;
+  } else {
+    qlAv.textContent = acc.userId;
+  }
+  document.getElementById("ql-name").textContent = acc.name;
+  document.getElementById("ql-meta").textContent = `${acc.userId} • ${acc.designation}`;
+  document.getElementById("ql-pin-input").value = "";
+  document.getElementById("auth-screen").classList.remove("hidden");
+}
+
+function switchToFullPasswordLogin(hideReturn = false) {
+  document.getElementById("panel-quicklock").classList.add("hidden");
+  document.getElementById("auth-mode-tabs").classList.remove("hidden");
+  switchAuthTab("signin");
+
+  const ds = vault.deviceSecurity || {};
+  const acc = ds.rememberedUserId ? vault.accounts.find(a => a.userId === ds.rememberedUserId) : null;
+  const retBan = document.getElementById("ql-return-banner");
+  if (!hideReturn && acc && ds.pinHash) {
+    retBan.classList.remove("hidden");
+    selectLoginRole(acc.role);
+    document.getElementById("signin-userid").value = acc.userId;
+  } else {
+    retBan.classList.add("hidden");
+  }
+}
+
+async function switchAccountCompletely() {
+  vault.deviceSecurity = { rememberedUserId: "", activeSessionUserId: "", pinHash: "", credentialId: "" };
+  await saveVault();
+  document.getElementById("signin-userid").value = "";
+  document.getElementById("signin-pass").value = "";
+  switchToFullPasswordLogin(true);
+}
+
+async function handleQuickPinUnlock(ev) {
+  ev.preventDefault();
+  const ds = vault.deviceSecurity || {};
+  const acc = ds.rememberedUserId ? vault.accounts.find(a => a.userId === ds.rememberedUserId) : null;
+  if (!acc) return switchToFullPasswordLogin(true);
+
+  if (isUserBlocked(acc.userId)) {
+    showToast(lang === "hi" ? "यह खाता जिला प्रशासन द्वारा अवरुद्ध (Blocked) है" : "This account is blocked by District Administration", true);
+    return;
+  }
+
+  const pin = document.getElementById("ql-pin-input").value.trim();
+  if (!ds.pinHash) {
+    showToast(lang === "hi" ? "पिन सेट नहीं है — कृपया पासवर्ड से लॉगिन करें" : "No PIN set — sign in with password first", true);
+    switchToFullPasswordLogin(true);
+    return;
+  }
+
+  const hash = await sha256Hex("PIN:" + acc.userId + ":" + pin);
+  if (hash !== ds.pinHash) {
+    document.getElementById("ql-pin-input").value = "";
+    showToast(lang === "hi" ? "गलत 4-अंकों का पिन" : "Incorrect 4-digit PIN", true);
+    return;
+  }
+
+  await completeLogin(acc, false);
+}
+
+function openSet4DigitPinModal(isFirstSetup = false) {
+  const isHi = lang === "hi";
+  openUniversalModal(
+    isHi ? "🔢 4-अंकों का सुरक्षा पिन व फिंगरप्रिंट सेट करें" : "🔢 Set 4-Digit Quick PIN & Fingerprint",
+    `${currentUser.userId} • ${currentUser.name}`,
+    `<form onsubmit="saveDevice4DigitPin(event)" class="space-y-3">
+      <p class="text-sec-var leading-relaxed">${isHi ? "अगली बार लंबा पासवर्ड टाइप किए बिना सिर्फ 4-अंकों के पिन या फिंगरप्रिंट से ऐप खोलें, ताकि आपके फ़ोन से कोई अन्य व्यक्ति डेटा न बदल सके।" : "Next time, unlock instantly with a 4-digit PIN or Fingerprint without typing your full password, keeping your device protected from unauthorized access."}</p>
+      <div>
+        <label class="block font-bold mb-1">${isHi ? "नया 4-अंकों का पिन चुनें (0-9) *" : "Choose 4-Digit PIN (0-9) *"}</label>
+        <input type="password" id="setup-pin-1" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" required placeholder="1234" class="w-full px-3 py-2.5 civic-input text-center text-base tracking-[0.5em] font-black" />
+      </div>
+      <div>
+        <label class="block font-bold mb-1">${isHi ? "पिन की पुष्टि करें *" : "Confirm 4-Digit PIN *"}</label>
+        <input type="password" id="setup-pin-2" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" required placeholder="1234" class="w-full px-3 py-2.5 civic-input text-center text-base tracking-[0.5em] font-black" />
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+        <button type="submit" class="py-2.5 btn-civic bg-civic-teal text-xs">✓ ${isHi ? "4-अंक पिन सहेजें" : "Save 4-Digit PIN"}</button>
+        <button type="button" onclick="enrollDeviceBiometric()" class="py-2.5 btn-civic bg-civic-blue text-xs">👆 ${isHi ? "फिंगरप्रिंट भी जोड़ें" : "Also Link Fingerprint"}</button>
+      </div>
+    </form>`
+  );
+}
+
+async function saveDevice4DigitPin(ev) {
+  ev.preventDefault();
+  const p1 = document.getElementById("setup-pin-1").value.trim();
+  const p2 = document.getElementById("setup-pin-2").value.trim();
+  if (!/^\d{4}$/.test(p1) || p1 !== p2) {
+    showToast(lang === "hi" ? "दोनों बॉक्स में समान 4-अंकों का पिन दर्ज करें" : "Both PIN entries must match (4 digits)", true);
+    return;
+  }
+  vault.deviceSecurity.rememberedUserId = currentUser.userId;
+  vault.deviceSecurity.activeSessionUserId = currentUser.userId;
+  vault.deviceSecurity.pinHash = await sha256Hex("PIN:" + currentUser.userId + ":" + p1);
+  await saveVault();
+  closeUniversalModal();
+  renderAll();
+  showToast(lang === "hi" ? "✓ 4-अंकों का सुरक्षा पिन सक्रिय हो गया!" : "✓ 4-Digit Quick PIN saved for this device!");
+}
+
+async function enrollDeviceBiometric() {
+  if (!currentUser) return;
+  try {
+    if (window.PublicKeyCredential && window.isSecureContext) {
+      const challenge = crypto.getRandomValues(new Uint8Array(32));
+      const userIdBytes = new TextEncoder().encode(currentUser.userId);
+      const cred = await navigator.credentials.create({
+        publicKey: {
+          challenge,
+          rp: { name: "Surguja ASHA Portal" },
+          user: { id: userIdBytes, name: currentUser.userId, displayName: currentUser.name },
+          pubKeyCredParams: [{ type: "public-key", alg: -7 }, { type: "public-key", alg: -257 }],
+          authenticatorSelection: { authenticatorAttachment: "platform", userVerification: "required" },
+          timeout: 30000
+        }
+      });
+      if (cred && cred.rawId) {
+        vault.deviceSecurity.credentialId = bufToBase64Url(cred.rawId);
+      }
+    }
+    vault.deviceSecurity.rememberedUserId = currentUser.userId;
+    vault.deviceSecurity.activeSessionUserId = currentUser.userId;
+    await saveVault();
+    closeUniversalModal();
+    renderAll();
+    showToast(lang === "hi" ? "✓ फिंगरप्रिंट / Face ID इस डिवाइस पर सक्रिय हो गया!" : "✓ Fingerprint / Face ID linked to this device!");
+  } catch (e) {
+    showToast(lang === "hi" ? "बायोमेट्रिक रद्द हुआ — आप 4-अंकों का पिन उपयोग कर सकते हैं" : "Biometric cancelled — you can use your 4-digit PIN", true);
+  }
+}
+
+async function triggerSavedBiometricUnlock() {
+  const ds = vault.deviceSecurity || {};
+  const acc = ds.rememberedUserId ? vault.accounts.find(a => a.userId === ds.rememberedUserId) : null;
+  if (!acc) return switchToFullPasswordLogin(true);
+  if (!ds.credentialId) {
+    showToast(lang === "hi" ? "पहले 4-अंकों के पिन से खोलें और Settings में फिंगरप्रिंट जोड़ें" : "Unlock with your 4-digit PIN first, then link Fingerprint in Settings", true);
+    return;
+  }
+  try {
+    const assertion = await navigator.credentials.get({
+      publicKey: {
+        challenge: crypto.getRandomValues(new Uint8Array(32)),
+        allowCredentials: [{ id: base64UrlToUint8(ds.credentialId), type: "public-key" }],
+        userVerification: "required",
+        timeout: 30000
+      }
+    });
+    if (assertion) {
+      await completeLogin(acc, false);
+    }
+  } catch (e) {
+    showToast(lang === "hi" ? "बायोमेट्रिक सत्यापन विफल — कृपया 4-अंकों का पिन डालें" : "Biometric failed — enter your 4-digit PIN", true);
+  }
+}
+
 function switchAuthTab(tab) {
   const isSignIn = tab === "signin";
   document.getElementById("panel-signin").classList.toggle("hidden", !isSignIn);
@@ -1057,7 +1277,7 @@ function populateSignUpUnits() {
   const sel = document.getElementById("su-unit");
   const units = vault.units.filter(u => u.block === blockVal);
   sel.innerHTML = units.map(u => `<option value="${u.id}">${escapeHTML(lang === "hi" ? u.hi : u.en)}</option>`).join("") +
-    `<option value="__NEW__">${lang === "hi" ? "+ नया ASHA केंद्र जोड़ें" : "+ Register New ASHA Center"}</option>`;
+    `<option value="__NEW__">${lang === "hi" ? "+ नया ASHA केंद्र जोड़ें (District Code आवश्यक)" : "+ Register New ASHA Center (District Code Req.)"}</option>`;
   toggleNewUnitInput();
 }
 
@@ -1070,6 +1290,8 @@ function toggleSignUpFields() {
   const role = document.getElementById("su-role").value;
   document.getElementById("su-shg-fields").classList.toggle("hidden", role !== "shg");
   document.getElementById("su-officer-fields").classList.toggle("hidden", role !== "officer");
+  const shgCodeInp = document.getElementById("su-shgcode");
+  if (shgCodeInp) shgCodeInp.required = (role === "shg");
 }
 
 function handleSignUpPhoto(ev) {
@@ -1114,10 +1336,19 @@ async function handleFirstTimeSignUp(ev) {
 
   let block = "ALL", unitId = "ALL", shgName = "", designation = "SHG Member / Udyog Sakhi";
   if (role === "shg") {
+    const inviteCode = sanitizeInput(document.getElementById("su-shgcode").value).toUpperCase();
+    if (inviteCode !== SHG_INVITE_SIGNUP_CODE && inviteCode !== DISTRICT_OFFICER_SIGNUP_CODE) {
+      showToast(lang === "hi" ? "अमान्य NRLM आमंत्रण कोड! कृपया BPO या DMMU से सही कोड प्राप्त करें।" : "Invalid NRLM Invite Code! Obtain valid code from BPO/DMMU.", true);
+      return;
+    }
     block = document.getElementById("su-block").value;
     unitId = document.getElementById("su-unit").value;
     shgName = sanitizeInput(document.getElementById("su-shgname").value) || `${block} Mahila SHG`;
     if (unitId === "__NEW__") {
+      if (inviteCode !== DISTRICT_OFFICER_SIGNUP_CODE) {
+        showToast(lang === "hi" ? "नया ASHA केंद्र जोड़ने के लिए जिला सत्यापन कोड आवश्यक है" : "District Verification Code required to register a new ASHA center", true);
+        return;
+      }
       const newUnitName = sanitizeInput(document.getElementById("su-new-unit-name").value);
       const newUnitGP = sanitizeInput(document.getElementById("su-new-unit-gp").value);
       if (!newUnitName || !newUnitGP) {
@@ -1150,9 +1381,9 @@ async function handleFirstTimeSignUp(ev) {
     }
   } else {
     designation = document.getElementById("su-desig").value;
-    const code = sanitizeInput(document.getElementById("su-offcode").value);
-    if (!code || code.length < 4) {
-      showToast(lang === "hi" ? "कृपया जिला सत्यापन कोड दर्ज करें" : "Enter District Verification Code", true);
+    const code = sanitizeInput(document.getElementById("su-offcode").value).toUpperCase();
+    if (code !== DISTRICT_OFFICER_SIGNUP_CODE) {
+      showToast(lang === "hi" ? "अमान्य जिला सत्यापन कोड! अधिकारी पंजीयन अस्वीकृत।" : "Invalid District Verification Code! Officer registration denied.", true);
       return;
     }
     shgName = designation;
@@ -1188,8 +1419,13 @@ async function handleSignIn(ev) {
 
   const uid = sanitizeInput(document.getElementById("signin-userid").value).toUpperCase();
   const pass = document.getElementById("signin-pass").value;
-  const acc = vault.accounts.find(a => a.userId === uid);
 
+  if (isUserBlocked(uid)) {
+    showToast(lang === "hi" ? "यह खाता जिला प्रशासन द्वारा अवरुद्ध (Blocked) है" : "This account is blocked by District Administration", true);
+    return;
+  }
+
+  const acc = vault.accounts.find(a => a.userId === uid);
   if (!acc || acc.role !== selectedLoginRole) {
     registerFailedLogin(lang === "hi" ? "चयनित भूमिका के लिए User ID अमान्य है" : "Invalid User ID for selected role");
     return;
@@ -1203,7 +1439,12 @@ async function handleSignIn(ev) {
 
   failedLoginAttempts = 0;
   document.getElementById("login-lockout-banner").classList.add("hidden");
-  await completeLogin(acc, false);
+  const isNewUserOnDevice = vault.deviceSecurity.rememberedUserId !== acc.userId;
+  if (isNewUserOnDevice) {
+    vault.deviceSecurity.pinHash = "";
+    vault.deviceSecurity.credentialId = "";
+  }
+  await completeLogin(acc, !vault.deviceSecurity.pinHash);
 }
 
 function registerFailedLogin(msg) {
@@ -1218,11 +1459,14 @@ function registerFailedLogin(msg) {
   showToast(msg, true);
 }
 
-async function completeLogin(acc, promptBiometricAfter) {
+async function completeLogin(acc, promptPinAfter) {
   currentUser = acc;
   devImpersonateId = null;
   activeTab = "dashboard";
   tabErrorFlags = {};
+
+  vault.deviceSecurity.rememberedUserId = acc.userId;
+  vault.deviceSecurity.activeSessionUserId = acc.userId;
 
   if (acc.role === "shg") {
     globalFilterBlock = acc.block;
@@ -1242,22 +1486,31 @@ async function completeLogin(acc, promptBiometricAfter) {
   startLiveSystemClock();
   renderAll();
 
-  // Pull latest cross-device cloud entries immediately on login when online
   pullFromGoogleCloud(false);
 
-  if (promptBiometricAfter && !(vault.biometricUsers || []).includes(acc.userId)) {
-    openBiometricEnrollPrompt(acc);
+  if (promptPinAfter) {
+    openSet4DigitPinModal(true);
   }
 }
 
-function lockSessionNow() {
+async function lockSessionNow() {
+  if (currentUser && vault && vault.deviceSecurity) {
+    vault.deviceSecurity.rememberedUserId = currentUser.userId;
+    vault.deviceSecurity.activeSessionUserId = "";
+    await saveVault();
+  }
   currentUser = null;
   devImpersonateId = null;
   if (systemClockTimer) clearInterval(systemClockTimer);
   document.getElementById("signin-pass").value = "";
   document.getElementById("dev-perspective-bar").classList.add("hidden");
-  document.getElementById("auth-screen").classList.remove("hidden");
-  renderBiometricList();
+
+  if (vault.deviceSecurity && vault.deviceSecurity.pinHash) {
+    showQuickLockScreen();
+  } else {
+    switchToFullPasswordLogin(true);
+    document.getElementById("auth-screen").classList.remove("hidden");
+  }
 }
 
 function resetInactivityTimer() {
@@ -1265,7 +1518,7 @@ function resetInactivityTimer() {
   if (currentUser) {
     inactivityTimer = setTimeout(() => {
       lockSessionNow();
-      showToast(lang === "hi" ? "15 मिनट निष्क्रियता के कारण सत्र लॉक किया गया" : "Session auto-locked after 15 mins inactivity");
+      showToast(lang === "hi" ? "15 मिनट निष्क्रियता के कारण स्क्रीन लॉक की गई" : "Screen auto-locked after 15 mins inactivity");
     }, 15 * 60 * 1000);
   }
 }
@@ -1278,86 +1531,6 @@ function startLiveSystemClock() {
       el.textContent = nowSystemStamp();
     });
   }, 1000);
-}
-
-function renderBiometricList() {
-  const listEl = document.getElementById("biometric-enrolled-list");
-  if (!listEl || !vault) return;
-  const enrolled = (vault.biometricUsers || []).map(uid => vault.accounts.find(a => a.userId === uid)).filter(Boolean);
-  if (!enrolled.length) {
-    listEl.innerHTML = "";
-    return;
-  }
-  listEl.innerHTML = enrolled.map(acc => `
-    <button type="button" onclick="unlockBiometricAccount('${escapeHTML(acc.userId)}')" class="w-full p-2.5 rounded-xl civic-muted flex items-center justify-between text-left hover:opacity-90">
-      <div>
-        <div class="font-extrabold text-xs">${escapeHTML(acc.userId)} • ${escapeHTML(acc.name)}</div>
-        <div class="text-[10px] text-muted-var">${escapeHTML(acc.designation)}</div>
-      </div>
-      <span class="px-2.5 py-1 rounded-lg bg-civic-emerald text-white text-[11px] font-bold">👆 Unlock</span>
-    </button>
-  `).join("");
-}
-
-async function enrollBiometricForCurrent() {
-  if (!currentUser) return;
-  try {
-    if (window.PublicKeyCredential && window.isSecureContext) {
-      const challenge = crypto.getRandomValues(new Uint8Array(32));
-      const userIdBytes = new TextEncoder().encode(currentUser.userId);
-      await navigator.credentials.create({
-        publicKey: {
-          challenge,
-          rp: { name: "Surguja ASHA Portal" },
-          user: { id: userIdBytes, name: currentUser.userId, displayName: currentUser.name },
-          pubKeyCredParams: [{ type: "public-key", alg: -7 }],
-          authenticatorSelection: { authenticatorAttachment: "platform", userVerification: "required" },
-          timeout: 30000
-        }
-      });
-    }
-  } catch (e) {}
-  if (!vault.biometricUsers.includes(currentUser.userId)) {
-    vault.biometricUsers.push(currentUser.userId);
-    await saveVault();
-  }
-  closeUniversalModal();
-  renderAll();
-  showToast(lang === "hi" ? "फिंगरप्रिंट / बायोमेट्रिक लॉक सक्रिय हो गया" : "Fingerprint / Biometric unlock enabled");
-}
-
-async function unlockBiometricAccount(uid) {
-  const acc = vault.accounts.find(a => a.userId === uid);
-  if (!acc) return;
-  try {
-    if (window.PublicKeyCredential && window.isSecureContext) {
-      await navigator.credentials.get({
-        publicKey: { challenge: crypto.getRandomValues(new Uint8Array(32)), userVerification: "required", timeout: 30000 }
-      });
-    }
-  } catch (e) {}
-  await completeLogin(acc, false);
-}
-
-function triggerBiometricLogin() {
-  const enrolled = vault.biometricUsers || [];
-  if (!enrolled.length) {
-    showToast(lang === "hi" ? "पहले User ID व पासवर्ड से साइन इन करके Settings में फिंगरप्रिंट जोड़ें" : "Sign in with User ID & Password first, then enable Fingerprint in Settings", true);
-    return;
-  }
-  unlockBiometricAccount(enrolled[0]);
-}
-
-function openBiometricEnrollPrompt(acc) {
-  openUniversalModal(
-    lang === "hi" ? "👆 फिंगरप्रिंट लॉगिन सक्रिय करें?" : "👆 Enable Fingerprint / Face ID?",
-    `${acc.userId} • ${acc.name}`,
-    `<p class="text-sec-var leading-relaxed">${lang === "hi" ? "अगली बार बिना पासवर्ड टाइप किए एक टच में ऐप खोलने के लिए अपने फ़ोन का फिंगरप्रिंट जोड़ें।" : "Link your phone's Fingerprint / Face ID for instant 1-tap login next time."}</p>
-     <div class="grid grid-cols-2 gap-2 pt-2">
-       <button type="button" onclick="closeUniversalModal()" class="py-2.5 btn-civic civic-muted text-xs">${lang === "hi" ? "बाद में" : "Later"}</button>
-       <button type="button" onclick="enrollBiometricForCurrent()" class="py-2.5 btn-civic bg-civic-emerald text-xs">👆 ${lang === "hi" ? "अभी जोड़ें" : "Enable Now"}</button>
-     </div>`
-  );
 }
 
 // ============================================================================
@@ -1400,8 +1573,12 @@ function applyLanguageStaticLabels() {
   document.getElementById("lbl-signin-userid").textContent = isHi ? "2. यूजर आईडी (User ID) *" : "2. User ID *";
   document.getElementById("lbl-signin-pass").textContent = isHi ? "3. पासवर्ड (Password) *" : "3. Password *";
   document.getElementById("btn-signin-submit").textContent = isHi ? "🔐 सुरक्षित साइन इन करें" : "🔐 Sign In Securely";
-  document.getElementById("bio-or-text").textContent = isHi ? "— या बायोमेट्रिक से तुरंत खोलें —" : "— or unlock instantly with Biometric —";
-  document.getElementById("btn-bio-unlock").textContent = isHi ? "👆 फिंगरप्रिंट / Face ID से अनलॉक करें" : "👆 Unlock with Fingerprint / Face ID";
+  document.getElementById("ql-badge").textContent = isHi ? "इस डिवाइस पर सहेजा गया खाता" : "SAVED DEVICE ACCOUNT";
+  document.getElementById("lbl-ql-pin").textContent = isHi ? "4-अंकों का सुरक्षा पिन (4-Digit PIN) दर्ज करें *" : "Enter 4-Digit Security PIN *";
+  document.getElementById("btn-ql-unlock").textContent = isHi ? "🔓 पिन से तुरंत खोलें" : "🔓 Unlock with PIN";
+  document.getElementById("btn-ql-bio").textContent = isHi ? "👆 फिंगरप्रिंट / Face ID से अनलॉक करें" : "👆 Unlock with Fingerprint / Face ID";
+  document.getElementById("btn-ql-usepass").textContent = isHi ? "🔑 पासवर्ड से खोलें / पिन बदलें" : "🔑 Use Password / Reset PIN";
+  document.getElementById("btn-ql-switch").textContent = isHi ? "🔄 खाता बदलें" : "🔄 Switch User";
   document.getElementById("btn-reset-filters").textContent = isHi ? "✕ फ़िल्टर रीसेट" : "✕ Reset Filters";
   document.getElementById("sidebar-portal-tag").textContent = isHi ? "सरगुजा ASHA पोर्टल" : "Surguja ASHA Portal";
   document.getElementById("dev-bar-label").textContent = isHi ? "डेवलपर दृष्टिकोण मोड:" : "Developer Perspective Mode:";
@@ -1604,7 +1781,10 @@ function renderDashboardTab() {
       <div class="bg-civic-teal p-4 sm:p-5 rounded-2xl text-white space-y-3 shadow-sm">
         <div class="flex flex-wrap items-center justify-between gap-2">
           <span class="px-2.5 py-1 rounded-full bg-amber-200 text-slate-900 text-[11px] font-extrabold">${escapeHTML(u.id)} • ${escapeHTML(u.block)}</span>
-          <span class="px-2.5 py-1 rounded-full bg-white/15 text-xs font-bold">${escapeHTML(u.phase)}</span>
+          <div class="flex items-center gap-1.5">
+            <button type="button" onclick="pullFromGoogleCloud(true)" class="px-2.5 py-1 rounded-full bg-white/15 text-[11px] font-bold">🔄 Sync</button>
+            <span class="px-2.5 py-1 rounded-full bg-white/15 text-xs font-bold">${escapeHTML(u.phase)}</span>
+          </div>
         </div>
         <h2 class="text-base sm:text-lg font-extrabold">${escapeHTML(isHi ? u.hi : u.en)}</h2>
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
@@ -1936,11 +2116,12 @@ function openDrillDown(type, param = "") {
 }
 
 // ============================================================================
-// SECTION I: TAB 2 — STOCK & PRODUCTION (MANUAL DATE + LOCKED SYSTEM TIME)
+// SECTION I: TAB 2 — STOCK & PRODUCTION + ADMIN VOID CONTROL
 // ============================================================================
 function renderStockTab() {
   const isHi = lang === "hi";
   const units = getFilteredUnits();
+  const canVoid = isDistrictTopAuthority();
 
   if (units.length > 1) {
     return `
@@ -2141,20 +2322,22 @@ function renderStockTab() {
               <th class="p-2">${isHi ? "बैच व वस्तु" : "Batch & Item"}</th>
               <th class="p-2">${isHi ? "मात्रा" : "Qty"}</th>
               <th class="p-2">${isHi ? "लेन-देन तिथि" : "Tx Date"}</th>
-              <th class="p-2">${isHi ? "सिस्टम रिकॉर्ड समय" : "System Recorded"}</th>
+              <th class="p-2">${isHi ? "सिस्टम समय" : "System Stamp"}</th>
+              ${canVoid ? `<th class="p-2 text-right">Admin</th>` : ""}
             </tr>
           </thead>
           <tbody class="divide-y" style="border-color: var(--border-subtle);">
             ${[
-              ...unitRMLogs.map(r => ({ cat: r.type === "IN" ? (isHi ? "RM आवक" : "RM In") : (isHi ? "RM खपत" : "RM Used"), badge: r.type === "IN" ? "bg-civic-blue" : "bg-civic-ochre", label: `${r.batchNo} • ${r.material}`, qty: `${r.qty} ${r.unit}`, txDate: r.txDate, sysStamp: r.sysStamp })),
-              ...unitFGLogs.map(f => ({ cat: isHi ? "FG उत्पादन" : "FG Produced", badge: "bg-civic-emerald", label: `${f.batchNo} • ${f.product}`, qty: `${f.qty} ${f.unit}`, txDate: f.txDate, sysStamp: f.sysStamp }))
-            ].slice(0, 15).map(row => `
+              ...unitRMLogs.map(r => ({ id: r.id, kind: "rm", cat: r.type === "IN" ? (isHi ? "RM आवक" : "RM In") : (isHi ? "RM खपत" : "RM Used"), badge: r.type === "IN" ? "bg-civic-blue" : "bg-civic-ochre", label: `${r.batchNo} • ${r.material}`, qty: `${r.qty} ${r.unit}`, txDate: r.txDate, sysStamp: r.sysStamp })),
+              ...unitFGLogs.map(f => ({ id: f.id, kind: "fg", cat: isHi ? "FG उत्पादन" : "FG Produced", badge: "bg-civic-emerald", label: `${f.batchNo} • ${f.product}`, qty: `${f.qty} ${f.unit}`, txDate: f.txDate, sysStamp: f.sysStamp }))
+            ].slice(0, 20).map(row => `
               <tr>
                 <td class="p-2"><span class="px-2 py-0.5 rounded-full ${row.badge} text-white text-[10px] font-bold whitespace-nowrap">${row.cat}</span></td>
                 <td class="p-2 font-bold">${escapeHTML(row.label)}</td>
                 <td class="p-2 font-extrabold whitespace-nowrap">${escapeHTML(row.qty)}</td>
                 <td class="p-2 whitespace-nowrap">${formatDateDisplay(row.txDate)}</td>
                 <td class="p-2 font-mono text-[10px] text-muted-var whitespace-nowrap">${escapeHTML(row.sysStamp)}</td>
+                ${canVoid ? `<td class="p-2 text-right"><button type="button" onclick="voidEntryByAdmin('${row.kind}', '${escapeHTML(row.id)}', '${u.id}')" class="px-2 py-1 rounded bg-civic-crimson text-white text-[10px] font-bold">🗑️ Void</button></td>` : ""}
               </tr>
             `).join("")}
           </tbody>
@@ -2318,6 +2501,7 @@ function renderSalesTab() {
   const units = getFilteredUnits();
   const unitIds = new Set(units.map(u => u.id));
   const filteredSales = filterSalesByTimeframe(vault.salesLogs.filter(sl => unitIds.has(sl.unitId)));
+  const canVoid = isDistrictTopAuthority();
 
   const totalRev = filteredSales.reduce((s, x) => s + Number(x.total || 0), 0);
   const offRev = filteredSales.filter(x => x.channel === "Offline").reduce((s, x) => s + Number(x.total || 0), 0);
@@ -2537,6 +2721,7 @@ function renderSalesTab() {
               <th class="p-2">${isHi ? "उत्पाद व मात्रा" : "Product & Qty"}</th>
               <th class="p-2">${isHi ? "भुगतान" : "Payment"}</th>
               <th class="p-2">${isHi ? "कुल राशि" : "Total"}</th>
+              ${canVoid ? `<th class="p-2 text-right">Admin</th>` : ""}
             </tr>
           </thead>
           <tbody class="divide-y" style="border-color: var(--border-subtle);">
@@ -2547,6 +2732,7 @@ function renderSalesTab() {
                 <td class="p-2">${escapeHTML(sl.product)} (${sl.qty} ${escapeHTML(u.unitType)})</td>
                 <td class="p-2">${escapeHTML(sl.paymentMode)}${sl.hybridBreakup ? `<div class="text-[10px] text-muted-var">${escapeHTML(sl.hybridBreakup)}</div>` : ""}</td>
                 <td class="p-2 font-extrabold text-civic-emerald whitespace-nowrap">${formatINR(sl.total)}</td>
+                ${canVoid ? `<td class="p-2 text-right"><button type="button" onclick="voidEntryByAdmin('sales', '${escapeHTML(sl.id)}', '${u.id}')" class="px-2 py-1 rounded bg-civic-crimson text-white text-[10px] font-bold">🗑️ Void</button></td>` : ""}
               </tr>
             `).join("")}
           </tbody>
@@ -2678,6 +2864,7 @@ function renderWeeklyTab() {
   if (!u) return "";
   const m = getUnitMetrics(u.id);
   const reports = vault.weeklyReports.filter(w => w.unitId === u.id).slice().reverse();
+  const canVoid = isDistrictTopAuthority();
 
   return `
     <div class="civic-card p-4 space-y-3">
@@ -2739,7 +2926,10 @@ function renderWeeklyTab() {
               <div class="font-extrabold">${formatDateDisplay(r.weekDate)} • ${r.daysOperated} ${isHi ? "दिन" : "Days"} • ${r.activeMembers} ${isHi ? "सदस्य" : "Members"}</div>
               <div class="text-[11px] text-sec-var">RM: ${r.rmClosing} • FG: ${r.fgClosing} • ${isHi ? "बिक्री:" : "Sales:"} ${formatINR(r.salesTotal)} • ${isHi ? "स्थिति:" : "Facility:"} ${escapeHTML(r.facilityStatus || "N/A")}</div>
             </div>
-            <button type="button" onclick="shareWeeklyReportItem('${r.id}')" class="px-3 py-1.5 rounded-lg bg-civic-emerald text-white text-[11px] font-bold">📤 ${isHi ? "शेयर" : "Share"}</button>
+            <div class="flex items-center gap-1.5">
+              <button type="button" onclick="shareWeeklyReportItem('${r.id}')" class="px-3 py-1.5 rounded-lg bg-civic-emerald text-white text-[11px] font-bold">📤 ${isHi ? "शेयर" : "Share"}</button>
+              ${canVoid ? `<button type="button" onclick="voidEntryByAdmin('weekly', '${escapeHTML(r.id)}', '${u.id}')" class="px-2.5 py-1.5 rounded-lg bg-civic-crimson text-white text-[11px] font-bold">🗑️ Void</button>` : ""}
+            </div>
           </div>
         `).join("")}
       </div>
@@ -3029,27 +3219,34 @@ async function saveCustomMilestone(ev) {
 }
 
 // ============================================================================
-// SECTION M: TAB 5 — SETTINGS, GOOGLE SHEETS LIVE SYNC (DMMU/CEO/DEV ONLY),
-//            7-SHEET EXCEL WORKBOOK & DEVELOPER PASSWORD VAULT
+// SECTION M: TAB 5 — SETTINGS, 4-DIGIT PIN / BIOMETRIC, USER BLOCKING,
+//            GOOGLE SHEETS 2-WAY SYNC & DEVELOPER PASSWORD VAULT
 // ============================================================================
 function renderSettingsTab() {
   const isHi = lang === "hi";
   const eff = getEffectiveUser();
   const isTopAdmin = isDistrictTopAuthority(eff);
   const isDevRoot = currentUser && currentUser.role === "dev" && !devImpersonateId;
-  const bioEnrolled = (vault.biometricUsers || []).includes(eff.userId);
+  const ds = vault.deviceSecurity || {};
+  const hasPin = !!ds.pinHash;
+  const hasBio = !!ds.credentialId;
   const activeUrl = (vault.cloudConfig && vault.cloudConfig.appsScriptUrl) || DEFAULT_APPS_SCRIPT_URL;
 
   return `
     <div class="civic-card p-4 space-y-3">
       <div class="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h2 class="text-sm font-extrabold">🛡️ ${isHi ? "सुरक्षा, बायोमेट्रिक व डेटा बैकअप" : "Security, Biometric & Encrypted Vault"}</h2>
-          <p class="text-[11px] text-muted-var">${isHi ? "AES-256-GCM स्थानीय एन्क्रिप्शन • सभी डिवाइस लाइव Google Sheet सिंक सक्रिय" : "AES-256-GCM Local Encryption • Cross-Device Google Sheet Live Sync Active"}</p>
+          <h2 class="text-sm font-extrabold">🛡️ ${isHi ? "डिवाइस लॉक (4-अंक पिन / फिंगरप्रिंट) व डेटा बैकअप" : "Device Lock (4-Digit PIN / Fingerprint) & Vault"}</h2>
+          <p class="text-[11px] text-muted-var">${isHi ? "एक बार साइन इन के बाद 4-अंक पिन या फिंगरप्रिंट से सुरक्षित अनलॉक • AES-256" : "Persistent Login with 4-Digit Quick PIN & Fingerprint Protection • AES-256"}</p>
         </div>
-        <button type="button" onclick="enrollBiometricForCurrent()" class="px-3 py-2 btn-civic ${bioEnrolled ? "bg-civic-emerald" : "bg-civic-blue"} text-[11px]">
-          👆 ${bioEnrolled ? (isHi ? "फिंगरप्रिंट सक्रिय है" : "Fingerprint Active") : (isHi ? "फिंगरप्रिंट लॉक जोड़ें" : "Enable Fingerprint")}
-        </button>
+        <div class="flex flex-wrap gap-1.5">
+          <button type="button" onclick="openSet4DigitPinModal(false)" class="px-3 py-2 btn-civic ${hasPin ? "bg-civic-emerald" : "bg-civic-ochre"} text-[11px]">
+            🔢 ${hasPin ? (isHi ? "4-अंक पिन बदलें" : "Change 4-Digit PIN") : (isHi ? "4-अंक पिन सेट करें" : "Set 4-Digit PIN")}
+          </button>
+          <button type="button" onclick="enrollDeviceBiometric()" class="px-3 py-2 btn-civic ${hasBio ? "bg-civic-emerald" : "bg-civic-blue"} text-[11px]">
+            👆 ${hasBio ? (isHi ? "फिंगरप्रिंट सक्रिय" : "Fingerprint Active") : (isHi ? "फिंगरप्रिंट जोड़ें" : "Link Fingerprint")}
+          </button>
+        </div>
       </div>
 
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
@@ -3070,8 +3267,8 @@ function renderSettingsTab() {
       <div class="civic-card p-4 space-y-3 border-l-4" style="border-left-color: var(--civic-emerald);">
         <div class="flex flex-wrap items-center justify-between gap-2">
           <div>
-            <h3 class="text-xs sm:text-sm font-extrabold">☁️ ${isHi ? "Google Sheets लाइव सिंक व वेब पोर्टल पब्लिशिंग (केवल DMMU / CEO ZP / Dev)" : "Google Sheets Live Sync & Web Portal Publishing (DMMU / CEO ZP / Dev Only)"}</h3>
-            <p class="text-[11px] text-muted-var">${isHi ? "ऑनलाइन होने पर सभी डिवाइसों की प्रविष्टियाँ स्वतः सिंक होती हैं" : "All devices auto-sync entries to & from Google Sheets whenever online"}</p>
+            <h3 class="text-xs sm:text-sm font-extrabold">☁️ ${isHi ? "Google Sheets 2-Way लाइव सिंक (चेकलिस्ट, लक्ष्य, खाते व सभी प्रविष्टियाँ)" : "Google Sheets 2-Way Live Sync (Checklists, Targets, Accounts & All Entries)"}</h3>
+            <p class="text-[11px] text-muted-var">${isHi ? "केवल DMMU, CEO ZP या Developer ही सिंक लिंक बदल सकते हैं" : "Restricted to DMMU, CEO ZP, and Developer Root"}</p>
           </div>
           <span class="px-2.5 py-1 rounded-full whitespace-nowrap bg-civic-emerald text-white text-[10px] font-extrabold">
             Cloud Sync Linked
@@ -3094,6 +3291,37 @@ function renderSettingsTab() {
           </div>
         </form>
       </div>
+
+      <!-- USER ACCESS CONTROL (BLOCK / UNBLOCK USERS ACROSS ALL DEVICES) -->
+      <div class="civic-card p-4 space-y-3 border-l-4" style="border-left-color: var(--civic-crimson);">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h3 class="text-xs sm:text-sm font-extrabold">🚫 ${isHi ? "उपयोगकर्ता नियंत्रण व खाता ब्लॉक प्रबंधन (DMMU / CEO ZP / Dev)" : "User Access Control & Block Management (DMMU / CEO ZP / Dev)"}</h3>
+            <p class="text-[11px] text-muted-var">${isHi ? `ब्लॉक किए गए खाते सभी डिवाइस पर लॉगिन नहीं कर पाएंगे • SHG कोड: ${SHG_INVITE_SIGNUP_CODE} | अधिकारी कोड: ${DISTRICT_OFFICER_SIGNUP_CODE}` : `Blocked accounts are locked out across all devices • SHG Code: ${SHG_INVITE_SIGNUP_CODE} | Officer Code: ${DISTRICT_OFFICER_SIGNUP_CODE}`}</p>
+          </div>
+          <span class="px-2.5 py-0.5 rounded-full bg-civic-crimson text-white text-[10px] font-extrabold">${(vault.blockedUsers || []).length} Blocked</span>
+        </div>
+        <div class="max-h-60 overflow-y-auto space-y-1.5 pr-1">
+          ${vault.accounts.filter(a => a.userId !== "DEV2026").map(a => {
+            const blocked = isUserBlocked(a.userId);
+            return `
+              <div class="p-2.5 rounded-xl civic-muted flex flex-wrap items-center justify-between gap-2 text-xs">
+                <div>
+                  <div class="font-extrabold ${blocked ? "text-civic-crimson line-through" : ""}">${escapeHTML(a.userId)} • ${escapeHTML(a.name)}</div>
+                  <div class="text-[10px] text-muted-var">${escapeHTML(a.designation)} (${escapeHTML(a.block)}) ${isDevRoot ? `• Pass: <span class="font-mono font-bold text-civic-emerald">${escapeHTML(a.plainHint || "Custom")}</span>` : ""}</div>
+                </div>
+                <div class="flex items-center gap-1.5">
+                  ${isDevRoot ? `<button type="button" onclick="openResetAccountPassModal('${escapeHTML(a.userId)}')" class="px-2 py-1 rounded-lg civic-card text-[10px] font-bold">🔑 Pass</button>` : ""}
+                  ${isDevRoot ? `<button type="button" onclick="switchDeveloperPerspective('${escapeHTML(a.userId)}')" class="px-2 py-1 rounded-lg bg-civic-teal text-white text-[10px] font-bold">👁 View</button>` : ""}
+                  <button type="button" onclick="toggleBlockUser('${escapeHTML(a.userId)}')" class="px-2.5 py-1 rounded-lg ${blocked ? "bg-civic-emerald" : "bg-civic-crimson"} text-white text-[10px] font-bold">
+                    ${blocked ? (isHi ? "✓ अनब्लॉक" : "✓ Unblock") : (isHi ? "🚫 ब्लॉक करें" : "🚫 Block")}
+                  </button>
+                </div>
+              </div>
+            `;
+          }).join("")}
+        </div>
+      </div>
     ` : ""}
 
     ${isOfficerOrDev(eff) ? `
@@ -3113,33 +3341,10 @@ function renderSettingsTab() {
       </div>
     ` : ""}
 
-    ${isDevRoot ? `
-      <div class="civic-card p-4 space-y-3 border-2" style="border-color: var(--civic-ochre);">
-        <div class="flex items-center justify-between">
-          <h3 class="text-xs sm:text-sm font-extrabold">🛠️ Developer Credential & Password Vault (Dev Root Only)</h3>
-          <span class="px-2.5 py-0.5 rounded-full bg-civic-ochre text-white text-[10px] font-extrabold">${vault.accounts.length} Accounts</span>
-        </div>
-        <div class="max-h-64 overflow-y-auto space-y-1.5 pr-1">
-          ${vault.accounts.map(a => `
-            <div class="p-2.5 rounded-xl civic-muted flex flex-wrap items-center justify-between gap-2 text-xs">
-              <div>
-                <div class="font-extrabold">${escapeHTML(a.userId)} • ${escapeHTML(a.name)}</div>
-                <div class="text-[10px] text-muted-var">${escapeHTML(a.designation)} • Password: <span class="font-mono font-bold text-civic-emerald">${escapeHTML(a.plainHint || "Custom")}</span></div>
-              </div>
-              <div class="flex items-center gap-1.5">
-                <button type="button" onclick="openResetAccountPassModal('${escapeHTML(a.userId)}')" class="px-2.5 py-1 rounded-lg civic-card text-[10px] font-bold">🔑 Pass</button>
-                <button type="button" onclick="switchDeveloperPerspective('${escapeHTML(a.userId)}')" class="px-2.5 py-1 rounded-lg bg-civic-teal text-white text-[10px] font-bold">👁 View As</button>
-              </div>
-            </div>
-          `).join("")}
-        </div>
-      </div>
-    ` : ""}
-
     <div class="civic-card p-4 space-y-2.5">
       <h3 class="text-xs font-extrabold">📜 ${isHi ? `परिवर्तन इतिहास (Audit Log — ${vault.auditLogs.length})` : `Changes & Audit History (${vault.auditLogs.length})`}</h3>
       <div class="max-h-56 overflow-y-auto space-y-1.5 text-xs">
-        ${vault.auditLogs.slice(0, 30).map(log => `
+        ${vault.auditLogs.slice(0, 35).map(log => `
           <div class="p-2.5 rounded-xl civic-muted flex items-center justify-between gap-2">
             <div>
               <span class="px-2 py-0.5 rounded-md ${log.category === "SHG" ? "bg-civic-blue" : "bg-civic-indigo"} text-white text-[10px] font-bold">${escapeHTML(log.actorId)}</span>
@@ -3151,6 +3356,39 @@ function renderSettingsTab() {
       </div>
     </div>
   `;
+}
+
+async function toggleBlockUser(targetUid) {
+  if (!isDistrictTopAuthority()) return;
+  if (!Array.isArray(vault.blockedUsers)) vault.blockedUsers = [];
+  const idx = vault.blockedUsers.indexOf(targetUid);
+  if (idx >= 0) {
+    vault.blockedUsers.splice(idx, 1);
+    recordAudit("ADMIN", "ALL", `Unblocked User Account: ${targetUid}`);
+    showToast(lang === "hi" ? `${targetUid} को अनब्लॉक किया गया` : `${targetUid} unblocked`);
+  } else {
+    vault.blockedUsers.push(targetUid);
+    recordAudit("ADMIN", "ALL", `Blocked User Account: ${targetUid}`);
+    showToast(lang === "hi" ? `${targetUid} को ब्लॉक किया गया` : `${targetUid} blocked`, true);
+  }
+  await saveVault();
+  renderAll();
+}
+
+async function voidEntryByAdmin(kind, entryId, unitId) {
+  if (!isDistrictTopAuthority()) return;
+  if (!Array.isArray(vault.deletedIds)) vault.deletedIds = [];
+  if (!vault.deletedIds.includes(entryId)) vault.deletedIds.push(entryId);
+
+  if (kind === "rm") vault.rmLogs = vault.rmLogs.filter(x => x.id !== entryId);
+  else if (kind === "fg") vault.fgLogs = vault.fgLogs.filter(x => x.id !== entryId);
+  else if (kind === "sales") vault.salesLogs = vault.salesLogs.filter(x => x.id !== entryId);
+  else if (kind === "weekly") vault.weeklyReports = vault.weeklyReports.filter(x => x.id !== entryId);
+
+  recordAudit("ADMIN", unitId, `Voided/Deleted ${kind.toUpperCase()} entry [${entryId}]`);
+  await saveVault();
+  renderAll();
+  showToast(lang === "hi" ? "प्रविष्टि निरस्त (Void) की गई व ऑडिट लॉग में दर्ज हुई" : "Entry voided and recorded in Audit Log");
 }
 
 function openResetAccountPassModal(uid) {
@@ -3194,8 +3432,7 @@ async function handleSaveUnitTarget(ev) {
 }
 
 // ============================================================================
-// SECTION N: TWO-WAY GOOGLE SHEETS LIVE SYNC (PUSH + PULL ACROSS DEVICES),
-//            7-SHEET EXCEL & UNIVERSAL SHARE
+// SECTION N: FULL 100% TWO-WAY GOOGLE SHEETS SYNC (ALL DATA & CHECKLISTS)
 // ============================================================================
 let cloudSyncDebounce = null;
 function getActiveCloudUrl() {
@@ -3221,7 +3458,7 @@ async function saveGoogleCloudConfig(ev) {
   ev.preventDefault();
   const eff = getEffectiveUser();
   if (!isDistrictTopAuthority(eff)) {
-    showToast(lang === "hi" ? "अनुमति अस्वीकृत: केवल DMMU, CEO ZP या Developer ही सिंक लिंक बदल सकते हैं" : "Access Denied: Only DMMU, CEO ZP, or Developer can update the sync endpoint", true);
+    showToast(lang === "hi" ? "अनुमति अस्वीकृत: केवल DMMU, CEO ZP या Developer" : "Access Denied: Only DMMU, CEO ZP, or Developer", true);
     return;
   }
   vault.cloudConfig.appsScriptUrl = sanitizeInput(document.getElementById("cfg-script-url").value) || DEFAULT_APPS_SCRIPT_URL;
@@ -3232,10 +3469,10 @@ async function saveGoogleCloudConfig(ev) {
   showToast(lang === "hi" ? "Google Sheets लिंक सहेजा गया" : "Google Sheets link saved");
 }
 
-function mergeById(localArr, remoteArr) {
+function mergeById(localArr, remoteArr, deletedSet) {
   const map = new Map();
-  (localArr || []).forEach(item => { if (item && item.id) map.set(item.id, item); });
-  (remoteArr || []).forEach(item => { if (item && item.id && !map.has(item.id)) map.set(item.id, item); });
+  (localArr || []).forEach(item => { if (item && item.id && !deletedSet.has(item.id)) map.set(item.id, item); });
+  (remoteArr || []).forEach(item => { if (item && item.id && !deletedSet.has(item.id) && !map.has(item.id)) map.set(item.id, item); });
   return Array.from(map.values());
 }
 
@@ -3250,26 +3487,67 @@ async function pullFromGoogleCloud(manual) {
     if (!res.ok) throw new Error("HTTP " + res.status);
     const data = await res.json();
     if (data && data.status === "OK") {
-      vault.rmLogs = mergeById(vault.rmLogs, data.rmLogs);
-      vault.fgLogs = mergeById(vault.fgLogs, data.fgLogs);
-      vault.salesLogs = mergeById(vault.salesLogs, data.salesLogs);
-      vault.weeklyReports = mergeById(vault.weeklyReports, data.weeklyReports);
-      vault.auditLogs = mergeById(vault.auditLogs, data.auditLogs).slice(0, 600);
-      if (Array.isArray(data.units)) {
-        data.units.forEach(ru => {
-          const lu = vault.units.find(x => x.id === ru.id);
-          if (lu && ru.phase) lu.phase = ru.phase;
-          if (lu && ru.phaseDate) lu.phaseDate = ru.phaseDate;
-          if (lu && ru.upiId) lu.upiId = ru.upiId;
+      const delSet = new Set([...(vault.deletedIds || []), ...(data.deletedIds || [])]);
+      vault.deletedIds = Array.from(delSet);
+
+      vault.rmLogs = mergeById(vault.rmLogs, data.rmLogs, delSet);
+      vault.fgLogs = mergeById(vault.fgLogs, data.fgLogs, delSet);
+      vault.salesLogs = mergeById(vault.salesLogs, data.salesLogs, delSet);
+      vault.weeklyReports = mergeById(vault.weeklyReports, data.weeklyReports, delSet);
+      vault.auditLogs = mergeById(vault.auditLogs, data.auditLogs, new Set()).slice(0, 600);
+
+      if (Array.isArray(data.customChecklistItems)) {
+        vault.customChecklistItems = mergeById(vault.customChecklistItems, data.customChecklistItems, new Set());
+      }
+      if (data.checklistStatus && typeof data.checklistStatus === "object") {
+        Object.keys(data.checklistStatus).forEach(uid => {
+          if (!vault.checklistStatus[uid]) vault.checklistStatus[uid] = {};
+          Object.assign(vault.checklistStatus[uid], data.checklistStatus[uid]);
         });
       }
+      if (Array.isArray(data.blockedUsers)) {
+        vault.blockedUsers = Array.from(new Set([...(vault.blockedUsers || []), ...data.blockedUsers]));
+      }
+      if (Array.isArray(data.accounts)) {
+        data.accounts.forEach(ra => {
+          if (!ra || !ra.userId) return;
+          const idx = vault.accounts.findIndex(la => la.userId === ra.userId);
+          if (idx === -1) vault.accounts.push(ra);
+          else vault.accounts[idx] = { ...vault.accounts[idx], ...ra };
+        });
+      }
+      if (Array.isArray(data.units)) {
+        data.units.forEach(ru => {
+          if (!ru || !ru.id) return;
+          const lu = vault.units.find(x => x.id === ru.id);
+          if (!lu) {
+            vault.units.push(ru);
+          } else {
+            if (ru.phase) lu.phase = ru.phase;
+            if (ru.phaseDate !== undefined) lu.phaseDate = ru.phaseDate;
+            if (ru.model) lu.model = ru.model;
+            if (ru.upiId) lu.upiId = ru.upiId;
+            if (Array.isArray(ru.upiVerifiedBy)) lu.upiVerifiedBy = ru.upiVerifiedBy;
+            lu.upiPending = ru.upiPending || null;
+            if (ru.targetMetric) lu.targetMetric = ru.targetMetric;
+            if (ru.targetValue) lu.targetValue = ru.targetValue;
+          }
+        });
+      }
+
+      if (currentUser && isUserBlocked(currentUser.userId)) {
+        await switchAccountCompletely();
+        showToast(lang === "hi" ? "यह खाता ब्लॉक कर दिया गया है" : "This account has been blocked", true);
+        return;
+      }
+
       vault.cloudConfig.lastSyncedAt = nowSystemStamp();
       await saveVault();
       renderAll();
-      if (manual) showToast(lang === "hi" ? "✓ सभी डिवाइसों का नवीनतम डेटा प्राप्त हो गया" : "✓ Latest data pulled across all devices");
+      if (manual) showToast(lang === "hi" ? "✓ सभी डिवाइसों का डेटा व चेकलिस्ट सिंक हो गई" : "✓ All devices data, checklists & accounts synced");
     }
   } catch (e) {
-    if (manual) showToast(lang === "hi" ? "Google Sheet से डेटा पढ़ने के लिए Apps Script को नया कोड पेस्ट कर Deploy करें" : "Paste updated Apps Script code & redeploy to enable 2-way pull", true);
+    if (manual) showToast(lang === "hi" ? "Apps Script में नया कोड पेस्ट कर Deploy करें" : "Redeploy updated Apps Script to enable full 2-way pull", true);
   }
 }
 
@@ -3284,13 +3562,16 @@ async function syncVaultToGoogleCloud(manual) {
       syncedAt: nowSystemStamp(),
       actorId: getEffectiveUser() ? getEffectiveUser().userId : "SYSTEM",
       units: vault.units.map(u => ({ ...u, metrics: getUnitMetrics(u.id) })),
+      accounts: vault.accounts,
+      blockedUsers: vault.blockedUsers || [],
+      deletedIds: vault.deletedIds || [],
+      customChecklistItems: vault.customChecklistItems || [],
+      checklistStatus: vault.checklistStatus || {},
       rmLogs: vault.rmLogs,
       fgLogs: vault.fgLogs,
       salesLogs: vault.salesLogs,
       weeklyReports: vault.weeklyReports,
-      auditLogs: vault.auditLogs,
-      shgAuditLogs: vault.auditLogs.filter(a => a.category === "SHG"),
-      adminAuditLogs: vault.auditLogs.filter(a => a.category !== "SHG")
+      auditLogs: vault.auditLogs
     };
     await fetch(url, { method: "POST", mode: "no-cors", headers: { "Content-Type": "text/plain" }, body: JSON.stringify(payload) });
     vault.cloudConfig.lastSyncedAt = nowSystemStamp();
@@ -3312,10 +3593,10 @@ async function fullTwoWayCloudSync(manual) {
 }
 
 function copyAppsScriptBackend() {
-  const code = `function mergeRowsById(existing, incoming) {
+  const code = `function mergeRowsById(existing, incoming, delMap) {
   var map = {};
-  (existing || []).forEach(function(item) { if (item && item.id) map[item.id] = item; });
-  (incoming || []).forEach(function(item) { if (item && item.id) map[item.id] = item; });
+  (existing || []).forEach(function(item) { if (item && item.id && !delMap[item.id]) map[item.id] = item; });
+  (incoming || []).forEach(function(item) { if (item && item.id && !delMap[item.id]) map[item.id] = item; });
   return Object.keys(map).map(function(k) { return map[k]; });
 }
 
@@ -3324,17 +3605,41 @@ function doPost(e) {
   var props = PropertiesService.getScriptProperties();
   var data = JSON.parse(e.postData.contents);
 
-  var rmLogs = mergeRowsById(JSON.parse(props.getProperty("rmLogs") || "[]"), data.rmLogs);
-  var fgLogs = mergeRowsById(JSON.parse(props.getProperty("fgLogs") || "[]"), data.fgLogs);
-  var salesLogs = mergeRowsById(JSON.parse(props.getProperty("salesLogs") || "[]"), data.salesLogs);
-  var weeklyReports = mergeRowsById(JSON.parse(props.getProperty("weeklyReports") || "[]"), data.weeklyReports);
-  var auditLogs = mergeRowsById(JSON.parse(props.getProperty("auditLogs") || "[]"), data.auditLogs).slice(0, 600);
+  var delList = JSON.parse(props.getProperty("deletedIds") || "[]").concat(data.deletedIds || []);
+  var delMap = {};
+  delList.forEach(function(id) { delMap[id] = true; });
+  var uniqueDel = Object.keys(delMap);
 
+  var rmLogs = mergeRowsById(JSON.parse(props.getProperty("rmLogs") || "[]"), data.rmLogs, delMap);
+  var fgLogs = mergeRowsById(JSON.parse(props.getProperty("fgLogs") || "[]"), data.fgLogs, delMap);
+  var salesLogs = mergeRowsById(JSON.parse(props.getProperty("salesLogs") || "[]"), data.salesLogs, delMap);
+  var weeklyReports = mergeRowsById(JSON.parse(props.getProperty("weeklyReports") || "[]"), data.weeklyReports, delMap);
+  var auditLogs = mergeRowsById(JSON.parse(props.getProperty("auditLogs") || "[]"), data.auditLogs, {}).slice(0, 600);
+  var customChecklistItems = mergeRowsById(JSON.parse(props.getProperty("customChecklistItems") || "[]"), data.customChecklistItems, {});
+
+  var checklistStatus = JSON.parse(props.getProperty("checklistStatus") || "{}");
+  if (data.checklistStatus) {
+    Object.keys(data.checklistStatus).forEach(function(uid) {
+      if (!checklistStatus[uid]) checklistStatus[uid] = {};
+      Object.keys(data.checklistStatus[uid]).forEach(function(cid) {
+        checklistStatus[uid][cid] = data.checklistStatus[uid][cid];
+      });
+    });
+  }
+
+  var units = data.units || JSON.parse(props.getProperty("units") || "[]");
+  var blockedUsers = data.blockedUsers || JSON.parse(props.getProperty("blockedUsers") || "[]");
+
+  props.setProperty("deletedIds", JSON.stringify(uniqueDel));
   props.setProperty("rmLogs", JSON.stringify(rmLogs));
   props.setProperty("fgLogs", JSON.stringify(fgLogs));
   props.setProperty("salesLogs", JSON.stringify(salesLogs));
   props.setProperty("weeklyReports", JSON.stringify(weeklyReports));
   props.setProperty("auditLogs", JSON.stringify(auditLogs));
+  props.setProperty("customChecklistItems", JSON.stringify(customChecklistItems));
+  props.setProperty("checklistStatus", JSON.stringify(checklistStatus));
+  props.setProperty("units", JSON.stringify(units));
+  props.setProperty("blockedUsers", JSON.stringify(blockedUsers));
 
   function writeTab(name, headers, rows) {
     var sh = ss.getSheetByName(name) || ss.insertSheet(name);
@@ -3343,14 +3648,18 @@ function doPost(e) {
     rows.forEach(function(r) { sh.appendRow(r); });
   }
 
-  writeTab("1_Unit_Master_Summary", ["Unit ID","Block","GP","Name","Phase","RM Available","FG Available","Total Sales (Rs)","Checklist %"],
-    (data.units || []).map(function(u) {
+  writeTab("1_Unit_Master_Summary", ["Unit ID","Block","GP","Name","Phase","Launch Date","Model","RM Avail","FG Avail","Total Sales","Target","Checklist %"],
+    units.map(function(u) {
       var uRmIn = rmLogs.filter(function(r){ return r.unitId === u.id && r.type === "IN"; }).reduce(function(s,r){ return s + Number(r.qty||0); }, 0);
       var uRmOut = rmLogs.filter(function(r){ return r.unitId === u.id && r.type === "OUT"; }).reduce(function(s,r){ return s + Number(r.qty||0); }, 0);
       var uFgProd = fgLogs.filter(function(f){ return f.unitId === u.id; }).reduce(function(s,f){ return s + Number(f.qty||0); }, 0);
       var uFgSold = salesLogs.filter(function(sl){ return sl.unitId === u.id; }).reduce(function(s,sl){ return s + Number(sl.qty||0); }, 0);
       var uSales = salesLogs.filter(function(sl){ return sl.unitId === u.id; }).reduce(function(s,sl){ return s + Number(sl.total||0); }, 0);
-      return [u.id, u.block, u.gp, u.en, u.phase, Math.max(0, uRmIn - uRmOut), Math.max(0, uFgProd - uFgSold), uSales, (u.metrics ? u.metrics.checklistPct : 0) + "%"];
+      var st = checklistStatus[u.id] || {};
+      var app = 0, comp = 0;
+      Object.keys(st).forEach(function(k){ if (st[k] !== "N/A") { app++; if (st[k] === "Completed") comp++; } });
+      var pct = app > 0 ? Math.round((comp / app) * 100) : 0;
+      return [u.id, u.block, u.gp, u.en, u.phase, u.phaseDate || "-", u.model || "Standard", Math.max(0, uRmIn - uRmOut), Math.max(0, uFgProd - uFgSold), uSales, u.targetValue || 50000, pct + "%"];
     }));
 
   writeTab("2_RM_and_FG_Stock", ["Type","Unit","Batch","Item","Qty","Unit Type","Tx Date","System Stamp"],
@@ -3366,6 +3675,12 @@ function doPost(e) {
   writeTab("5_Audit_Log", ["System Stamp","Category","Actor","Role","Unit","Action"],
     auditLogs.map(function(a){ return [a.sysStamp, a.category, a.actorId, a.actorRole, a.unitId, a.action]; }));
 
+  writeTab("6_Checklist_Milestones", ["Unit ID","Unit Name","c1","c2","c3","c4","c5","c6","c7","c8","c9","c10","c11","c12","c13","c14","c15","c16","c17"],
+    units.map(function(u){
+      var st = checklistStatus[u.id] || {};
+      return [u.id, u.en, st.c1||"N/A", st.c2||"N/A", st.c3||"N/A", st.c4||"N/A", st.c5||"N/A", st.c6||"N/A", st.c7||"N/A", st.c8||"N/A", st.c9||"N/A", st.c10||"N/A", st.c11||"N/A", st.c12||"N/A", st.c13||"N/A", st.c14||"N/A", st.c15||"N/A", st.c16||"N/A", st.c17||"N/A"];
+    }));
+
   return ContentService.createTextOutput(JSON.stringify({status:"OK"})).setMimeType(ContentService.MimeType.JSON);
 }
 
@@ -3373,6 +3688,11 @@ function doGet(e) {
   var props = PropertiesService.getScriptProperties();
   var out = {
     status: "OK",
+    deletedIds: JSON.parse(props.getProperty("deletedIds") || "[]"),
+    blockedUsers: JSON.parse(props.getProperty("blockedUsers") || "[]"),
+    units: JSON.parse(props.getProperty("units") || "[]"),
+    checklistStatus: JSON.parse(props.getProperty("checklistStatus") || "{}"),
+    customChecklistItems: JSON.parse(props.getProperty("customChecklistItems") || "[]"),
     rmLogs: JSON.parse(props.getProperty("rmLogs") || "[]"),
     fgLogs: JSON.parse(props.getProperty("fgLogs") || "[]"),
     salesLogs: JSON.parse(props.getProperty("salesLogs") || "[]"),
@@ -3387,7 +3707,7 @@ function doGet(e) {
   ta.select();
   document.execCommand("copy");
   document.body.removeChild(ta);
-  showToast(lang === "hi" ? "2-Way Google Apps Script कोड कॉपी हो गया!" : "2-Way Google Apps Script code copied!");
+  showToast(lang === "hi" ? "पूर्ण 2-Way Apps Script कोड कॉपी हो गया!" : "Full 2-Way Apps Script code copied!");
 }
 
 function export7SheetMasterExcel() {
@@ -3488,7 +3808,7 @@ function shareWeeklyReportItem(wrId) {
 }
 
 // ============================================================================
-// SECTION O: TOAST & MASTER RENDERER
+// SECTION O: TOAST & AUTO-RESTORE PERSISTENT SESSION ON LAUNCH
 // ============================================================================
 let toastTimer = null;
 function showToast(msg, isError = false) {
@@ -3521,7 +3841,26 @@ async function initASHAApp() {
   applyTheme();
   applyLanguageStaticLabels();
   selectLoginRole("shg");
-  renderBiometricList();
+
+  const ds = vault.deviceSecurity || {};
+  // 1. If user had an active session on this device, stay logged in automatically
+  if (ds.activeSessionUserId) {
+    const activeAcc = vault.accounts.find(a => a.userId === ds.activeSessionUserId);
+    if (activeAcc && !isUserBlocked(activeAcc.userId)) {
+      await completeLogin(activeAcc, false);
+      return;
+    }
+  }
+  // 2. If user locked the screen (or session timed out) with a saved 4-digit PIN, show Quick-Unlock card
+  if (ds.rememberedUserId && ds.pinHash) {
+    const remAcc = vault.accounts.find(a => a.userId === ds.rememberedUserId);
+    if (remAcc && !isUserBlocked(remAcc.userId)) {
+      showQuickLockScreen();
+      return;
+    }
+  }
+  // 3. Otherwise show full first-time sign-in screen
+  switchToFullPasswordLogin(true);
 }
 window.initASHAApp = initASHAApp;
 </script>
