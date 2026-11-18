@@ -577,7 +577,7 @@ const MASTER_CHECKLIST_ITEMS = [
 // ============================================================================
 // SECTION B: CRYPTOGRAPHIC VAULT, SECURITY & DEFAULT ACCOUNTS
 // ============================================================================
-const VAULT_STORAGE_KEY = "SURGUJA_ASHA_SECURE_VAULT_V5";
+const VAULT_STORAGE_KEY = "SURGUJA_ASHA_SECURE_VAULT_PROD_V1";
 const VAULT_SALT = "SURGUJA-NRLM-ASHA-2026-ZERO-SERVER";
 
 let lang = "hi";
@@ -761,41 +761,21 @@ function buildSeedState() {
   const checklistStatus = {};
   INITIAL_UNITS.forEach(u => {
     checklistStatus[u.id] = {};
-    MASTER_CHECKLIST_ITEMS.forEach((item, idx) => {
-      if (u.id === "ASHA01") {
-        checklistStatus[u.id][item.id] = idx < 12 ? "Completed" : (idx < 15 ? "In Progress" : "Pending");
-      } else if (u.id === "ASHA03") {
-        checklistStatus[u.id][item.id] = idx < 15 ? "Completed" : "In Progress";
-      } else {
-        checklistStatus[u.id][item.id] = "N/A";
-      }
+    MASTER_CHECKLIST_ITEMS.forEach(item => {
+      checklistStatus[u.id][item.id] = "N/A";
     });
   });
 
-  const tDate = todayISO();
   return {
     units: JSON.parse(JSON.stringify(INITIAL_UNITS)),
     accounts: buildDefaultAccounts(),
     customChecklistItems: [],
     checklistStatus,
-    rmLogs: [
-      { id: "RM1", unitId: "ASHA03", type: "IN", batchNo: "B-WHEAT-01", material: "Whole Wheat & Chana Dal", qty: 200, unit: "Kg", amount: 6400, paymentMode: "Bank Transfer", hybridBreakup: "", shelfDays: 90, expiryDate: "2027-02-15", txDate: tDate, sysStamp: nowSystemStamp(), actor: "ASHA03" },
-      { id: "RM2", unitId: "ASHA03", type: "OUT", batchNo: "B-WHEAT-01", material: "Whole Wheat & Chana Dal", qty: 80, unit: "Kg", amount: 2560, paymentMode: "N/A", hybridBreakup: "", shelfDays: 90, expiryDate: "2027-02-15", txDate: tDate, sysStamp: nowSystemStamp(), actor: "ASHA03" }
-    ],
-    fgLogs: [
-      { id: "FG1", unitId: "ASHA03", type: "PROD", batchNo: "FG-ATT-01", product: "Multigrain Sattu & Atta", qty: 75, unit: "Kg", amount: 4500, paymentMode: "N/A", hybridBreakup: "", shelfDays: 90, expiryDate: "2027-02-15", txDate: tDate, sysStamp: nowSystemStamp(), actor: "ASHA03" },
-      { id: "FG2", unitId: "ASHA01", type: "PROD", batchNo: "FG-PRT-01", product: "Printed School Registers", qty: 40, unit: "Bundles", amount: 8000, paymentMode: "N/A", hybridBreakup: "", shelfDays: 0, expiryDate: "", txDate: tDate, sysStamp: nowSystemStamp(), actor: "ASHA01" }
-    ],
-    salesLogs: [
-      { id: "SL1", unitId: "ASHA03", buyer: "Tribal Girls Ashram Ambikapur", channel: "Offline", batchNo: "FG-ATT-01", product: "Multigrain Sattu & Atta", qty: 30, rate: 80, total: 2400, paymentMode: "Bank Transfer", hybridBreakup: "", paidAmount: 2400, txDate: tDate, sysStamp: nowSystemStamp(), actor: "ASHA03" },
-      { id: "SL2", unitId: "ASHA01", buyer: "Janpad Panchayat Stationery", channel: "Offline", batchNo: "FG-PRT-01", product: "Printed School Registers", qty: 10, rate: 250, total: 2500, paymentMode: "UPI", hybridBreakup: "", paidAmount: 2500, txDate: tDate, sysStamp: nowSystemStamp(), actor: "ASHA01" }
-    ],
-    weeklyReports: [
-      { id: "WR1", unitId: "ASHA03", weekDate: tDate, daysOperated: 6, activeMembers: 8, rmOpening: 0, rmProcured: 200, rmConsumed: 80, rmClosing: 120, fgProduced: 75, fgClosing: 45, salesOffline: 2400, salesOnline: 0, salesTotal: 2400, paidTotal: 2400, creditPending: 0, facilityStatus: "N/A", supportNeeded: "N/A", sysStamp: nowSystemStamp(), actor: "ASHA03" }
-    ],
-    auditLogs: [
-      { id: "AUD1", category: "ADMIN", actorId: "DMMU26", actorRole: "District Officer (DMMU)", unitId: "ALL", action: "Initialized District Surguja ASHA Master Vault", sysStamp: nowSystemStamp() }
-    ],
+    rmLogs: [],
+    fgLogs: [],
+    salesLogs: [],
+    weeklyReports: [],
+    auditLogs: [],
     biometricUsers: [],
     snoozedExpiryUntil: 0,
     cloudConfig: {
@@ -849,7 +829,7 @@ function recordAudit(category, unitId, actionText) {
   const actor = getEffectiveUser();
   vault.auditLogs.unshift({
     id: "AUD" + Date.now() + Math.floor(Math.random() * 99),
-    category: category, // "SHG" or "ADMIN"
+    category: category,
     actorId: actor ? actor.userId : "SYSTEM",
     actorRole: actor ? actor.designation : "System",
     unitId: unitId || "ALL",
@@ -920,7 +900,6 @@ function getUnitMetrics(unitId) {
   const paidSales = unitSales.reduce((s, sl) => s + Number(sl.paidAmount ?? sl.total ?? 0), 0);
   const creditPending = Math.max(0, totalSales - paidSales);
 
-  // Dynamic Reorder Point (5 days of average daily RM consumption)
   const outLogs = vault.rmLogs.filter(r => r.unitId === unitId && r.type === "OUT");
   const uniqueDays = new Set(outLogs.map(r => r.txDate)).size || 1;
   const avgDailyRM = rmOut / uniqueDays;
@@ -928,7 +907,6 @@ function getUnitMetrics(unitId) {
   const daysLeft = avgDailyRM > 0 ? Math.floor(rmAvailable / avgDailyRM) : (rmAvailable > 0 ? 30 : 0);
   const isReorderAlert = rmAvailable <= reorderPoint;
 
-  // Checklist progress (excluding N/A)
   const items = getAllChecklistItems();
   const stMap = vault.checklistStatus[unitId] || {};
   let applicable = 0, completed = 0;
@@ -941,7 +919,6 @@ function getUnitMetrics(unitId) {
   });
   const checklistPct = applicable > 0 ? Math.round((completed / applicable) * 100) : 0;
 
-  // Target progress
   const uObj = vault.units.find(x => x.id === unitId) || {};
   const tVal = Number(uObj.targetValue || 50000);
   const achieved = uObj.targetMetric === "production" ? fgProd : totalSales;
@@ -996,7 +973,6 @@ function getQuietShelfLifeAlerts(unitsList) {
     const exp = new Date(expiryDate + "T23:59:59");
     const entry = new Date((txDate || todayISO()) + "T00:00:00");
     const daysSinceEntry = Math.floor((now - entry) / 86400000);
-    // Quiet guard: ignore stale logs older than 21 days so irregular data entry never spams
     if (daysSinceEntry > 21) return;
     const daysToExpiry = Math.ceil((exp - now) / 86400000);
     if (daysToExpiry <= 10 && daysToExpiry >= -7) {
@@ -1297,7 +1273,6 @@ function startLiveSystemClock() {
   }, 1000);
 }
 
-// Biometric WebAuthn + Local Device Passkey
 function renderBiometricList() {
   const listEl = document.getElementById("biometric-enrolled-list");
   if (!listEl || !vault) return;
@@ -1494,7 +1469,6 @@ function renderHeaderAndNav() {
   const eff = getEffectiveUser();
   if (!eff) return;
 
-  // Developer Bar
   const devBar = document.getElementById("dev-perspective-bar");
   if (currentUser && currentUser.role === "dev") {
     devBar.classList.remove("hidden");
@@ -1508,7 +1482,6 @@ function renderHeaderAndNav() {
     devBar.classList.add("hidden");
   }
 
-  // Avatar & Meta
   const av = document.getElementById("hdr-avatar");
   if (eff.photo) {
     av.innerHTML = `<img src="${escapeHTML(eff.photo)}" alt="" class="w-full h-full object-cover" />`;
@@ -1521,7 +1494,6 @@ function renderHeaderAndNav() {
   const online = navigator.onLine;
   document.getElementById("hdr-net-text").textContent = online ? "Online • AES-256" : "Offline • AES-256";
 
-  // Global Block & Unit Filter Dropdowns
   const blockSel = document.getElementById("filter-block");
   const unitSel = document.getElementById("filter-unit");
   const isSHG = eff.role === "shg";
@@ -1546,7 +1518,6 @@ function renderHeaderAndNav() {
       candidateUnits.map(u => `<option value="${u.id}" ${globalFilterUnit === u.id ? "selected" : ""}>${escapeHTML(lang === "hi" ? u.hi : u.en)}</option>`).join("");
   }
 
-  // Navigation Tabs (Strict Role Separation: SHG gets Weekly Report; Officers/Dev get Checklist)
   const isHi = lang === "hi";
   const totalCheckCount = getAllChecklistItems().length;
   const navItems = [
@@ -1603,7 +1574,6 @@ function renderDashboardTab() {
     phaseCounts[u.phase] = (phaseCounts[u.phase] || 0) + 1;
   });
 
-  // Quiet Shelf-Life Watch Banner (Snoozable for 7 days)
   const quietAlerts = getQuietShelfLifeAlerts(units);
   const shelfWatchHTML = quietAlerts.length ? `
     <div class="civic-card p-3.5 flex flex-wrap items-center justify-between gap-2 border-l-4" style="border-left-color: var(--civic-ochre);">
@@ -1618,7 +1588,6 @@ function renderDashboardTab() {
     </div>
   ` : "";
 
-  // SHG Dedicated Single-Unit Dashboard vs Officer Multi-Unit Command Dashboard
   if (eff.role === "shg" && units.length === 1) {
     const u = units[0];
     const m = getUnitMetrics(u.id);
@@ -1713,7 +1682,6 @@ function renderDashboardTab() {
     `;
   }
 
-  // Officer / District / Developer Command Dashboard
   const blockBars = BLOCKS.map(b => {
     const bUnits = units.filter(u => u.block === b.id);
     const bSales = bUnits.reduce((s, u) => s + getUnitMetrics(u.id).totalSales, 0);
@@ -1751,7 +1719,6 @@ function renderDashboardTab() {
 
     ${shelfWatchHTML}
 
-    <!-- Interactive Charts Grid -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
       <div class="civic-card p-4 space-y-2.5">
         <div class="flex items-center justify-between">
@@ -1798,7 +1765,6 @@ function renderDashboardTab() {
       </div>
     </div>
 
-    <!-- Filtered Unit Cards -->
     <div class="space-y-2">
       <div class="flex items-center justify-between">
         <h3 class="text-xs font-extrabold">📍 ${isHi ? `ASHA केंद्र विवरण (${units.length})` : `ASHA Units Directory (${units.length})`}</h3>
@@ -1964,7 +1930,6 @@ function renderStockTab() {
   const isHi = lang === "hi";
   const units = getFilteredUnits();
 
-  // Multi-Unit Consolidated View when "All Units" is selected
   if (units.length > 1) {
     return `
       <div class="civic-card p-4 space-y-3">
@@ -2044,7 +2009,6 @@ function renderStockTab() {
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-      <!-- RAW MATERIAL ENTRY / CONSUMPTION FORM -->
       <div class="civic-card p-4 space-y-3">
         <div class="flex items-center justify-between">
           <h3 class="text-xs font-extrabold">🌾 ${isHi ? "कच्चा माल (RM) आवक / खपत प्रविष्टि" : "Raw Material (RM) Inward / Usage"}</h3>
@@ -2111,7 +2075,6 @@ function renderStockTab() {
         </form>
       </div>
 
-      <!-- FINISHED GOODS PRODUCTION FORM -->
       <div class="civic-card p-4 space-y-3">
         <div class="flex items-center justify-between">
           <h3 class="text-xs font-extrabold">🏭 ${isHi ? "तैयार माल (FG) उत्पादन प्रविष्टि" : "Finished Goods (FG) Production Entry"}</h3>
@@ -2156,7 +2119,6 @@ function renderStockTab() {
       </div>
     </div>
 
-    <!-- STOCK HISTORY TABLE -->
     <div class="civic-card p-4 space-y-2.5">
       <h3 class="text-xs font-extrabold">📜 ${isHi ? "स्टॉक व उत्पादन इतिहास (तिथि व लॉक सिस्टम समय सहित)" : "Stock & Production History (Manual Date + Locked System Stamp)"}</h3>
       <div class="overflow-x-auto">
@@ -2310,7 +2272,6 @@ function setSalesTimeFilter(tf) {
 }
 
 function generateOfflineQRSVG(upiString) {
-  // Deterministic crisp SVG QR matrix generator
   let hash = 0;
   for (let i = 0; i < upiString.length; i++) {
     hash = ((hash << 5) - hash) + upiString.charCodeAt(i);
@@ -2360,7 +2321,6 @@ function renderSalesTab() {
     { id: "ALL", label: isHi ? "संपूर्ण (All-Time)" : "All-Time" }
   ];
 
-  // Multi-Unit Consolidated View
   if (units.length > 1) {
     return `
       <div class="civic-card p-4 space-y-3">
@@ -2412,7 +2372,6 @@ function renderSalesTab() {
   const qrPayload = `upi://pay?pa=${encodeURIComponent(u.upiId)}&pn=${encodeURIComponent(u.en)}&cu=INR`;
 
   return `
-    <!-- Multi-Timeframe Trade Analytics Card -->
     <div class="civic-card p-4 space-y-3">
       <div class="flex flex-wrap items-center justify-between gap-2">
         <div>
@@ -2431,7 +2390,6 @@ function renderSalesTab() {
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-      <!-- RECORD NEW SALE FORM (WITH LIGHT-GREY MAX FINISHED GOODS HINT) -->
       <div class="civic-card p-4 space-y-3">
         <div class="flex items-center justify-between">
           <h3 class="text-xs font-extrabold">💰 ${isHi ? "नई बिक्री दर्ज करें" : "Record New Sale"}</h3>
@@ -2509,7 +2467,6 @@ function renderSalesTab() {
         </form>
       </div>
 
-      <!-- 2-PARTY VERIFIED BUYER UPI QR PAYMENT CARD -->
       <div id="qr-print-zone" class="civic-card p-4 space-y-3 text-center">
         <div class="flex items-center justify-between">
           <h3 class="text-xs font-extrabold">📱 ${isHi ? "खरीदार UPI QR भुगतान कार्ड" : "Buyer UPI QR Payment Card"}</h3>
@@ -2557,7 +2514,6 @@ function renderSalesTab() {
       </div>
     </div>
 
-    <!-- SALES LEDGER TABLE -->
     <div class="civic-card p-4 space-y-2.5">
       <h3 class="text-xs font-extrabold">🧾 ${isHi ? `बिक्री खाता बही (${filteredSales.length})` : `Sales & Trade Ledger (${filteredSales.length})`}</h3>
       <div class="overflow-x-auto">
@@ -2724,7 +2680,6 @@ function renderWeeklyTab() {
         </div>
       </div>
 
-      <!-- Auto-Fetched Live Summary Banner -->
       <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 p-3 rounded-xl civic-muted text-xs">
         <div><div class="text-muted-var">${isHi ? "अंतिम कच्चा माल (Auto)" : "Closing RM (Auto)"}</div><div class="font-extrabold text-civic-blue">${m.rmAvailable} ${escapeHTML(u.unitType)}</div></div>
         <div><div class="text-muted-var">${isHi ? "कुल उत्पादन (Auto)" : "Produced FG (Auto)"}</div><div class="font-extrabold text-civic-emerald">${m.fgProd} ${escapeHTML(u.unitType)}</div></div>
@@ -2832,8 +2787,8 @@ function exportSingleSHGWeeklyExcel(unitId) {
     ["Gram Panchayat / ग्राम पंचायत", u.gp],
     ["ASHA Unit / आशा इकाई", u.en],
     ["Week Ending Date", latest.weekDate || todayISO()],
-    ["Days Operated (0-7)", latest.daysOperated ?? 6],
-    ["Active SHG Members", latest.activeMembers ?? 8],
+    ["Days Operated (0-7)", latest.daysOperated ?? 0],
+    ["Active SHG Members", latest.activeMembers ?? 0],
     ["Closing Raw Material Stock", `${m.rmAvailable} ${u.unitType}`],
     ["Total Production Output", `${m.fgProd} ${u.unitType}`],
     ["Closing Finished Goods Stock", `${m.fgAvailable} ${u.unitType}`],
@@ -2864,7 +2819,6 @@ function renderChecklistTab() {
   const units = getFilteredUnits();
   const allItems = getAllChecklistItems();
 
-  // Multi-Unit Consolidated Checklist View when "All Units" is selected
   if (units.length > 1) {
     return `
       <div class="civic-card p-4 space-y-3">
@@ -2935,7 +2889,6 @@ function renderChecklistTab() {
         </div>
       </div>
 
-      <!-- Phase, Phase Target Date & Operating Model Controls -->
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1 text-xs">
         <div>
           <label class="block font-bold mb-1 text-sec-var">${isHi ? "प्राथमिकता चरण (Priority Phase)" : "Priority Phase"}</label>
@@ -2957,7 +2910,6 @@ function renderChecklistTab() {
         </div>
       </div>
 
-      <!-- Clickable Checklist Status Filter Pills -->
       <div class="flex flex-wrap items-center gap-1.5 pt-1">
         ${statusFilters.map(sf => `
           <button type="button" onclick="setChecklistStatusFilter('${sf.id}')" class="px-3 py-1.5 rounded-xl text-[11px] font-extrabold transition ${checklistStatusFilter === sf.id ? sf.cls : "civic-muted"}">
@@ -2967,7 +2919,6 @@ function renderChecklistTab() {
       </div>
     </div>
 
-    <!-- Checklist Items -->
     <div class="space-y-2.5">
       ${visibleItems.map(it => {
         const cur = stMap[it.id] || "N/A";
@@ -3077,7 +3028,6 @@ function renderSettingsTab() {
   const bioEnrolled = (vault.biometricUsers || []).includes(eff.userId);
 
   return `
-    <!-- Biometric & Security Card -->
     <div class="civic-card p-4 space-y-3">
       <div class="flex flex-wrap items-center justify-between gap-2">
         <div>
@@ -3103,7 +3053,6 @@ function renderSettingsTab() {
       </div>
     </div>
 
-    <!-- Google Sheets Live Sync & Publishing (STRICTLY DMMU / CEO ZP / DEVELOPER ONLY) -->
     ${isTopAdmin ? `
       <div class="civic-card p-4 space-y-3 border-l-4" style="border-left-color: var(--civic-emerald);">
         <div class="flex flex-wrap items-center justify-between gap-2">
@@ -3134,7 +3083,6 @@ function renderSettingsTab() {
       </div>
     ` : ""}
 
-    <!-- DMMU / Officer Custom Target Setter -->
     ${isOfficerOrDev(eff) ? `
       <div class="civic-card p-4 space-y-3">
         <h3 class="text-xs font-extrabold">🎯 ${isHi ? "DMMU / जिला लक्ष्य निर्धारण (रुपये या उत्पादन मात्रा)" : "DMMU / District Target Setter (Revenue or Production Units)"}</h3>
@@ -3152,7 +3100,6 @@ function renderSettingsTab() {
       </div>
     ` : ""}
 
-    <!-- Developer Root Credential & Password Vault (HIDDEN FROM SHG & OFFICERS) -->
     ${isDevRoot ? `
       <div class="civic-card p-4 space-y-3 border-2" style="border-color: var(--civic-ochre);">
         <div class="flex items-center justify-between">
@@ -3176,7 +3123,6 @@ function renderSettingsTab() {
       </div>
     ` : ""}
 
-    <!-- Changes & Audit History -->
     <div class="civic-card p-4 space-y-2.5">
       <h3 class="text-xs font-extrabold">📜 ${isHi ? `परिवर्तन इतिहास (Audit Log — ${vault.auditLogs.length})` : `Changes & Audit History (${vault.auditLogs.length})`}</h3>
       <div class="max-h-56 overflow-y-auto space-y-1.5 text-xs">
@@ -3377,7 +3323,6 @@ function restoreEncryptedBackup(ev) {
   reader.readAsText(file);
 }
 
-// Universal Share (Web Share API + Clipboard Fallback for WhatsApp, Telegram, Email, etc.)
 async function shareUniversalText(title, text) {
   if (navigator.share) {
     try {
@@ -3426,23 +3371,6 @@ function hideToast() {
   document.getElementById("toast-banner").classList.add("hidden");
 }
 
-function setupPWA() {
-  try {
-    const manifest = {
-      name: "ASHA Surguja — Atal Samriddhi Haat Yojana",
-      short_name: "ASHA Surguja",
-      start_url: ".",
-      display: "standalone",
-      background_color: "#14533c",
-      theme_color: "#14533c"
-    };
-    const link = document.createElement("link");
-    link.rel = "manifest";
-    link.href = URL.createObjectURL(new Blob([JSON.stringify(manifest)], { type: "application/json" }));
-    document.head.appendChild(link);
-  } catch (e) {}
-}
-
 function renderAll() {
   if (!currentUser || !vault) return;
   renderHeaderAndNav();
@@ -3456,7 +3384,6 @@ function renderAll() {
 }
 
 async function initASHAApp() {
-  setupPWA();
   vault = await loadVault();
   applyTheme();
   applyLanguageStaticLabels();
