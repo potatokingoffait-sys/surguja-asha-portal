@@ -1,0 +1,15 @@
+{
+  "name": "Atal Samriddhi Haat Yojana (ASHA) - Surguja",
+  "short_name": "ASHA Surguja",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#14533c",
+  "theme_color": "#14533c",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/3135/3135715.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
