@@ -1,9 +1,10 @@
 <!DOCTYPE html>
-<html lang="hi" data-theme="light">
+<html lang="hi" translate="no" class="notranslate" data-theme="light">
 <head>
   <link rel="manifest" href="manifest.json">
   <script>if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js');}</script>
   <meta charset="UTF-8" />
+  <meta name="google" content="notranslate" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover" />
   <meta name="theme-color" content="#14533c" />
   <meta name="mobile-web-app-capable" content="yes" />
@@ -207,9 +208,9 @@
     }
   </style>
 </head>
-<body>
+<body class="notranslate">
 
-<div class="app-shell relative">
+<div class="app-shell relative notranslate">
 
   <!-- ===================================================================== -->
   <!-- 1. AUTHENTICATION & DEVICE QUICK-PIN / BIOMETRIC LOCK SCREEN          -->
@@ -245,7 +246,7 @@
         </div>
       </div>
 
-      <!-- DEVICE SAVED ACCOUNT QUICK-UNLOCK PANEL (SHOWN AFTER 1ST LOGIN WHEN LOCKED) -->
+      <!-- DEVICE SAVED ACCOUNT QUICK-UNLOCK PANEL -->
       <div id="panel-quicklock" class="hidden p-4 space-y-3 text-xs">
         <div class="p-3.5 rounded-2xl civic-muted flex items-center gap-3">
           <div id="ql-avatar" class="w-12 h-12 rounded-full bg-civic-teal text-amber-200 font-black text-xs flex items-center justify-center shrink-0 overflow-hidden border-2 border-emerald-500/30">
@@ -330,7 +331,7 @@
         </form>
       </div>
 
-      <!-- FIRST-TIME SIGN UP PANEL (PROTECTED BY DISTRICT INVITE CODE) -->
+      <!-- FIRST-TIME SIGN UP PANEL -->
       <div id="panel-signup" class="hidden p-4 space-y-3 text-xs max-h-[75dvh] overflow-y-auto">
         <form onsubmit="handleFirstTimeSignUp(event)" class="space-y-2.5">
           <div>
@@ -490,7 +491,7 @@
   <!-- ===================================================================== -->
   <div class="flex-1 flex min-h-0 overflow-hidden">
     <aside class="hidden md:flex md:w-60 flex-col border-r p-3 space-y-1.5 shrink-0" style="background-color: var(--bg-card); border-color: var(--border-subtle);">
-      <div id="sidebar-portal-tag" class="px-3 py-2 rounded-xl civic-muted text-[11px] font-extrabold text-sec-var mb-1">
+      <div id="sidebar-portal-tag" class="px-3 py-2 rounded-xl civic-muted text-[11px] font-extrabold text-sec-var mb-1 capitalize">
         सरगुजा ASHA पोर्टल
       </div>
       <div id="sidebar-nav-list" class="space-y-1"></div>
@@ -620,6 +621,12 @@ let lockoutUntil = 0;
 let inactivityTimer = null;
 let systemClockTimer = null;
 let pendingSignUpPhoto = "";
+
+function scrollViewportToTop() {
+  const vp = document.getElementById("main-viewport");
+  if (vp) vp.scrollTop = 0;
+  window.scrollTo(0, 0);
+}
 
 function escapeHTML(str) {
   return String(str ?? "")
@@ -1485,6 +1492,7 @@ async function completeLogin(acc, promptPinAfter) {
   resetInactivityTimer();
   startLiveSystemClock();
   renderAll();
+  scrollViewportToTop();
 
   pullFromGoogleCloud(false);
 
@@ -1601,12 +1609,14 @@ function switchDeveloperPerspective(uid) {
     if (activeTab === "weekly") activeTab = "checklist";
   }
   renderAll();
+  scrollViewportToTop();
 }
 
 function onGlobalBlockChange(val) {
   globalFilterBlock = val;
   globalFilterUnit = "ALL";
   renderAll();
+  scrollViewportToTop();
 }
 
 function onGlobalUnitChange(val) {
@@ -1616,6 +1626,7 @@ function onGlobalUnitChange(val) {
     if (u) globalFilterBlock = u.block;
   }
   renderAll();
+  scrollViewportToTop();
 }
 
 function resetGlobalFilters() {
@@ -1631,6 +1642,7 @@ function resetGlobalFilters() {
     globalFilterUnit = "ALL";
   }
   renderAll();
+  scrollViewportToTop();
 }
 
 function jumpToUnitTab(unitId, tabName) {
@@ -1641,12 +1653,14 @@ function jumpToUnitTab(unitId, tabName) {
   }
   activeTab = tabName;
   renderAll();
+  scrollViewportToTop();
 }
 
 function setActiveTab(tab) {
   activeTab = tab;
   if (tabErrorFlags[tab]) delete tabErrorFlags[tab];
   renderAll();
+  scrollViewportToTop();
 }
 
 function renderHeaderAndNav() {
@@ -1706,8 +1720,8 @@ function renderHeaderAndNav() {
   const totalCheckCount = getAllChecklistItems().length;
   const navItems = [
     { id: "dashboard", icon: "🏠", label: isHi ? "डैशबोर्ड" : "Dashboard" },
-    { id: "stock", icon: "📦", label: isHi ? "स्टॉक व उत्पादन" : "Stock & Prod." },
-    { id: "sales", icon: "📊", label: isHi ? "बिक्री व UPI QR" : "Sales & QR" },
+    { id: "stock", icon: "📦", label: isHi ? "स्टॉक व उत्पादन" : "Stock & Production" },
+    { id: "sales", icon: "📊", label: isHi ? "बिक्री व UPI QR" : "Sales & UPI QR" },
     isSHG
       ? { id: "weekly", icon: "📋", label: isHi ? "साप्ताहिक रिपोर्ट" : "Weekly Report" }
       : { id: "checklist", icon: "✅", label: isHi ? `चेकलिस्ट (${totalCheckCount})` : `Checklist (${totalCheckCount})` },
@@ -1718,7 +1732,7 @@ function renderHeaderAndNav() {
     const active = activeTab === n.id;
     const hasErr = !!tabErrorFlags[n.id];
     return `
-      <button type="button" onclick="setActiveTab('${n.id}')" class="w-full px-3 py-2.5 rounded-xl text-left text-xs font-extrabold flex items-center justify-between transition ${active ? "bg-civic-teal text-white" : "hover:opacity-85"} ${hasErr ? "ring-2 ring-red-600" : ""}">
+      <button type="button" onclick="setActiveTab('${n.id}')" class="w-full px-3 py-2.5 rounded-xl text-left text-xs font-extrabold capitalize flex items-center justify-between transition ${active ? "bg-civic-teal text-white" : "hover:opacity-85"} ${hasErr ? "ring-2 ring-red-600" : ""}">
         <span class="flex items-center gap-2"><span>${n.icon}</span><span>${n.label}</span></span>
         ${hasErr ? `<span class="px-1.5 py-0.5 rounded-full bg-civic-crimson text-white text-[10px] badge-alert-pulse">!</span>` : ""}
       </button>
@@ -1729,7 +1743,7 @@ function renderHeaderAndNav() {
     const active = activeTab === n.id;
     const hasErr = !!tabErrorFlags[n.id];
     return `
-      <button type="button" onclick="setActiveTab('${n.id}')" class="relative py-2 px-1 rounded-xl flex flex-col items-center justify-center text-[10px] font-extrabold transition ${active ? "bg-civic-teal text-white" : "text-sec-var"} ${hasErr ? "ring-2 ring-red-600" : ""}">
+      <button type="button" onclick="setActiveTab('${n.id}')" class="relative py-2 px-1 rounded-xl flex flex-col items-center justify-center text-[10px] font-extrabold capitalize transition ${active ? "bg-civic-teal text-white" : "text-sec-var"} ${hasErr ? "ring-2 ring-red-600" : ""}">
         <span class="text-sm leading-none mb-0.5">${n.icon}</span>
         <span class="truncate max-w-full">${n.label}</span>
         ${hasErr ? `<span class="absolute top-1 right-1 w-4 h-4 rounded-full bg-civic-crimson text-white text-[9px] flex items-center justify-center badge-alert-pulse">!</span>` : ""}
@@ -1786,7 +1800,7 @@ function renderDashboardTab() {
             <span class="px-2.5 py-1 rounded-full bg-white/15 text-xs font-bold">${escapeHTML(u.phase)}</span>
           </div>
         </div>
-        <h2 class="text-base sm:text-lg font-extrabold">${escapeHTML(isHi ? u.hi : u.en)}</h2>
+        <h2 class="text-base sm:text-lg font-extrabold capitalize">${escapeHTML(isHi ? u.hi : u.en)}</h2>
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
           <div onclick="openDrillDown('unit_rm', '${u.id}')" class="p-3 rounded-xl bg-white/10 border border-white/15 cursor-pointer hover:bg-white/20">
             <div class="text-[11px] text-emerald-100">${isHi ? "कच्चा माल (RM)" : "Raw Material"}</div>
@@ -1973,20 +1987,20 @@ function renderDashboardTab() {
                 </span>
               </div>
               <div>
-                <div class="text-xs font-extrabold">${escapeHTML(isHi ? u.hi : u.en)}</div>
+                <div class="text-xs font-extrabold capitalize">${escapeHTML(isHi ? u.hi : u.en)}</div>
                 <div class="text-[11px] text-muted-var">GP: ${escapeHTML(u.gp)} • ${escapeHTML(u.phase)} ${u.phaseDate ? "(" + formatDateDisplay(u.phaseDate) + ")" : ""}</div>
               </div>
               <div class="grid grid-cols-3 gap-2 p-2 rounded-xl civic-muted text-center text-[11px]">
                 <div>
-                  <div class="text-muted-var">RM</div>
+                  <div class="text-muted-var font-bold">RM</div>
                   <div class="font-extrabold text-civic-blue">${m.rmAvailable} ${escapeHTML(u.unitType)}</div>
                 </div>
                 <div>
-                  <div class="text-muted-var">FG</div>
+                  <div class="text-muted-var font-bold">FG</div>
                   <div class="font-extrabold text-civic-emerald">${m.fgAvailable} ${escapeHTML(u.unitType)}</div>
                 </div>
                 <div>
-                  <div class="text-muted-var">${isHi ? "बिक्री" : "Sales"}</div>
+                  <div class="text-muted-var font-bold">${isHi ? "बिक्री" : "Sales"}</div>
                   <div class="font-extrabold text-civic-ochre">${formatINR(m.totalSales)}</div>
                 </div>
               </div>
@@ -2148,7 +2162,7 @@ function renderStockTab() {
                 const m = getUnitMetrics(u.id);
                 return `
                   <tr>
-                    <td class="p-2 font-bold">${escapeHTML(isHi ? u.hi : u.en)}<div class="text-[10px] text-muted-var">${escapeHTML(u.block)}</div></td>
+                    <td class="p-2 font-bold capitalize">${escapeHTML(isHi ? u.hi : u.en)}<div class="text-[10px] text-muted-var">${escapeHTML(u.block)}</div></td>
                     <td class="p-2 font-extrabold whitespace-nowrap ${m.isReorderAlert ? "text-civic-crimson" : "text-civic-blue"}">${m.rmAvailable} ${escapeHTML(u.unitType)}</td>
                     <td class="p-2 text-muted-var hidden sm:table-cell whitespace-nowrap">${m.reorderPoint} ${escapeHTML(u.unitType)}</td>
                     <td class="p-2 font-extrabold text-civic-emerald whitespace-nowrap">${m.fgAvailable} ${escapeHTML(u.unitType)}</td>
@@ -2174,7 +2188,7 @@ function renderStockTab() {
       <div class="flex flex-wrap items-center justify-between gap-2">
         <div>
           <span class="text-[11px] font-extrabold text-civic-ochre">${escapeHTML(u.block)} • ${escapeHTML(u.id)}</span>
-          <h2 class="text-sm sm:text-base font-extrabold">📦 ${escapeHTML(isHi ? u.hi : u.en)}</h2>
+          <h2 class="text-sm sm:text-base font-extrabold capitalize">📦 ${escapeHTML(isHi ? u.hi : u.en)}</h2>
         </div>
         <span class="px-3 py-1 rounded-full ${m.isReorderAlert ? "bg-civic-crimson" : "bg-civic-emerald"} text-white text-[11px] font-extrabold">
           ${m.isReorderAlert ? (isHi ? `⚠️ रीऑर्डर अलर्ट (न्यूनतम ${m.reorderPoint} ${u.unitType})` : `⚠️ Reorder Alert (Min ${m.reorderPoint} ${u.unitType})`) : (isHi ? `✓ स्टॉक पर्याप्त (${m.daysLeft} दिन शेष)` : `✓ Stock Healthy (${m.daysLeft}d left)`)}
@@ -2464,6 +2478,7 @@ function filterSalesByTimeframe(logs) {
 function setSalesTimeFilter(tf) {
   salesTimeFilter = tf;
   renderAll();
+  scrollViewportToTop();
 }
 
 function generateOfflineQRSVG(upiString) {
@@ -2546,7 +2561,7 @@ function renderSalesTab() {
                 const m = getUnitMetrics(u.id);
                 return `
                   <tr>
-                    <td class="p-2 font-bold">${escapeHTML(isHi ? u.hi : u.en)}</td>
+                    <td class="p-2 font-bold capitalize">${escapeHTML(isHi ? u.hi : u.en)}</td>
                     <td class="p-2 font-extrabold text-civic-emerald whitespace-nowrap">${formatINR(m.totalSales)}</td>
                     <td class="p-2 whitespace-nowrap"><span class="inline-flex items-center px-2 py-0.5 rounded-full whitespace-nowrap ${u.upiPending ? "bg-civic-ochre" : "bg-civic-emerald"} text-white text-[10px] font-bold">${u.upiPending ? "1/2 Pending" : "2/2 Verified"}</span></td>
                     <td class="p-2 text-right whitespace-nowrap"><button type="button" onclick="jumpToUnitTab('${u.id}', 'sales')" class="px-2.5 py-1.5 rounded-lg bg-civic-ochre text-white text-[10px] sm:text-[11px] font-bold whitespace-nowrap">${isHi ? "खोलें" : "Open"}</button></td>
@@ -2572,7 +2587,7 @@ function renderSalesTab() {
       <div class="flex flex-wrap items-center justify-between gap-2">
         <div>
           <span class="text-[11px] font-extrabold text-civic-ochre">${escapeHTML(u.block)}</span>
-          <h2 class="text-sm sm:text-base font-extrabold">📊 ${escapeHTML(isHi ? u.hi : u.en)}</h2>
+          <h2 class="text-sm sm:text-base font-extrabold capitalize">📊 ${escapeHTML(isHi ? u.hi : u.en)}</h2>
         </div>
         <div class="flex flex-wrap gap-1">
           ${tfButtons.map(b => `<button type="button" onclick="setSalesTimeFilter('${b.id}')" class="px-2.5 py-1 rounded-lg text-[11px] font-bold ${salesTimeFilter === b.id ? "bg-civic-ochre text-white" : "civic-muted"}">${b.label}</button>`).join("")}
@@ -2674,7 +2689,7 @@ function renderSalesTab() {
         ${generateOfflineQRSVG(qrPayload)}
 
         <div>
-          <div class="text-xs font-extrabold">${escapeHTML(isHi ? u.hi : u.en)}</div>
+          <div class="text-xs font-extrabold capitalize">${escapeHTML(isHi ? u.hi : u.en)}</div>
           <div class="mt-1 px-3 py-1.5 rounded-xl civic-muted font-mono text-xs font-extrabold inline-block">
             UPI: ${escapeHTML(u.upiId)}
           </div>
@@ -3014,6 +3029,7 @@ function exportSingleSHGWeeklyExcel(unitId) {
 function setChecklistStatusFilter(st) {
   checklistStatusFilter = st;
   renderAll();
+  scrollViewportToTop();
 }
 
 function renderChecklistTab() {
@@ -3046,7 +3062,7 @@ function renderChecklistTab() {
                 const m = getUnitMetrics(u.id);
                 return `
                   <tr>
-                    <td class="p-2 font-bold">${escapeHTML(isHi ? u.hi : u.en)}<div class="text-[10px] text-muted-var">${escapeHTML(u.block)}</div></td>
+                    <td class="p-2 font-bold capitalize">${escapeHTML(isHi ? u.hi : u.en)}<div class="text-[10px] text-muted-var">${escapeHTML(u.block)}</div></td>
                     <td class="p-2 font-bold whitespace-nowrap">${escapeHTML(u.phase)} ${u.phaseDate ? "• " + formatDateDisplay(u.phaseDate) : ""}</td>
                     <td class="p-2 font-extrabold text-civic-emerald whitespace-nowrap">${m.checklistPct}% (${m.completed}/${m.applicable})</td>
                     <td class="p-2 text-right whitespace-nowrap"><button type="button" onclick="jumpToUnitTab('${u.id}', 'checklist')" class="px-2.5 py-1.5 rounded-lg bg-civic-indigo text-white text-[10px] sm:text-[11px] font-bold whitespace-nowrap">${isHi ? "खोलें" : "Open"}</button></td>
@@ -3083,7 +3099,7 @@ function renderChecklistTab() {
       <div class="flex flex-wrap items-center justify-between gap-2">
         <div>
           <span class="text-[11px] font-extrabold text-civic-ochre">${escapeHTML(u.block)} • ${escapeHTML(u.id)}</span>
-          <h2 class="text-sm sm:text-base font-extrabold">${escapeHTML(isHi ? u.hi : u.en)}</h2>
+          <h2 class="text-sm sm:text-base font-extrabold capitalize">${escapeHTML(isHi ? u.hi : u.en)}</h2>
         </div>
         <div class="flex items-center gap-1.5">
           <button type="button" onclick="openAddMilestoneModal()" class="px-3 py-2 btn-civic bg-civic-ochre text-[11px]">+ ${isHi ? "नया बिंदु जोड़ें" : "Add Milestone"}</button>
@@ -3843,7 +3859,6 @@ async function initASHAApp() {
   selectLoginRole("shg");
 
   const ds = vault.deviceSecurity || {};
-  // 1. If user had an active session on this device, stay logged in automatically
   if (ds.activeSessionUserId) {
     const activeAcc = vault.accounts.find(a => a.userId === ds.activeSessionUserId);
     if (activeAcc && !isUserBlocked(activeAcc.userId)) {
@@ -3851,7 +3866,6 @@ async function initASHAApp() {
       return;
     }
   }
-  // 2. If user locked the screen (or session timed out) with a saved 4-digit PIN, show Quick-Unlock card
   if (ds.rememberedUserId && ds.pinHash) {
     const remAcc = vault.accounts.find(a => a.userId === ds.rememberedUserId);
     if (remAcc && !isUserBlocked(remAcc.userId)) {
@@ -3859,7 +3873,6 @@ async function initASHAApp() {
       return;
     }
   }
-  // 3. Otherwise show full first-time sign-in screen
   switchToFullPasswordLogin(true);
 }
 window.initASHAApp = initASHAApp;
