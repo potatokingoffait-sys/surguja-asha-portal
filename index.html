@@ -436,7 +436,7 @@
       <div class="flex items-center gap-1.5 shrink-0">
         <span id="hdr-net-pill" class="hidden sm:inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-bold bg-white/15 text-emerald-100 border border-white/20">
           <span class="w-1.5 h-1.5 rounded-full bg-emerald-300"></span>
-          <span id="hdr-net-text">Online • AES-256</span>
+          <span id="hdr-net-text">Cloud Sync • AES-256</span>
         </span>
         <button type="button" onclick="cycleTheme()" id="hdr-theme-btn" class="px-2.5 py-1.5 rounded-lg bg-white/15 border border-white/25 text-white text-[11px] font-bold">
           ☀️ Light
@@ -476,7 +476,7 @@
       <div id="sidebar-nav-list" class="space-y-1"></div>
     </aside>
 
-    <main id="main-viewport" class="scroll-area flex-1 p-3.5 sm:p-5 space-y-4">
+    <main id="main-viewport" class="scroll-area flex-1 min-w-0 p-3.5 sm:p-5 space-y-4">
       <div id="tab-content-root" class="space-y-4"></div>
       <div aria-hidden="true" class="h-14 md:h-4"></div>
     </main>
@@ -507,8 +507,10 @@
 
 <script type="text/plain" id="asha-app-code">
 // ============================================================================
-// SECTION A: MASTER DATA — 7 BLOCKS & ALL 32 SURGUJA ASHA UNITS
+// SECTION A: MASTER DATA & DEFAULT APPS SCRIPT ENDPOINT
 // ============================================================================
+const DEFAULT_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyDRx28ZQLFu0d-sH_cQjudAGSAy-mIkYQEVPY7XMS8WEXlF2nlZ_ICNpdnMPEUZyDpjA/exec";
+
 const BLOCKS = [
   { id: "Ambikapur", en: "Ambikapur", hi: "अंबिकापुर" },
   { id: "Batauli", en: "Batauli", hi: "बतौली" },
@@ -577,7 +579,7 @@ const MASTER_CHECKLIST_ITEMS = [
 // ============================================================================
 // SECTION B: CRYPTOGRAPHIC VAULT, SECURITY & DEFAULT ACCOUNTS
 // ============================================================================
-const VAULT_STORAGE_KEY = "SURGUJA_ASHA_SECURE_VAULT_PROD_V1";
+const VAULT_STORAGE_KEY = "SURGUJA_ASHA_SECURE_VAULT_PROD_V2";
 const VAULT_SALT = "SURGUJA-NRLM-ASHA-2026-ZERO-SERVER";
 
 let lang = "hi";
@@ -779,7 +781,7 @@ function buildSeedState() {
     biometricUsers: [],
     snoozedExpiryUntil: 0,
     cloudConfig: {
-      appsScriptUrl: "",
+      appsScriptUrl: DEFAULT_APPS_SCRIPT_URL,
       masterSheetUrl: "",
       lastSyncedAt: ""
     }
@@ -802,6 +804,8 @@ async function loadVault() {
     if (raw) {
       const dec = await decryptVaultJSON(raw);
       if (dec && Array.isArray(dec.units) && Array.isArray(dec.accounts)) {
+        if (!dec.cloudConfig) dec.cloudConfig = { appsScriptUrl: DEFAULT_APPS_SCRIPT_URL, masterSheetUrl: "", lastSyncedAt: "" };
+        if (!dec.cloudConfig.appsScriptUrl) dec.cloudConfig.appsScriptUrl = DEFAULT_APPS_SCRIPT_URL;
         await ensurePasswordHashes(dec);
         return dec;
       }
@@ -1238,6 +1242,9 @@ async function completeLogin(acc, promptBiometricAfter) {
   startLiveSystemClock();
   renderAll();
 
+  // Pull latest cross-device cloud entries immediately on login when online
+  pullFromGoogleCloud(false);
+
   if (promptBiometricAfter && !(vault.biometricUsers || []).includes(acc.userId)) {
     openBiometricEnrollPrompt(acc);
   }
@@ -1492,7 +1499,7 @@ function renderHeaderAndNav() {
   document.getElementById("hdr-user-meta").textContent = `${eff.name} • ${eff.shgName}`;
 
   const online = navigator.onLine;
-  document.getElementById("hdr-net-text").textContent = online ? "Online • AES-256" : "Offline • AES-256";
+  document.getElementById("hdr-net-text").textContent = online ? "Cloud Sync • AES-256" : "Offline • AES-256";
 
   const blockSel = document.getElementById("filter-block");
   const unitSel = document.getElementById("filter-unit");
@@ -1691,11 +1698,16 @@ function renderDashboardTab() {
 
   return `
     <div class="bg-civic-teal p-4 sm:p-5 rounded-2xl text-white space-y-3 shadow-sm">
-      <div class="flex items-center justify-between gap-2">
+      <div class="flex flex-wrap items-center justify-between gap-2">
         <span class="px-2.5 py-1 rounded-full bg-amber-200 text-slate-900 text-[11px] font-extrabold">
           ${isHi ? "NRLM कमांड डैशबोर्ड" : "NRLM Command Dashboard"}
         </span>
-        <span class="text-xs font-extrabold text-emerald-100">${units.length} ${isHi ? "ASHA इकाइयाँ" : "ASHA Units"}</span>
+        <div class="flex items-center gap-2">
+          <button type="button" onclick="pullFromGoogleCloud(true)" class="px-2.5 py-1 rounded-full bg-white/15 hover:bg-white/25 text-[11px] font-extrabold text-white">
+            🔄 ${isHi ? "लाइव डेटा रिफ्रेश" : "Refresh Cloud"}
+          </button>
+          <span class="text-xs font-extrabold text-emerald-100">${units.length} ${isHi ? "ASHA इकाइयाँ" : "ASHA Units"}</span>
+        </div>
       </div>
       <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
         <div onclick="openDrillDown('sales')" class="p-3 rounded-xl bg-white/10 border border-white/15 cursor-pointer hover:bg-white/20">
@@ -1932,7 +1944,7 @@ function renderStockTab() {
 
   if (units.length > 1) {
     return `
-      <div class="civic-card p-4 space-y-3">
+      <div class="civic-card p-3.5 sm:p-4 space-y-3">
         <div class="flex flex-wrap items-center justify-between gap-2">
           <div>
             <h2 class="text-sm font-extrabold">📦 ${isHi ? `समेकित स्टॉक व उत्पादन रजिस्टर (${units.length} इकाइयाँ)` : `Consolidated Stock & Production (${units.length} Units)`}</h2>
@@ -1940,14 +1952,14 @@ function renderStockTab() {
           </div>
         </div>
         <div class="overflow-x-auto">
-          <table class="w-full text-left border-collapse text-xs">
+          <table class="w-full text-left border-collapse text-[11px] sm:text-xs">
             <thead>
-              <tr class="civic-muted text-[11px] font-extrabold">
-                <th class="p-2.5">${isHi ? "ASHA इकाई" : "ASHA Unit"}</th>
-                <th class="p-2.5">${isHi ? "उपलब्ध RM" : "Avail. RM"}</th>
-                <th class="p-2.5">${isHi ? "रीऑर्डर बिंदु" : "Reorder Pt"}</th>
-                <th class="p-2.5">${isHi ? "उपलब्ध FG" : "Avail. FG"}</th>
-                <th class="p-2.5">${isHi ? "क्रिया" : "Action"}</th>
+              <tr class="civic-muted text-[10px] sm:text-[11px] font-extrabold">
+                <th class="p-2">${isHi ? "ASHA इकाई" : "ASHA Unit"}</th>
+                <th class="p-2">${isHi ? "उपलब्ध RM" : "Avail. RM"}</th>
+                <th class="p-2 hidden sm:table-cell">${isHi ? "रीऑर्डर" : "Reorder Pt"}</th>
+                <th class="p-2">${isHi ? "उपलब्ध FG" : "Avail. FG"}</th>
+                <th class="p-2 text-right">${isHi ? "क्रिया" : "Action"}</th>
               </tr>
             </thead>
             <tbody class="divide-y" style="border-color: var(--border-subtle);">
@@ -1955,11 +1967,11 @@ function renderStockTab() {
                 const m = getUnitMetrics(u.id);
                 return `
                   <tr>
-                    <td class="p-2.5 font-bold">${escapeHTML(isHi ? u.hi : u.en)}<div class="text-[10px] text-muted-var">${escapeHTML(u.block)}</div></td>
-                    <td class="p-2.5 font-extrabold ${m.isReorderAlert ? "text-civic-crimson" : "text-civic-blue"}">${m.rmAvailable} ${escapeHTML(u.unitType)}</td>
-                    <td class="p-2.5 text-muted-var">${m.reorderPoint} ${escapeHTML(u.unitType)}</td>
-                    <td class="p-2.5 font-extrabold text-civic-emerald">${m.fgAvailable} ${escapeHTML(u.unitType)}</td>
-                    <td class="p-2.5"><button type="button" onclick="jumpToUnitTab('${u.id}', 'stock')" class="px-3 py-1.5 rounded-lg bg-civic-blue text-white text-[11px] font-bold">${isHi ? "रजिस्टर खोलें" : "Open Ledger"}</button></td>
+                    <td class="p-2 font-bold">${escapeHTML(isHi ? u.hi : u.en)}<div class="text-[10px] text-muted-var">${escapeHTML(u.block)}</div></td>
+                    <td class="p-2 font-extrabold whitespace-nowrap ${m.isReorderAlert ? "text-civic-crimson" : "text-civic-blue"}">${m.rmAvailable} ${escapeHTML(u.unitType)}</td>
+                    <td class="p-2 text-muted-var hidden sm:table-cell whitespace-nowrap">${m.reorderPoint} ${escapeHTML(u.unitType)}</td>
+                    <td class="p-2 font-extrabold text-civic-emerald whitespace-nowrap">${m.fgAvailable} ${escapeHTML(u.unitType)}</td>
+                    <td class="p-2 text-right whitespace-nowrap"><button type="button" onclick="jumpToUnitTab('${u.id}', 'stock')" class="px-2.5 py-1.5 rounded-lg bg-civic-blue text-white text-[10px] sm:text-[11px] font-bold whitespace-nowrap">${isHi ? "खोलें" : "Open"}</button></td>
                   </tr>
                 `;
               }).join("")}
@@ -2138,11 +2150,11 @@ function renderStockTab() {
               ...unitFGLogs.map(f => ({ cat: isHi ? "FG उत्पादन" : "FG Produced", badge: "bg-civic-emerald", label: `${f.batchNo} • ${f.product}`, qty: `${f.qty} ${f.unit}`, txDate: f.txDate, sysStamp: f.sysStamp }))
             ].slice(0, 15).map(row => `
               <tr>
-                <td class="p-2"><span class="px-2 py-0.5 rounded-full ${row.badge} text-white text-[10px] font-bold">${row.cat}</span></td>
+                <td class="p-2"><span class="px-2 py-0.5 rounded-full ${row.badge} text-white text-[10px] font-bold whitespace-nowrap">${row.cat}</span></td>
                 <td class="p-2 font-bold">${escapeHTML(row.label)}</td>
-                <td class="p-2 font-extrabold">${escapeHTML(row.qty)}</td>
-                <td class="p-2">${formatDateDisplay(row.txDate)}</td>
-                <td class="p-2 font-mono text-[10px] text-muted-var">${escapeHTML(row.sysStamp)}</td>
+                <td class="p-2 font-extrabold whitespace-nowrap">${escapeHTML(row.qty)}</td>
+                <td class="p-2 whitespace-nowrap">${formatDateDisplay(row.txDate)}</td>
+                <td class="p-2 font-mono text-[10px] text-muted-var whitespace-nowrap">${escapeHTML(row.sysStamp)}</td>
               </tr>
             `).join("")}
           </tbody>
@@ -2323,7 +2335,7 @@ function renderSalesTab() {
 
   if (units.length > 1) {
     return `
-      <div class="civic-card p-4 space-y-3">
+      <div class="civic-card p-3.5 sm:p-4 space-y-3">
         <div class="flex flex-wrap items-center justify-between gap-2">
           <h2 class="text-sm font-extrabold">📊 ${isHi ? `समेकित व्यापार व बिक्री विश्लेषण (${units.length} इकाइयाँ)` : `Consolidated Sales & Trade Analytics (${units.length} Units)`}</h2>
           <div class="flex flex-wrap gap-1">
@@ -2336,13 +2348,13 @@ function renderSalesTab() {
           <div class="p-3 rounded-xl civic-muted"><div class="text-muted-var">${isHi ? `ऑनलाइन (${onPct}%)` : `Online (${onPct}%)`}</div><div class="text-base font-extrabold text-civic-indigo">${formatINR(onRev)}</div></div>
         </div>
         <div class="overflow-x-auto">
-          <table class="w-full text-left border-collapse text-xs">
+          <table class="w-full text-left border-collapse text-[11px] sm:text-xs">
             <thead>
-              <tr class="civic-muted text-[11px] font-extrabold">
-                <th class="p-2.5">${isHi ? "ASHA इकाई" : "ASHA Unit"}</th>
-                <th class="p-2.5">${isHi ? "कुल बिक्री" : "Total Sales"}</th>
-                <th class="p-2.5">UPI QR</th>
-                <th class="p-2.5">${isHi ? "क्रिया" : "Action"}</th>
+              <tr class="civic-muted text-[10px] sm:text-[11px] font-extrabold">
+                <th class="p-2">${isHi ? "ASHA इकाई" : "ASHA Unit"}</th>
+                <th class="p-2">${isHi ? "बिक्री" : "Sales"}</th>
+                <th class="p-2">UPI QR</th>
+                <th class="p-2 text-right">${isHi ? "क्रिया" : "Action"}</th>
               </tr>
             </thead>
             <tbody class="divide-y" style="border-color: var(--border-subtle);">
@@ -2350,10 +2362,10 @@ function renderSalesTab() {
                 const m = getUnitMetrics(u.id);
                 return `
                   <tr>
-                    <td class="p-2.5 font-bold">${escapeHTML(isHi ? u.hi : u.en)}</td>
-                    <td class="p-2.5 font-extrabold text-civic-emerald whitespace-nowrap">${formatINR(m.totalSales)}</td>
-                    <td class="p-2.5 whitespace-nowrap"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full whitespace-nowrap ${u.upiPending ? "bg-civic-ochre" : "bg-civic-emerald"} text-white text-[10px] font-bold">${u.upiPending ? "1/2 Pending" : "2/2 Verified"}</span></td>
-                    <td class="p-2.5 whitespace-nowrap"><button type="button" onclick="jumpToUnitTab('${u.id}', 'sales')" class="px-3 py-1.5 rounded-lg bg-civic-ochre text-white text-[11px] font-bold whitespace-nowrap">${isHi ? "बिक्री व QR" : "Sales & QR"}</button></td>
+                    <td class="p-2 font-bold">${escapeHTML(isHi ? u.hi : u.en)}</td>
+                    <td class="p-2 font-extrabold text-civic-emerald whitespace-nowrap">${formatINR(m.totalSales)}</td>
+                    <td class="p-2 whitespace-nowrap"><span class="inline-flex items-center px-2 py-0.5 rounded-full whitespace-nowrap ${u.upiPending ? "bg-civic-ochre" : "bg-civic-emerald"} text-white text-[10px] font-bold">${u.upiPending ? "1/2 Pending" : "2/2 Verified"}</span></td>
+                    <td class="p-2 text-right whitespace-nowrap"><button type="button" onclick="jumpToUnitTab('${u.id}', 'sales')" class="px-2.5 py-1.5 rounded-lg bg-civic-ochre text-white text-[10px] sm:text-[11px] font-bold whitespace-nowrap">${isHi ? "खोलें" : "Open"}</button></td>
                   </tr>
                 `;
               }).join("")}
@@ -2368,7 +2380,7 @@ function renderSalesTab() {
   if (!u) return "";
   const m = getUnitMetrics(u.id);
   const eff = getEffectiveUser();
-  const canEditQR = eff.role === "dev" || isDistrictTopAuthority(eff) || (eff.role === "shg" && eff.unitId === u.id);
+  const canEditQR = isDistrictTopAuthority(eff) || (eff.role === "shg" && eff.unitId === u.id);
   const qrPayload = `upi://pay?pa=${encodeURIComponent(u.upiId)}&pn=${encodeURIComponent(u.en)}&cu=INR`;
 
   return `
@@ -2470,7 +2482,7 @@ function renderSalesTab() {
       <div id="qr-print-zone" class="civic-card p-4 space-y-3 text-center">
         <div class="flex items-center justify-between">
           <h3 class="text-xs font-extrabold">📱 ${isHi ? "खरीदार UPI QR भुगतान कार्ड" : "Buyer UPI QR Payment Card"}</h3>
-          <span class="px-2.5 py-0.5 rounded-full ${u.upiPending ? "bg-civic-ochre" : "bg-civic-emerald"} text-white text-[10px] font-extrabold">
+          <span class="px-2.5 py-0.5 rounded-full whitespace-nowrap ${u.upiPending ? "bg-civic-ochre" : "bg-civic-emerald"} text-white text-[10px] font-extrabold">
             ${u.upiPending ? (isHi ? "1/2 दूसरा पक्ष लंबित" : "1/2 Pending 2nd Party") : (isHi ? "✓ 2/2 सत्यापित सक्रिय" : "✓ 2/2 Verified Active")}
           </span>
         </div>
@@ -2530,11 +2542,11 @@ function renderSalesTab() {
           <tbody class="divide-y" style="border-color: var(--border-subtle);">
             ${filteredSales.slice().reverse().map(sl => `
               <tr>
-                <td class="p-2">${formatDateDisplay(sl.txDate)}<div class="font-mono text-[9px] text-muted-var">${escapeHTML(sl.sysStamp || "")}</div></td>
+                <td class="p-2 whitespace-nowrap">${formatDateDisplay(sl.txDate)}<div class="font-mono text-[9px] text-muted-var">${escapeHTML(sl.sysStamp || "")}</div></td>
                 <td class="p-2 font-bold">${escapeHTML(sl.buyer)}<div class="text-[10px] text-muted-var">${escapeHTML(sl.channel)}</div></td>
                 <td class="p-2">${escapeHTML(sl.product)} (${sl.qty} ${escapeHTML(u.unitType)})</td>
                 <td class="p-2">${escapeHTML(sl.paymentMode)}${sl.hybridBreakup ? `<div class="text-[10px] text-muted-var">${escapeHTML(sl.hybridBreakup)}</div>` : ""}</td>
-                <td class="p-2 font-extrabold text-civic-emerald">${formatINR(sl.total)}</td>
+                <td class="p-2 font-extrabold text-civic-emerald whitespace-nowrap">${formatINR(sl.total)}</td>
               </tr>
             `).join("")}
           </tbody>
@@ -2821,7 +2833,7 @@ function renderChecklistTab() {
 
   if (units.length > 1) {
     return `
-      <div class="civic-card p-4 space-y-3">
+      <div class="civic-card p-3.5 sm:p-4 space-y-3">
         <div class="flex flex-wrap items-center justify-between gap-2">
           <div>
             <h2 class="text-sm font-extrabold">✅ ${isHi ? `समेकित मास्टर चेकलिस्ट (${units.length} इकाइयाँ • ${allItems.length} बिंदु)` : `Master Execution Checklist (${units.length} Units • ${allItems.length} Items)`}</h2>
@@ -2830,13 +2842,13 @@ function renderChecklistTab() {
           <button type="button" onclick="openAddMilestoneModal()" class="px-3 py-2 btn-civic bg-civic-ochre text-[11px]">+ ${isHi ? "नया बिंदु जोड़ें" : "Add Milestone"}</button>
         </div>
         <div class="overflow-x-auto">
-          <table class="w-full text-left border-collapse text-xs">
+          <table class="w-full text-left border-collapse text-[11px] sm:text-xs">
             <thead>
-              <tr class="civic-muted text-[11px] font-extrabold">
-                <th class="p-2.5">${isHi ? "ASHA इकाई" : "ASHA Unit"}</th>
-                <th class="p-2.5">${isHi ? "चरण व लक्ष्य तिथि" : "Phase & Launch Date"}</th>
-                <th class="p-2.5">${isHi ? "पूर्णता %" : "Readiness"}</th>
-                <th class="p-2.5">${isHi ? "क्रिया" : "Action"}</th>
+              <tr class="civic-muted text-[10px] sm:text-[11px] font-extrabold">
+                <th class="p-2">${isHi ? "ASHA इकाई" : "ASHA Unit"}</th>
+                <th class="p-2">${isHi ? "चरण" : "Phase"}</th>
+                <th class="p-2">${isHi ? "पूर्णता" : "Readiness"}</th>
+                <th class="p-2 text-right">${isHi ? "क्रिया" : "Action"}</th>
               </tr>
             </thead>
             <tbody class="divide-y" style="border-color: var(--border-subtle);">
@@ -2844,10 +2856,10 @@ function renderChecklistTab() {
                 const m = getUnitMetrics(u.id);
                 return `
                   <tr>
-                    <td class="p-2.5 font-bold">${escapeHTML(isHi ? u.hi : u.en)}<div class="text-[10px] text-muted-var">${escapeHTML(u.block)}</div></td>
-                    <td class="p-2.5 font-bold">${escapeHTML(u.phase)} ${u.phaseDate ? "• " + formatDateDisplay(u.phaseDate) : ""}</td>
-                    <td class="p-2.5 font-extrabold text-civic-emerald">${m.checklistPct}% (${m.completed}/${m.applicable})</td>
-                    <td class="p-2.5"><button type="button" onclick="jumpToUnitTab('${u.id}', 'checklist')" class="px-3 py-1.5 rounded-lg bg-civic-indigo text-white text-[11px] font-bold">${isHi ? "चेकलिस्ट खोलें" : "Open Checklist"}</button></td>
+                    <td class="p-2 font-bold">${escapeHTML(isHi ? u.hi : u.en)}<div class="text-[10px] text-muted-var">${escapeHTML(u.block)}</div></td>
+                    <td class="p-2 font-bold whitespace-nowrap">${escapeHTML(u.phase)} ${u.phaseDate ? "• " + formatDateDisplay(u.phaseDate) : ""}</td>
+                    <td class="p-2 font-extrabold text-civic-emerald whitespace-nowrap">${m.checklistPct}% (${m.completed}/${m.applicable})</td>
+                    <td class="p-2 text-right whitespace-nowrap"><button type="button" onclick="jumpToUnitTab('${u.id}', 'checklist')" class="px-2.5 py-1.5 rounded-lg bg-civic-indigo text-white text-[10px] sm:text-[11px] font-bold whitespace-nowrap">${isHi ? "खोलें" : "Open"}</button></td>
                   </tr>
                 `;
               }).join("")}
@@ -3026,13 +3038,14 @@ function renderSettingsTab() {
   const isTopAdmin = isDistrictTopAuthority(eff);
   const isDevRoot = currentUser && currentUser.role === "dev" && !devImpersonateId;
   const bioEnrolled = (vault.biometricUsers || []).includes(eff.userId);
+  const activeUrl = (vault.cloudConfig && vault.cloudConfig.appsScriptUrl) || DEFAULT_APPS_SCRIPT_URL;
 
   return `
     <div class="civic-card p-4 space-y-3">
       <div class="flex flex-wrap items-center justify-between gap-2">
         <div>
           <h2 class="text-sm font-extrabold">🛡️ ${isHi ? "सुरक्षा, बायोमेट्रिक व डेटा बैकअप" : "Security, Biometric & Encrypted Vault"}</h2>
-          <p class="text-[11px] text-muted-var">${isHi ? "AES-256-GCM स्थानीय एन्क्रिप्शन • बिना सर्वर ऑफ़लाइन कार्यक्षमता" : "AES-256-GCM Local Encryption • Zero-Server Offline Architecture"}</p>
+          <p class="text-[11px] text-muted-var">${isHi ? "AES-256-GCM स्थानीय एन्क्रिप्शन • सभी डिवाइस लाइव Google Sheet सिंक सक्रिय" : "AES-256-GCM Local Encryption • Cross-Device Google Sheet Live Sync Active"}</p>
         </div>
         <button type="button" onclick="enrollBiometricForCurrent()" class="px-3 py-2 btn-civic ${bioEnrolled ? "bg-civic-emerald" : "bg-civic-blue"} text-[11px]">
           👆 ${bioEnrolled ? (isHi ? "फिंगरप्रिंट सक्रिय है" : "Fingerprint Active") : (isHi ? "फिंगरप्रिंट लॉक जोड़ें" : "Enable Fingerprint")}
@@ -3058,17 +3071,17 @@ function renderSettingsTab() {
         <div class="flex flex-wrap items-center justify-between gap-2">
           <div>
             <h3 class="text-xs sm:text-sm font-extrabold">☁️ ${isHi ? "Google Sheets लाइव सिंक व वेब पोर्टल पब्लिशिंग (केवल DMMU / CEO ZP / Dev)" : "Google Sheets Live Sync & Web Portal Publishing (DMMU / CEO ZP / Dev Only)"}</h3>
-            <p class="text-[11px] text-muted-var">${isHi ? "ऑनलाइन होने पर सभी प्रविष्टियाँ स्वतः Google Sheet में सिंक होंगी" : "All entries auto-sync to Google Sheets whenever online"}</p>
+            <p class="text-[11px] text-muted-var">${isHi ? "ऑनलाइन होने पर सभी डिवाइसों की प्रविष्टियाँ स्वतः सिंक होती हैं" : "All devices auto-sync entries to & from Google Sheets whenever online"}</p>
           </div>
-          <span class="px-2.5 py-1 rounded-full ${vault.cloudConfig.appsScriptUrl ? "bg-civic-emerald" : "bg-civic-ochre"} text-white text-[10px] font-extrabold">
-            ${vault.cloudConfig.appsScriptUrl ? "Cloud Sync Linked" : "Local Vault Mode"}
+          <span class="px-2.5 py-1 rounded-full whitespace-nowrap bg-civic-emerald text-white text-[10px] font-extrabold">
+            Cloud Sync Linked
           </span>
         </div>
 
         <form onsubmit="saveGoogleCloudConfig(event)" class="space-y-2.5 text-xs">
           <div>
             <label class="block font-bold mb-1 text-sec-var">Google Apps Script Web App URL (Live Sync Endpoint) *</label>
-            <input type="url" id="cfg-script-url" value="${escapeHTML(vault.cloudConfig.appsScriptUrl || "")}" placeholder="https://script.google.com/macros/s/.../exec" class="w-full px-3 py-2 civic-input font-mono text-[11px]" />
+            <input type="url" id="cfg-script-url" value="${escapeHTML(activeUrl)}" placeholder="https://script.google.com/macros/s/.../exec" class="w-full px-3 py-2 civic-input font-mono text-[11px]" />
           </div>
           <div>
             <label class="block font-bold mb-1 text-sec-var">Master Google Sheet URL (Optional)</label>
@@ -3076,7 +3089,7 @@ function renderSettingsTab() {
           </div>
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
             <button type="submit" class="py-2.5 btn-civic bg-civic-emerald text-[11px]">✓ ${isHi ? "लिंक सहेजें व पब्लिश करें" : "Save & Publish Link"}</button>
-            <button type="button" onclick="syncVaultToGoogleCloud(true)" class="py-2.5 btn-civic bg-civic-blue text-[11px]">🔄 ${isHi ? "अभी सिंक करें" : "Sync All Now"}</button>
+            <button type="button" onclick="fullTwoWayCloudSync(true)" class="py-2.5 btn-civic bg-civic-blue text-[11px]">🔄 ${isHi ? "अभी सिंक करें (Push + Pull)" : "Sync All Devices Now"}</button>
             <button type="button" onclick="copyAppsScriptBackend()" class="py-2.5 btn-civic civic-muted text-[11px]">📋 ${isHi ? "Apps Script कोड कॉपी करें" : "Copy Script Code"}</button>
           </div>
         </form>
@@ -3181,18 +3194,37 @@ async function handleSaveUnitTarget(ev) {
 }
 
 // ============================================================================
-// SECTION N: GOOGLE SHEETS AUTO-SYNC, 7-SHEET EXCEL & UNIVERSAL SHARE
+// SECTION N: TWO-WAY GOOGLE SHEETS LIVE SYNC (PUSH + PULL ACROSS DEVICES),
+//            7-SHEET EXCEL & UNIVERSAL SHARE
 // ============================================================================
 let cloudSyncDebounce = null;
-function scheduleAutoCloudSync() {
-  if (!vault || !vault.cloudConfig || !vault.cloudConfig.appsScriptUrl || !navigator.onLine) return;
-  if (cloudSyncDebounce) clearTimeout(cloudSyncDebounce);
-  cloudSyncDebounce = setTimeout(() => syncVaultToGoogleCloud(false), 1800);
+function getActiveCloudUrl() {
+  return (vault && vault.cloudConfig && vault.cloudConfig.appsScriptUrl) || DEFAULT_APPS_SCRIPT_URL;
 }
+
+function scheduleAutoCloudSync() {
+  if (!vault || !navigator.onLine) return;
+  const url = getActiveCloudUrl();
+  if (!url) return;
+  if (cloudSyncDebounce) clearTimeout(cloudSyncDebounce);
+  cloudSyncDebounce = setTimeout(() => syncVaultToGoogleCloud(false), 1500);
+}
+
+window.addEventListener("online", () => {
+  if (currentUser && vault) {
+    fullTwoWayCloudSync(false);
+    renderHeaderAndNav();
+  }
+});
 
 async function saveGoogleCloudConfig(ev) {
   ev.preventDefault();
-  vault.cloudConfig.appsScriptUrl = sanitizeInput(document.getElementById("cfg-script-url").value);
+  const eff = getEffectiveUser();
+  if (!isDistrictTopAuthority(eff)) {
+    showToast(lang === "hi" ? "अनुमति अस्वीकृत: केवल DMMU, CEO ZP या Developer ही सिंक लिंक बदल सकते हैं" : "Access Denied: Only DMMU, CEO ZP, or Developer can update the sync endpoint", true);
+    return;
+  }
+  vault.cloudConfig.appsScriptUrl = sanitizeInput(document.getElementById("cfg-script-url").value) || DEFAULT_APPS_SCRIPT_URL;
   vault.cloudConfig.masterSheetUrl = sanitizeInput(document.getElementById("cfg-sheet-url").value);
   recordAudit("ADMIN", "ALL", "Updated Google Sheets Live Sync Endpoint");
   await saveVault();
@@ -3200,20 +3232,63 @@ async function saveGoogleCloudConfig(ev) {
   showToast(lang === "hi" ? "Google Sheets लिंक सहेजा गया" : "Google Sheets link saved");
 }
 
+function mergeById(localArr, remoteArr) {
+  const map = new Map();
+  (localArr || []).forEach(item => { if (item && item.id) map.set(item.id, item); });
+  (remoteArr || []).forEach(item => { if (item && item.id && !map.has(item.id)) map.set(item.id, item); });
+  return Array.from(map.values());
+}
+
+async function pullFromGoogleCloud(manual) {
+  const url = getActiveCloudUrl();
+  if (!url || !navigator.onLine) {
+    if (manual) showToast(lang === "hi" ? "इंटरनेट कनेक्शन नहीं है" : "No internet connection", true);
+    return;
+  }
+  try {
+    const res = await fetch(url + "?action=pull&t=" + Date.now(), { method: "GET" });
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const data = await res.json();
+    if (data && data.status === "OK") {
+      vault.rmLogs = mergeById(vault.rmLogs, data.rmLogs);
+      vault.fgLogs = mergeById(vault.fgLogs, data.fgLogs);
+      vault.salesLogs = mergeById(vault.salesLogs, data.salesLogs);
+      vault.weeklyReports = mergeById(vault.weeklyReports, data.weeklyReports);
+      vault.auditLogs = mergeById(vault.auditLogs, data.auditLogs).slice(0, 600);
+      if (Array.isArray(data.units)) {
+        data.units.forEach(ru => {
+          const lu = vault.units.find(x => x.id === ru.id);
+          if (lu && ru.phase) lu.phase = ru.phase;
+          if (lu && ru.phaseDate) lu.phaseDate = ru.phaseDate;
+          if (lu && ru.upiId) lu.upiId = ru.upiId;
+        });
+      }
+      vault.cloudConfig.lastSyncedAt = nowSystemStamp();
+      await saveVault();
+      renderAll();
+      if (manual) showToast(lang === "hi" ? "✓ सभी डिवाइसों का नवीनतम डेटा प्राप्त हो गया" : "✓ Latest data pulled across all devices");
+    }
+  } catch (e) {
+    if (manual) showToast(lang === "hi" ? "Google Sheet से डेटा पढ़ने के लिए Apps Script को नया कोड पेस्ट कर Deploy करें" : "Paste updated Apps Script code & redeploy to enable 2-way pull", true);
+  }
+}
+
 async function syncVaultToGoogleCloud(manual) {
-  const url = vault.cloudConfig && vault.cloudConfig.appsScriptUrl;
-  if (!url) {
-    if (manual) showToast("Please paste Google Apps Script Web App URL first", true);
+  const url = getActiveCloudUrl();
+  if (!url || !navigator.onLine) {
+    if (manual) showToast(lang === "hi" ? "इंटरनेट कनेक्शन नहीं है" : "No internet connection", true);
     return;
   }
   try {
     const payload = {
       syncedAt: nowSystemStamp(),
+      actorId: getEffectiveUser() ? getEffectiveUser().userId : "SYSTEM",
       units: vault.units.map(u => ({ ...u, metrics: getUnitMetrics(u.id) })),
       rmLogs: vault.rmLogs,
       fgLogs: vault.fgLogs,
       salesLogs: vault.salesLogs,
       weeklyReports: vault.weeklyReports,
+      auditLogs: vault.auditLogs,
       shgAuditLogs: vault.auditLogs.filter(a => a.category === "SHG"),
       adminAuditLogs: vault.auditLogs.filter(a => a.category !== "SHG")
     };
@@ -3226,27 +3301,85 @@ async function syncVaultToGoogleCloud(manual) {
   }
 }
 
+async function fullTwoWayCloudSync(manual) {
+  const eff = getEffectiveUser();
+  if (manual && !isDistrictTopAuthority(eff)) {
+    showToast(lang === "hi" ? "अनुमति अस्वीकृत: केवल DMMU, CEO ZP या Developer" : "Access Denied: Only DMMU, CEO ZP, or Developer", true);
+    return;
+  }
+  await syncVaultToGoogleCloud(false);
+  await pullFromGoogleCloud(manual);
+}
+
 function copyAppsScriptBackend() {
-  const code = `function doPost(e) {
+  const code = `function mergeRowsById(existing, incoming) {
+  var map = {};
+  (existing || []).forEach(function(item) { if (item && item.id) map[item.id] = item; });
+  (incoming || []).forEach(function(item) { if (item && item.id) map[item.id] = item; });
+  return Object.keys(map).map(function(k) { return map[k]; });
+}
+
+function doPost(e) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var props = PropertiesService.getScriptProperties();
   var data = JSON.parse(e.postData.contents);
+
+  var rmLogs = mergeRowsById(JSON.parse(props.getProperty("rmLogs") || "[]"), data.rmLogs);
+  var fgLogs = mergeRowsById(JSON.parse(props.getProperty("fgLogs") || "[]"), data.fgLogs);
+  var salesLogs = mergeRowsById(JSON.parse(props.getProperty("salesLogs") || "[]"), data.salesLogs);
+  var weeklyReports = mergeRowsById(JSON.parse(props.getProperty("weeklyReports") || "[]"), data.weeklyReports);
+  var auditLogs = mergeRowsById(JSON.parse(props.getProperty("auditLogs") || "[]"), data.auditLogs).slice(0, 600);
+
+  props.setProperty("rmLogs", JSON.stringify(rmLogs));
+  props.setProperty("fgLogs", JSON.stringify(fgLogs));
+  props.setProperty("salesLogs", JSON.stringify(salesLogs));
+  props.setProperty("weeklyReports", JSON.stringify(weeklyReports));
+  props.setProperty("auditLogs", JSON.stringify(auditLogs));
+
   function writeTab(name, headers, rows) {
     var sh = ss.getSheetByName(name) || ss.insertSheet(name);
     sh.clear();
     sh.appendRow(headers);
     rows.forEach(function(r) { sh.appendRow(r); });
   }
-  writeTab("1_Unit_Master_Summary", ["Unit ID","Block","GP","Name","Phase","RM","FG","Sales","Checklist %"],
-    data.units.map(function(u){ return [u.id, u.block, u.gp, u.en, u.phase, u.metrics.rmAvailable, u.metrics.fgAvailable, u.metrics.totalSales, u.metrics.checklistPct + "%"]; }));
-  writeTab("2_Sales_and_Trade", ["Date","System Stamp","Unit","Buyer","Channel","Product","Qty","Total","Payment"],
-    data.salesLogs.map(function(s){ return [s.txDate, s.sysStamp, s.unitId, s.buyer, s.channel, s.product, s.qty, s.total, s.paymentMode]; }));
-  writeTab("3_Weekly_Reports", ["Week Date","System Stamp","Unit","Days","Members","Closing RM","Closing FG","Total Sales","Credit"],
-    data.weeklyReports.map(function(w){ return [w.weekDate, w.sysStamp, w.unitId, w.daysOperated, w.activeMembers, w.rmClosing, w.fgClosing, w.salesTotal, w.creditPending]; }));
-  writeTab("4_SHG_Audit_Log", ["System Stamp","Actor","Unit","Action"],
-    data.shgAuditLogs.map(function(a){ return [a.sysStamp, a.actorId, a.unitId, a.action]; }));
-  writeTab("5_District_Admin_Audit_Log", ["System Stamp","Actor","Role","Unit","Action"],
-    data.adminAuditLogs.map(function(a){ return [a.sysStamp, a.actorId, a.actorRole, a.unitId, a.action]; }));
+
+  writeTab("1_Unit_Master_Summary", ["Unit ID","Block","GP","Name","Phase","RM Available","FG Available","Total Sales (Rs)","Checklist %"],
+    (data.units || []).map(function(u) {
+      var uRmIn = rmLogs.filter(function(r){ return r.unitId === u.id && r.type === "IN"; }).reduce(function(s,r){ return s + Number(r.qty||0); }, 0);
+      var uRmOut = rmLogs.filter(function(r){ return r.unitId === u.id && r.type === "OUT"; }).reduce(function(s,r){ return s + Number(r.qty||0); }, 0);
+      var uFgProd = fgLogs.filter(function(f){ return f.unitId === u.id; }).reduce(function(s,f){ return s + Number(f.qty||0); }, 0);
+      var uFgSold = salesLogs.filter(function(sl){ return sl.unitId === u.id; }).reduce(function(s,sl){ return s + Number(sl.qty||0); }, 0);
+      var uSales = salesLogs.filter(function(sl){ return sl.unitId === u.id; }).reduce(function(s,sl){ return s + Number(sl.total||0); }, 0);
+      return [u.id, u.block, u.gp, u.en, u.phase, Math.max(0, uRmIn - uRmOut), Math.max(0, uFgProd - uFgSold), uSales, (u.metrics ? u.metrics.checklistPct : 0) + "%"];
+    }));
+
+  writeTab("2_RM_and_FG_Stock", ["Type","Unit","Batch","Item","Qty","Unit Type","Tx Date","System Stamp"],
+    rmLogs.map(function(r){ return ["RM-" + r.type, r.unitId, r.batchNo, r.material, r.qty, r.unit, r.txDate, r.sysStamp]; })
+      .concat(fgLogs.map(function(f){ return ["FG-PROD", f.unitId, f.batchNo, f.product, f.qty, f.unit, f.txDate, f.sysStamp]; })));
+
+  writeTab("3_Sales_and_Trade", ["Date","System Stamp","Unit","Buyer","Channel","Product","Qty","Total","Payment"],
+    salesLogs.map(function(s){ return [s.txDate, s.sysStamp, s.unitId, s.buyer, s.channel, s.product, s.qty, s.total, s.paymentMode]; }));
+
+  writeTab("4_Weekly_Reports", ["Week Date","System Stamp","Unit","Days","Members","Closing RM","Closing FG","Total Sales","Credit"],
+    weeklyReports.map(function(w){ return [w.weekDate, w.sysStamp, w.unitId, w.daysOperated, w.activeMembers, w.rmClosing, w.fgClosing, w.salesTotal, w.creditPending]; }));
+
+  writeTab("5_Audit_Log", ["System Stamp","Category","Actor","Role","Unit","Action"],
+    auditLogs.map(function(a){ return [a.sysStamp, a.category, a.actorId, a.actorRole, a.unitId, a.action]; }));
+
   return ContentService.createTextOutput(JSON.stringify({status:"OK"})).setMimeType(ContentService.MimeType.JSON);
+}
+
+function doGet(e) {
+  var props = PropertiesService.getScriptProperties();
+  var out = {
+    status: "OK",
+    rmLogs: JSON.parse(props.getProperty("rmLogs") || "[]"),
+    fgLogs: JSON.parse(props.getProperty("fgLogs") || "[]"),
+    salesLogs: JSON.parse(props.getProperty("salesLogs") || "[]"),
+    weeklyReports: JSON.parse(props.getProperty("weeklyReports") || "[]"),
+    auditLogs: JSON.parse(props.getProperty("auditLogs") || "[]")
+  };
+  return ContentService.createTextOutput(JSON.stringify(out)).setMimeType(ContentService.MimeType.JSON);
 }`;
   const ta = document.createElement("textarea");
   ta.value = code;
@@ -3254,7 +3387,7 @@ function copyAppsScriptBackend() {
   ta.select();
   document.execCommand("copy");
   document.body.removeChild(ta);
-  showToast(lang === "hi" ? "Google Apps Script कोड कॉपी हो गया!" : "Google Apps Script code copied!");
+  showToast(lang === "hi" ? "2-Way Google Apps Script कोड कॉपी हो गया!" : "2-Way Google Apps Script code copied!");
 }
 
 function export7SheetMasterExcel() {
@@ -3355,7 +3488,7 @@ function shareWeeklyReportItem(wrId) {
 }
 
 // ============================================================================
-// SECTION O: TOAST, PWA SETUP & MASTER RENDERER
+// SECTION O: TOAST & MASTER RENDERER
 // ============================================================================
 let toastTimer = null;
 function showToast(msg, isError = false) {
