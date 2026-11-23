@@ -222,11 +222,11 @@
           <span class="px-2.5 py-1 rounded-full text-[10px] font-extrabold tracking-wide bg-white/15 text-amber-200 border border-white/20">
             NRLM SURGUJA • AES-256
           </span>
-          <div class="flex items-center gap-1.5">
-            <button type="button" onclick="cycleTheme()" id="auth-theme-btn" class="px-2.5 py-1 rounded-lg bg-white/15 border border-white/25 text-white text-[11px] font-bold">
+          <div class="flex items-center gap-1.5 shrink-0">
+            <button type="button" onclick="cycleTheme()" id="auth-theme-btn" class="px-2.5 py-1 rounded-lg bg-white/15 border border-white/25 text-white text-[11px] font-bold whitespace-nowrap">
               ☀️ Light
             </button>
-            <button type="button" onclick="toggleLang()" id="auth-lang-btn" class="px-2.5 py-1 rounded-lg bg-amber-200 text-slate-900 text-[11px] font-extrabold">
+            <button type="button" onclick="toggleLang()" id="auth-lang-btn" class="px-2.5 py-1 rounded-lg bg-amber-200 text-slate-900 text-[11px] font-extrabold whitespace-nowrap">
               English
             </button>
           </div>
@@ -428,53 +428,59 @@
   <!-- 2. DEVELOPER GOD-MODE & PERSPECTIVE IMPERSONATION BAR (DEV ROOT ONLY) -->
   <!-- ===================================================================== -->
   <div id="dev-perspective-bar" class="hidden bg-slate-900 text-amber-200 px-3.5 py-2 border-b border-amber-500/40 flex flex-wrap items-center justify-between gap-2 text-xs shrink-0 z-40">
-    <div class="flex items-center gap-2 font-extrabold">
+    <div class="flex items-center gap-2 font-extrabold shrink-0">
       <span>🛠️</span>
       <span id="dev-bar-label">डेवलपर दृष्टिकोण मोड:</span>
     </div>
-    <select id="dev-impersonate-select" onchange="switchDeveloperPerspective(this.value)" class="px-2.5 py-1.5 rounded-lg bg-slate-800 text-white border border-amber-400/50 font-bold text-xs max-w-full sm:max-w-xs">
+    <select id="dev-impersonate-select" onchange="switchDeveloperPerspective(this.value)" class="px-2.5 py-1.5 rounded-lg bg-slate-800 text-white border border-amber-400/50 font-bold text-xs w-full sm:w-auto sm:max-w-xs truncate">
     </select>
   </div>
 
   <!-- ===================================================================== -->
-  <!-- 3. EXECUTIVE CIVIC HEADER & SYNCHRONIZED GLOBAL BLOCK/UNIT FILTERS    -->
+  <!-- 3. ALIGNED CIVIC HEADER & SYNCHRONIZED GLOBAL BLOCK/UNIT FILTERS      -->
   <!-- ===================================================================== -->
-  <header class="bg-civic-teal px-3.5 pb-3 safe-top shadow-sm shrink-0 z-30">
+  <header class="bg-civic-teal px-3.5 pb-3 safe-top shadow-sm shrink-0 z-30 space-y-2">
+    <!-- Top Utility Row: Status + Theme + Language + Lock -->
     <div class="flex items-center justify-between gap-2">
-      <div class="flex items-center gap-2.5 min-w-0 flex-1">
-        <div id="hdr-avatar" class="px-2.5 h-10 min-w-[44px] rounded-full bg-amber-200 text-slate-900 font-black text-[10px] tracking-tight flex items-center justify-center shrink-0 overflow-hidden border-2 border-white/30">
-          ASHA
-        </div>
-        <div class="min-w-0 flex-1">
-          <div class="flex items-center gap-1.5 flex-wrap">
-            <h1 id="hdr-title" class="text-xs sm:text-sm font-extrabold text-white truncate">अटल समृद्धि हाट योजना (ASHA) - सरगुजा</h1>
-            <span id="hdr-role-badge" class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-white/15 text-amber-200">Role</span>
-          </div>
-          <p id="hdr-user-meta" class="text-[11px] text-emerald-100 truncate">District Surguja • Chhattisgarh NRLM</p>
-        </div>
+      <div class="flex items-center gap-1.5 min-w-0">
+        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-white/15 text-emerald-100 border border-white/20 whitespace-nowrap">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-300 shrink-0"></span>
+          <span id="hdr-net-text">Cloud Sync • AES-256</span>
+        </span>
       </div>
 
       <div class="flex items-center gap-1.5 shrink-0">
-        <span id="hdr-net-pill" class="hidden sm:inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-bold bg-white/15 text-emerald-100 border border-white/20">
-          <span class="w-1.5 h-1.5 rounded-full bg-emerald-300"></span>
-          <span id="hdr-net-text">Cloud Sync • AES-256</span>
-        </span>
-        <button type="button" onclick="cycleTheme()" id="hdr-theme-btn" class="px-2.5 py-1.5 rounded-lg bg-white/15 border border-white/25 text-white text-[11px] font-bold">
+        <button type="button" onclick="cycleTheme()" id="hdr-theme-btn" class="px-2.5 py-1 rounded-lg bg-white/15 border border-white/25 text-white text-[11px] font-bold whitespace-nowrap">
           ☀️ Light
         </button>
-        <button type="button" onclick="toggleLang()" id="hdr-lang-btn" class="px-2.5 py-1.5 rounded-lg bg-amber-200 text-slate-900 text-[11px] font-extrabold">
+        <button type="button" onclick="toggleLang()" id="hdr-lang-btn" class="px-2.5 py-1 rounded-lg bg-amber-200 text-slate-900 text-[11px] font-extrabold whitespace-nowrap">
           English
         </button>
-        <button type="button" onclick="lockSessionNow()" id="hdr-lock-btn" title="Lock with PIN / Biometric" class="px-2.5 py-1.5 rounded-lg bg-rose-900/80 border border-rose-300/30 text-white text-[11px] font-extrabold">
+        <button type="button" onclick="lockSessionNow()" id="hdr-lock-btn" title="Lock with PIN / Biometric" class="px-2.5 py-1 rounded-lg bg-rose-900/90 border border-rose-300/30 text-white text-[11px] font-extrabold whitespace-nowrap">
           🔒
         </button>
       </div>
     </div>
 
-    <div id="global-filter-bar" class="mt-2.5 grid grid-cols-12 gap-1.5 items-center">
-      <select id="filter-block" onchange="onGlobalBlockChange(this.value)" class="col-span-4 sm:col-span-3 px-2.5 py-1.5 rounded-xl bg-white/15 border border-white/25 text-white text-[11px] font-bold focus:outline-none truncate"></select>
-      <select id="filter-unit" onchange="onGlobalUnitChange(this.value)" class="col-span-8 sm:col-span-6 px-2.5 py-1.5 rounded-xl bg-white/15 border border-white/25 text-white text-[11px] font-bold focus:outline-none truncate"></select>
-      <button type="button" id="btn-reset-filters" onclick="resetGlobalFilters()" class="col-span-12 sm:col-span-3 px-2.5 py-1.5 rounded-xl bg-amber-200 text-slate-900 text-[11px] font-extrabold text-center">
+    <!-- Identity Row: Avatar + Portal Title + Role + Active User -->
+    <div class="flex items-center gap-2.5 min-w-0">
+      <div id="hdr-avatar" class="px-2.5 h-10 min-w-[44px] rounded-full bg-amber-200 text-slate-900 font-black text-[10px] tracking-tight flex items-center justify-center shrink-0 overflow-hidden border-2 border-white/30">
+        ASHA
+      </div>
+      <div class="min-w-0 flex-1">
+        <div class="flex items-center gap-1.5 flex-wrap">
+          <h1 id="hdr-title" class="text-xs sm:text-sm font-extrabold text-white truncate">अटल समृद्धि हाट योजना (ASHA) - सरगुजा</h1>
+          <span id="hdr-role-badge" class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-white/15 text-amber-200 whitespace-nowrap">Role</span>
+        </div>
+        <p id="hdr-user-meta" class="text-[11px] text-emerald-100 truncate">District Surguja • Chhattisgarh NRLM</p>
+      </div>
+    </div>
+
+    <!-- Filter Row -->
+    <div id="global-filter-bar" class="grid grid-cols-12 gap-1.5 items-center pt-0.5">
+      <select id="filter-block" onchange="onGlobalBlockChange(this.value)" class="col-span-5 sm:col-span-3 px-2.5 py-1.5 rounded-xl bg-white/15 border border-white/25 text-white text-[11px] font-bold focus:outline-none truncate"></select>
+      <select id="filter-unit" onchange="onGlobalUnitChange(this.value)" class="col-span-7 sm:col-span-6 px-2.5 py-1.5 rounded-xl bg-white/15 border border-white/25 text-white text-[11px] font-bold focus:outline-none truncate"></select>
+      <button type="button" id="btn-reset-filters" onclick="resetGlobalFilters()" class="col-span-12 sm:col-span-3 px-2.5 py-1.5 rounded-xl bg-amber-200 text-slate-900 text-[11px] font-extrabold text-center whitespace-nowrap">
         ✕ फ़िल्टर रीसेट करें
       </button>
     </div>
@@ -528,11 +534,14 @@
 
 <script type="text/plain" id="asha-app-code">
 // ============================================================================
-// SECTION A: MASTER DATA, HARDCODED APPS SCRIPT ENDPOINT & ACCESS CODES
+// SECTION A: MASTER DATA, STANDARD UNITS, WASTAGE LIMITS & ACCESS CODES
 // ============================================================================
 const DEFAULT_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyDRx28ZQLFu0d-sH_cQjudAGSAy-mIkYQEVPY7XMS8WEXlF2nlZ_ICNpdnMPEUZyDpjA/exec";
 const DISTRICT_OFFICER_SIGNUP_CODE = "SURGUJA26";
 const SHG_INVITE_SIGNUP_CODE = "ASHA26";
+const DEFAULT_WASTAGE_LIMIT_PCT = 5;
+
+const STANDARD_UNITS = ["Kg", "Tonnes", "Litre", "Pieces", "Bundles", "Packets", "Rolls", "Bricks", "Boxes"];
 
 const BLOCKS = [
   { id: "Ambikapur", en: "Ambikapur", hi: "अंबिकापुर" },
@@ -545,38 +554,38 @@ const BLOCKS = [
 ];
 
 const INITIAL_UNITS = [
-  { id: "ASHA01", block: "Ambikapur", gp: "Darima", en: "1. Darima ASHA : Screen-Offset Printing", hi: "1. दरिमा आशा : स्क्रीन-ऑफसेट प्रिंटिंग", unitType: "Bundles", shelfLifeDays: 0, phase: "Phase 1", phaseDate: "", model: "Standard", upiId: "asha.darima@sbi", upiVerifiedBy: ["ASHA01", "DMMU26"], upiPending: null, targetMetric: "revenue", targetValue: 50000, targetUnit: "Rs", targetDeadline: "2026-12-31" },
-  { id: "ASHA02", block: "Ambikapur", gp: "Darima", en: "2. Darima ASHA : Steel Fabrication", hi: "2. दरिमा आशा : स्टील फैब्रिकेशन", unitType: "Units", shelfLifeDays: 0, phase: "Phase 1", phaseDate: "", model: "Standard", upiId: "asha.surguja@sbi", upiVerifiedBy: ["ASHA02", "DMMU26"], upiPending: null, targetMetric: "revenue", targetValue: 60000, targetUnit: "Rs", targetDeadline: "2026-12-31" },
-  { id: "ASHA03", block: "Ambikapur", gp: "Mendrakala", en: "3. Mendrakala ASHA : Multigrain Flour & Sattu", hi: "3. मेंड्राकला आशा : मल्टीग्रेन आटा व सत्तू", unitType: "Kg", shelfLifeDays: 90, phase: "Phase 1", phaseDate: "", model: "Standard", upiId: "asha.mendrakala@sbi", upiVerifiedBy: ["ASHA03", "DMMU26"], upiPending: null, targetMetric: "revenue", targetValue: 45000, targetUnit: "Rs", targetDeadline: "2026-12-31" },
-  { id: "ASHA04", block: "Ambikapur", gp: "Mendrakala", en: "4. Mendrakala ASHA : Jam, Jelly & Pickle", hi: "4. मेंड्राकला आशा : जैम, जेली व अचार", unitType: "Kg", shelfLifeDays: 180, phase: "Phase 1", phaseDate: "", model: "Standard", upiId: "asha.surguja@sbi", upiVerifiedBy: ["ASHA04", "DMMU26"], upiPending: null, targetMetric: "revenue", targetValue: 40000, targetUnit: "Rs", targetDeadline: "2026-12-31" },
-  { id: "ASHA05", block: "Batauli", gp: "Taragi", en: "5. Taragi ASHA : Aromatic Rice Processing", hi: "5. तरागी आशा : सुगंधित चावल प्रसंस्करण", unitType: "Kg", shelfLifeDays: 180, phase: "Phase 1", phaseDate: "", model: "Standard", upiId: "asha.surguja@sbi", upiVerifiedBy: ["ASHA05", "DMMU26"], upiPending: null, targetMetric: "revenue", targetValue: 55000, targetUnit: "Rs", targetDeadline: "2026-12-31" },
-  { id: "ASHA06", block: "Batauli", gp: "Taragi", en: "6. Taragi ASHA : Edible Oil Processing", hi: "6. तरागी आशा : खाद्य तेल प्रसंस्करण", unitType: "Litre", shelfLifeDays: 180, phase: "Phase 1", phaseDate: "", model: "Standard", upiId: "asha.surguja@sbi", upiVerifiedBy: ["ASHA06", "DMMU26"], upiPending: null, targetMetric: "revenue", targetValue: 50000, targetUnit: "Rs", targetDeadline: "2026-12-31" },
-  { id: "ASHA07", block: "Batauli", gp: "Mangari", en: "7. Mangari ASHA : Garment Industries", hi: "7. मंगारी आशा : गारमेंट व सिलाई इकाई", unitType: "Pieces", shelfLifeDays: 0, phase: "Phase 1", phaseDate: "", model: "Standard", upiId: "asha.surguja@sbi", upiVerifiedBy: ["ASHA07", "DMMU26"], upiPending: null, targetMetric: "revenue", targetValue: 45000, targetUnit: "Rs", targetDeadline: "2026-12-31" },
-  { id: "ASHA08", block: "Batauli", gp: "Mangari", en: "8. Mangari ASHA : Bakery Unit", hi: "8. मंगारी आशा : बेकरी इकाई", unitType: "Packets", shelfLifeDays: 30, phase: "Phase 1", phaseDate: "", model: "Standard", upiId: "asha.surguja@sbi", upiVerifiedBy: ["ASHA08", "DMMU26"], upiPending: null, targetMetric: "revenue", targetValue: 40000, targetUnit: "Rs", targetDeadline: "2026-12-31" },
-  { id: "ASHA09", block: "Batauli", gp: "Mangari", en: "9. Mangari ASHA : Chain Link Fencing Wire", hi: "9. मंगारी आशा : चेन लिंक फेंसिंग तार", unitType: "Rolls", shelfLifeDays: 0, phase: "Phase 1", phaseDate: "", model: "Standard", upiId: "asha.surguja@sbi", upiVerifiedBy: ["ASHA09", "DMMU26"], upiPending: null, targetMetric: "revenue", targetValue: 65000, targetUnit: "Rs", targetDeadline: "2026-12-31" },
-  { id: "ASHA10", block: "Lakhanpur", gp: "Kunwarpur", en: "10. Kunwarpur ASHA : Sack & Bag Printing", hi: "10. कुंवरपुर आशा : बोरी व बैग प्रिंटिंग", unitType: "Pieces", shelfLifeDays: 0, phase: "Phase 1", phaseDate: "", model: "Standard", upiId: "asha.surguja@sbi", upiVerifiedBy: ["ASHA10", "DMMU26"], upiPending: null, targetMetric: "revenue", targetValue: 45000, targetUnit: "Rs", targetDeadline: "2026-12-31" },
-  { id: "ASHA11", block: "Lakhanpur", gp: "Kunwarpur", en: "11. Kunwarpur ASHA : Poha / Chuda Unit", hi: "11. कुंवरपुर आशा : पोहा / चूड़ा इकाई", unitType: "Kg", shelfLifeDays: 90, phase: "Phase 1", phaseDate: "", model: "Standard", upiId: "asha.surguja@sbi", upiVerifiedBy: ["ASHA11", "DMMU26"], upiPending: null, targetMetric: "revenue", targetValue: 45000, targetUnit: "Rs", targetDeadline: "2026-12-31" },
-  { id: "ASHA12", block: "Lakhanpur", gp: "Puhputra", en: "12. Puhputra ASHA : Silk Yarn Unit", hi: "12. पुहपुत्रा आशा : रेशम धागा इकाई", unitType: "Kg", shelfLifeDays: 0, phase: "Phase 1", phaseDate: "", model: "Standard", upiId: "asha.surguja@sbi", upiVerifiedBy: ["ASHA12", "DMMU26"], upiPending: null, targetMetric: "revenue", targetValue: 50000, targetUnit: "Rs", targetDeadline: "2026-12-31" },
-  { id: "ASHA13", block: "Lakhanpur", gp: "Puhputra", en: "13. Puhputra ASHA : Bakery Unit", hi: "13. पुहपुत्रा आशा : बेकरी इकाई", unitType: "Packets", shelfLifeDays: 30, phase: "Phase 1", phaseDate: "", model: "Standard", upiId: "asha.surguja@sbi", upiVerifiedBy: ["ASHA13", "DMMU26"], upiPending: null, targetMetric: "revenue", targetValue: 40000, targetUnit: "Rs", targetDeadline: "2026-12-31" },
-  { id: "ASHA14", block: "Lundra", gp: "Batwahi", en: "14. Batwahi ASHA : Carpet (Galeecha) Unit", hi: "14. बटवाही आशा : कालीन (गलीचा) इकाई", unitType: "Pieces", shelfLifeDays: 0, phase: "Phase 1", phaseDate: "", model: "Standard", upiId: "asha.surguja@sbi", upiVerifiedBy: ["ASHA14", "DMMU26"], upiPending: null, targetMetric: "revenue", targetValue: 55000, targetUnit: "Rs", targetDeadline: "2026-12-31" },
-  { id: "ASHA15", block: "Lundra", gp: "Batwahi", en: "15. Batwahi ASHA : Cow Dung Paint Unit", hi: "15. बटवाही आशा : गोबर पेंट इकाई", unitType: "Litre", shelfLifeDays: 180, phase: "Phase 1", phaseDate: "", model: "Standard", upiId: "asha.surguja@sbi", upiVerifiedBy: ["ASHA15", "DMMU26"], upiPending: null, targetMetric: "revenue", targetValue: 50000, targetUnit: "Rs", targetDeadline: "2026-12-31" },
-  { id: "ASHA16", block: "Lundra", gp: "Batwahi", en: "16. Batwahi ASHA : Soybean Badi Unit", hi: "16. बटवाही आशा : सोयाबीन बड़ी इकाई", unitType: "Kg", shelfLifeDays: 120, phase: "Phase 1", phaseDate: "", model: "Standard", upiId: "asha.surguja@sbi", upiVerifiedBy: ["ASHA16", "DMMU26"], upiPending: null, targetMetric: "revenue", targetValue: 40000, targetUnit: "Rs", targetDeadline: "2026-12-31" },
-  { id: "ASHA17", block: "Lundra", gp: "Askala", en: "17. Askala ASHA : Fly Ash Brick Unit", hi: "17. असकला आशा : फ्लाई ऐश ईंट इकाई", unitType: "Bricks", shelfLifeDays: 0, phase: "Phase 1", phaseDate: "", model: "Standard", upiId: "asha.surguja@sbi", upiVerifiedBy: ["ASHA17", "DMMU26"], upiPending: null, targetMetric: "revenue", targetValue: 65000, targetUnit: "Rs", targetDeadline: "2026-12-31" },
-  { id: "ASHA18", block: "Lundra", gp: "Askala", en: "18. Askala ASHA : Minor Millet Processing", hi: "18. असकला आशा : कोदो-कुटकी प्रसंस्करण", unitType: "Kg", shelfLifeDays: 120, phase: "Phase 1", phaseDate: "", model: "Standard", upiId: "asha.surguja@sbi", upiVerifiedBy: ["ASHA18", "DMMU26"], upiPending: null, targetMetric: "revenue", targetValue: 45000, targetUnit: "Rs", targetDeadline: "2026-12-31" },
-  { id: "ASHA19", block: "Lundra", gp: "Askala", en: "19. Askala ASHA : Detergent & Soap Unit", hi: "19. असकला आशा : डिटर्जेंट व साबुन इकाई", unitType: "Kg", shelfLifeDays: 365, phase: "Phase 1", phaseDate: "", model: "Standard", upiId: "asha.surguja@sbi", upiVerifiedBy: ["ASHA19", "DMMU26"], upiPending: null, targetMetric: "revenue", targetValue: 40000, targetUnit: "Rs", targetDeadline: "2026-12-31" },
-  { id: "ASHA20", block: "Mainpat", gp: "Rajapur", en: "20. Rajapur ASHA : Multigrain Flour & Sattu", hi: "20. राजापुर आशा : मल्टीग्रेन आटा व सत्तू", unitType: "Kg", shelfLifeDays: 90, phase: "Phase 1", phaseDate: "", model: "Standard", upiId: "asha.surguja@sbi", upiVerifiedBy: ["ASHA20", "DMMU26"], upiPending: null, targetMetric: "revenue", targetValue: 45000, targetUnit: "Rs", targetDeadline: "2026-12-31" },
-  { id: "ASHA21", block: "Mainpat", gp: "Rajapur", en: "21. Rajapur ASHA : Tau Processing Unit", hi: "21. राजापुर आशा : टाऊ प्रसंस्करण इकाई", unitType: "Kg", shelfLifeDays: 120, phase: "Phase 1", phaseDate: "", model: "Standard", upiId: "asha.surguja@sbi", upiVerifiedBy: ["ASHA21", "DMMU26"], upiPending: null, targetMetric: "revenue", targetValue: 50000, targetUnit: "Rs", targetDeadline: "2026-12-31" },
-  { id: "ASHA22", block: "Mainpat", gp: "Dangbuda", en: "22. Dangbuda ASHA : Dona Pattal Unit", hi: "22. डांगबुड़ा आशा : दोना पत्तल इकाई", unitType: "Bundles", shelfLifeDays: 0, phase: "Phase 1", phaseDate: "", model: "Standard", upiId: "asha.surguja@sbi", upiVerifiedBy: ["ASHA22", "DMMU26"], upiPending: null, targetMetric: "revenue", targetValue: 35000, targetUnit: "Rs", targetDeadline: "2026-12-31" },
-  { id: "ASHA23", block: "Mainpat", gp: "Dangbuda", en: "23. Dangbuda ASHA : Oil Production & Packaging", hi: "23. डांगबुड़ा आशा : तेल उत्पादन व पैकेजिंग", unitType: "Litre", shelfLifeDays: 180, phase: "Phase 1", phaseDate: "", model: "Standard", upiId: "asha.surguja@sbi", upiVerifiedBy: ["ASHA23", "DMMU26"], upiPending: null, targetMetric: "revenue", targetValue: 50000, targetUnit: "Rs", targetDeadline: "2026-12-31" },
-  { id: "ASHA24", block: "Sitapur", gp: "Sur", en: "24. Sur ASHA : Poha Manufacturing", hi: "24. सुर आशा : पोहा निर्माण इकाई", unitType: "Kg", shelfLifeDays: 90, phase: "Phase 1", phaseDate: "", model: "Standard", upiId: "asha.surguja@sbi", upiVerifiedBy: ["ASHA24", "DMMU26"], upiPending: null, targetMetric: "revenue", targetValue: 45000, targetUnit: "Rs", targetDeadline: "2026-12-31" },
-  { id: "ASHA25", block: "Sitapur", gp: "Sur", en: "25. Sur ASHA : Bakery Unit", hi: "25. सुर आशा : बेकरी इकाई", unitType: "Packets", shelfLifeDays: 30, phase: "Phase 1", phaseDate: "", model: "Standard", upiId: "asha.surguja@sbi", upiVerifiedBy: ["ASHA25", "DMMU26"], upiPending: null, targetMetric: "revenue", targetValue: 40000, targetUnit: "Rs", targetDeadline: "2026-12-31" },
-  { id: "ASHA26", block: "Sitapur", gp: "Sontarai", en: "26. Sontarai ASHA : Multigrain Flour", hi: "26. सोनतरई आशा : मल्टीग्रेन आटा इकाई", unitType: "Kg", shelfLifeDays: 90, phase: "Phase 1", phaseDate: "", model: "Standard", upiId: "asha.surguja@sbi", upiVerifiedBy: ["ASHA26", "DMMU26"], upiPending: null, targetMetric: "revenue", targetValue: 45000, targetUnit: "Rs", targetDeadline: "2026-12-31" },
-  { id: "ASHA27", block: "Sitapur", gp: "Sontarai", en: "27. Sontarai ASHA : Dona Pattal Unit", hi: "27. सोनतरई आशा : दोना पत्तल इकाई", unitType: "Bundles", shelfLifeDays: 0, phase: "Phase 1", phaseDate: "", model: "Standard", upiId: "asha.surguja@sbi", upiVerifiedBy: ["ASHA27", "DMMU26"], upiPending: null, targetMetric: "revenue", targetValue: 35000, targetUnit: "Rs", targetDeadline: "2026-12-31" },
-  { id: "ASHA28", block: "Udaipur", gp: "Kanwalgiri", en: "28. Kanwalgiri ASHA : Paper Cup / Glass Unit", hi: "28. कनवलगिरी आशा : पेपर कप / गिलास इकाई", unitType: "Boxes", shelfLifeDays: 0, phase: "Phase 1", phaseDate: "", model: "Standard", upiId: "asha.surguja@sbi", upiVerifiedBy: ["ASHA28", "DMMU26"], upiPending: null, targetMetric: "revenue", targetValue: 45000, targetUnit: "Rs", targetDeadline: "2026-12-31" },
-  { id: "ASHA29", block: "Udaipur", gp: "Kanwalgiri", en: "29. Kanwalgiri ASHA : Dona Pattal Unit", hi: "29. कनवलगिरी आशा : दोना पत्तल इकाई", unitType: "Bundles", shelfLifeDays: 0, phase: "Phase 1", phaseDate: "", model: "Standard", upiId: "asha.surguja@sbi", upiVerifiedBy: ["ASHA29", "DMMU26"], upiPending: null, targetMetric: "revenue", targetValue: 35000, targetUnit: "Rs", targetDeadline: "2026-12-31" },
-  { id: "ASHA30", block: "Udaipur", gp: "Kanwalgiri", en: "30. Kanwalgiri ASHA : Puffed Rice (Murra)", hi: "30. कनवलगिरी आशा : मुर्रा (लाई) इकाई", unitType: "Kg", shelfLifeDays: 60, phase: "Phase 1", phaseDate: "", model: "Standard", upiId: "asha.surguja@sbi", upiVerifiedBy: ["ASHA30", "DMMU26"], upiPending: null, targetMetric: "revenue", targetValue: 40000, targetUnit: "Rs", targetDeadline: "2026-12-31" },
-  { id: "ASHA31", block: "Udaipur", gp: "Jajga", en: "31. Jajga ASHA : Fly Ash Brick Unit", hi: "31. जजगा आशा : फ्लाई ऐश ईंट इकाई", unitType: "Bricks", shelfLifeDays: 0, phase: "Phase 1", phaseDate: "", model: "Standard", upiId: "asha.surguja@sbi", upiVerifiedBy: ["ASHA31", "DMMU26"], upiPending: null, targetMetric: "revenue", targetValue: 65000, targetUnit: "Rs", targetDeadline: "2026-12-31" },
-  { id: "ASHA32", block: "Udaipur", gp: "Jajga", en: "32. Jajga ASHA : Chain Link Fencing Wire", hi: "32. जजगा आशा : चेन लिंक फेंसिंग तार", unitType: "Rolls", shelfLifeDays: 0, phase: "Phase 1", phaseDate: "", model: "Standard", upiId: "asha.surguja@sbi", upiVerifiedBy: ["ASHA32", "DMMU26"], upiPending: null, targetMetric: "revenue", targetValue: 65000, targetUnit: "Rs", targetDeadline: "2026-12-31" }
+  { id: "ASHA01", block: "Ambikapur", gp: "Darima", en: "1. Darima ASHA: Screen-Offset Printing", hi: "1. दरिमा आशा: स्क्रीन-ऑफसेट प्रिंटिंग", unitType: "Bundles", wastageLimitPct: 5, shelfLifeDays: 0, phase: "Phase 1", phaseDate: "", model: "Standard", upiId: "asha.darima@sbi", upiVerifiedBy: ["ASHA01", "DMMU26"], upiPending: null, targetMetric: "revenue", targetValue: 50000, targetUnit: "Rs", targetDeadline: "2026-12-31" },
+  { id: "ASHA02", block: "Ambikapur", gp: "Darima", en: "2. Darima ASHA: Steel Fabrication", hi: "2. दरिमा आशा: स्टील फैब्रिकेशन", unitType: "Kg", wastageLimitPct: 5, shelfLifeDays: 0, phase: "Phase 1", phaseDate: "", model: "Standard", upiId: "asha.surguja@sbi", upiVerifiedBy: ["ASHA02", "DMMU26"], upiPending: null, targetMetric: "revenue", targetValue: 60000, targetUnit: "Rs", targetDeadline: "2026-12-31" },
+  { id: "ASHA03", block: "Ambikapur", gp: "Mendrakala", en: "3. Mendrakala ASHA: Multigrain Flour & Sattu", hi: "3. मेंड्राकला आशा: मल्टीग्रेन आटा व सत्तू", unitType: "Kg", wastageLimitPct: 4, shelfLifeDays: 90, phase: "Phase 1", phaseDate: "", model: "Standard", upiId: "asha.mendrakala@sbi", upiVerifiedBy: ["ASHA03", "DMMU26"], upiPending: null, targetMetric: "revenue", targetValue: 45000, targetUnit: "Rs", targetDeadline: "2026-12-31" },
+  { id: "ASHA04", block: "Ambikapur", gp: "Mendrakala", en: "4. Mendrakala ASHA: Jam, Jelly & Pickle", hi: "4. मेंड्राकला आशा: जैम, जेली व अचार", unitType: "Kg", wastageLimitPct: 5, shelfLifeDays: 180, phase: "Phase 1", phaseDate: "", model: "Standard", upiId: "asha.surguja@sbi", upiVerifiedBy: ["ASHA04", "DMMU26"], upiPending: null, targetMetric: "revenue", targetValue: 40000, targetUnit: "Rs", targetDeadline: "2026-12-31" },
+  { id: "ASHA05", block: "Batauli", gp: "Taragi", en: "5. Taragi ASHA: Aromatic Rice Processing", hi: "5. तरागी आशा: सुगंधित चावल प्रसंस्करण", unitType: "Kg", wastageLimitPct: 5, shelfLifeDays: 180, phase: "Phase 1", phaseDate: "", model: "Standard", upiId: "asha.surguja@sbi", upiVerifiedBy: ["ASHA05", "DMMU26"], upiPending: null, targetMetric: "revenue", targetValue: 55000, targetUnit: "Rs", targetDeadline: "2026-12-31" },
+  { id: "ASHA06", block: "Batauli", gp: "Taragi", en: "6. Taragi ASHA: Edible Oil Processing", hi: "6. तरागी आशा: खाद्य तेल प्रसंस्करण", unitType: "Litre", wastageLimitPct: 5, shelfLifeDays: 180, phase: "Phase 1", phaseDate: "", model: "Standard", upiId: "asha.surguja@sbi", upiVerifiedBy: ["ASHA06", "DMMU26"], upiPending: null, targetMetric: "revenue", targetValue: 50000, targetUnit: "Rs", targetDeadline: "2026-12-31" },
+  { id: "ASHA07", block: "Batauli", gp: "Mangari", en: "7. Mangari ASHA: Garment Industries", hi: "7. मंगारी आशा: गारमेंट व सिलाई इकाई", unitType: "Pieces", wastageLimitPct: 5, shelfLifeDays: 0, phase: "Phase 1", phaseDate: "", model: "Standard", upiId: "asha.surguja@sbi", upiVerifiedBy: ["ASHA07", "DMMU26"], upiPending: null, targetMetric: "revenue", targetValue: 45000, targetUnit: "Rs", targetDeadline: "2026-12-31" },
+  { id: "ASHA08", block: "Batauli", gp: "Mangari", en: "8. Mangari ASHA: Bakery Unit", hi: "8. मंगारी आशा: बेकरी इकाई", unitType: "Packets", wastageLimitPct: 5, shelfLifeDays: 30, phase: "Phase 1", phaseDate: "", model: "Standard", upiId: "asha.surguja@sbi", upiVerifiedBy: ["ASHA08", "DMMU26"], upiPending: null, targetMetric: "revenue", targetValue: 40000, targetUnit: "Rs", targetDeadline: "2026-12-31" },
+  { id: "ASHA09", block: "Batauli", gp: "Mangari", en: "9. Mangari ASHA: Chain Link Fencing Wire", hi: "9. मंगारी आशा: चेन लिंक फेंसिंग तार", unitType: "Rolls", wastageLimitPct: 5, shelfLifeDays: 0, phase: "Phase 1", phaseDate: "", model: "Standard", upiId: "asha.surguja@sbi", upiVerifiedBy: ["ASHA09", "DMMU26"], upiPending: null, targetMetric: "revenue", targetValue: 65000, targetUnit: "Rs", targetDeadline: "2026-12-31" },
+  { id: "ASHA10", block: "Lakhanpur", gp: "Kunwarpur", en: "10. Kunwarpur ASHA: Sack & Bag Printing", hi: "10. कुंवरपुर आशा: बोरी व बैग प्रिंटिंग", unitType: "Pieces", wastageLimitPct: 5, shelfLifeDays: 0, phase: "Phase 1", phaseDate: "", model: "Standard", upiId: "asha.surguja@sbi", upiVerifiedBy: ["ASHA10", "DMMU26"], upiPending: null, targetMetric: "revenue", targetValue: 45000, targetUnit: "Rs", targetDeadline: "2026-12-31" },
+  { id: "ASHA11", block: "Lakhanpur", gp: "Kunwarpur", en: "11. Kunwarpur ASHA: Poha / Chuda Unit", hi: "11. कुंवरपुर आशा: पोहा / चूड़ा इकाई", unitType: "Kg", wastageLimitPct: 5, shelfLifeDays: 90, phase: "Phase 1", phaseDate: "", model: "Standard", upiId: "asha.surguja@sbi", upiVerifiedBy: ["ASHA11", "DMMU26"], upiPending: null, targetMetric: "revenue", targetValue: 45000, targetUnit: "Rs", targetDeadline: "2026-12-31" },
+  { id: "ASHA12", block: "Lakhanpur", gp: "Puhputra", en: "12. Puhputra ASHA: Silk Yarn Unit", hi: "12. पुहपुत्रा आशा: रेशम धागा इकाई", unitType: "Kg", wastageLimitPct: 5, shelfLifeDays: 0, phase: "Phase 1", phaseDate: "", model: "Standard", upiId: "asha.surguja@sbi", upiVerifiedBy: ["ASHA12", "DMMU26"], upiPending: null, targetMetric: "revenue", targetValue: 50000, targetUnit: "Rs", targetDeadline: "2026-12-31" },
+  { id: "ASHA13", block: "Lakhanpur", gp: "Puhputra", en: "13. Puhputra ASHA: Bakery Unit", hi: "13. पुहपुत्रा आशा: बेकरी इकाई", unitType: "Packets", wastageLimitPct: 5, shelfLifeDays: 30, phase: "Phase 1", phaseDate: "", model: "Standard", upiId: "asha.surguja@sbi", upiVerifiedBy: ["ASHA13", "DMMU26"], upiPending: null, targetMetric: "revenue", targetValue: 40000, targetUnit: "Rs", targetDeadline: "2026-12-31" },
+  { id: "ASHA14", block: "Lundra", gp: "Batwahi", en: "14. Batwahi ASHA: Carpet (Galeecha) Unit", hi: "14. बटवाही आशा: कालीन (गलीचा) इकाई", unitType: "Pieces", wastageLimitPct: 5, shelfLifeDays: 0, phase: "Phase 1", phaseDate: "", model: "Standard", upiId: "asha.surguja@sbi", upiVerifiedBy: ["ASHA14", "DMMU26"], upiPending: null, targetMetric: "revenue", targetValue: 55000, targetUnit: "Rs", targetDeadline: "2026-12-31" },
+  { id: "ASHA15", block: "Lundra", gp: "Batwahi", en: "15. Batwahi ASHA: Cow Dung Paint Unit", hi: "15. बटवाही आशा: गोबर पेंट इकाई", unitType: "Litre", wastageLimitPct: 5, shelfLifeDays: 180, phase: "Phase 1", phaseDate: "", model: "Standard", upiId: "asha.surguja@sbi", upiVerifiedBy: ["ASHA15", "DMMU26"], upiPending: null, targetMetric: "revenue", targetValue: 50000, targetUnit: "Rs", targetDeadline: "2026-12-31" },
+  { id: "ASHA16", block: "Lundra", gp: "Batwahi", en: "16. Batwahi ASHA: Soybean Badi Unit", hi: "16. बटवाही आशा: सोयाबीन बड़ी इकाई", unitType: "Kg", wastageLimitPct: 5, shelfLifeDays: 120, phase: "Phase 1", phaseDate: "", model: "Standard", upiId: "asha.surguja@sbi", upiVerifiedBy: ["ASHA16", "DMMU26"], upiPending: null, targetMetric: "revenue", targetValue: 40000, targetUnit: "Rs", targetDeadline: "2026-12-31" },
+  { id: "ASHA17", block: "Lundra", gp: "Askala", en: "17. Askala ASHA: Fly Ash Brick Unit", hi: "17. असकला आशा: फ्लाई ऐश ईंट इकाई", unitType: "Bricks", wastageLimitPct: 5, shelfLifeDays: 0, phase: "Phase 1", phaseDate: "", model: "Standard", upiId: "asha.surguja@sbi", upiVerifiedBy: ["ASHA17", "DMMU26"], upiPending: null, targetMetric: "revenue", targetValue: 65000, targetUnit: "Rs", targetDeadline: "2026-12-31" },
+  { id: "ASHA18", block: "Lundra", gp: "Askala", en: "18. Askala ASHA: Minor Millet Processing", hi: "18. असकला आशा: कोदो-कुटकी प्रसंस्करण", unitType: "Kg", wastageLimitPct: 5, shelfLifeDays: 120, phase: "Phase 1", phaseDate: "", model: "Standard", upiId: "asha.surguja@sbi", upiVerifiedBy: ["ASHA18", "DMMU26"], upiPending: null, targetMetric: "revenue", targetValue: 45000, targetUnit: "Rs", targetDeadline: "2026-12-31" },
+  { id: "ASHA19", block: "Lundra", gp: "Askala", en: "19. Askala ASHA: Detergent & Soap Unit", hi: "19. असकला आशा: डिटर्जेंट व साबुन इकाई", unitType: "Kg", wastageLimitPct: 5, shelfLifeDays: 365, phase: "Phase 1", phaseDate: "", model: "Standard", upiId: "asha.surguja@sbi", upiVerifiedBy: ["ASHA19", "DMMU26"], upiPending: null, targetMetric: "revenue", targetValue: 40000, targetUnit: "Rs", targetDeadline: "2026-12-31" },
+  { id: "ASHA20", block: "Mainpat", gp: "Rajapur", en: "20. Rajapur ASHA: Multigrain Flour & Sattu", hi: "20. राजापुर आशा: मल्टीग्रेन आटा व सत्तू", unitType: "Kg", wastageLimitPct: 5, shelfLifeDays: 90, phase: "Phase 1", phaseDate: "", model: "Standard", upiId: "asha.surguja@sbi", upiVerifiedBy: ["ASHA20", "DMMU26"], upiPending: null, targetMetric: "revenue", targetValue: 45000, targetUnit: "Rs", targetDeadline: "2026-12-31" },
+  { id: "ASHA21", block: "Mainpat", gp: "Rajapur", en: "21. Rajapur ASHA: Tau Processing Unit", hi: "21. राजापुर आशा: टाऊ प्रसंस्करण इकाई", unitType: "Kg", wastageLimitPct: 5, shelfLifeDays: 120, phase: "Phase 1", phaseDate: "", model: "Standard", upiId: "asha.surguja@sbi", upiVerifiedBy: ["ASHA21", "DMMU26"], upiPending: null, targetMetric: "revenue", targetValue: 50000, targetUnit: "Rs", targetDeadline: "2026-12-31" },
+  { id: "ASHA22", block: "Mainpat", gp: "Dangbuda", en: "22. Dangbuda ASHA: Dona Pattal Unit", hi: "22. डांगबुड़ा आशा: दोना पत्तल इकाई", unitType: "Bundles", wastageLimitPct: 5, shelfLifeDays: 0, phase: "Phase 1", phaseDate: "", model: "Standard", upiId: "asha.surguja@sbi", upiVerifiedBy: ["ASHA22", "DMMU26"], upiPending: null, targetMetric: "revenue", targetValue: 35000, targetUnit: "Rs", targetDeadline: "2026-12-31" },
+  { id: "ASHA23", block: "Mainpat", gp: "Dangbuda", en: "23. Dangbuda ASHA: Oil Production & Packaging", hi: "23. डांगबुड़ा आशा: तेल उत्पादन व पैकेजिंग", unitType: "Litre", wastageLimitPct: 5, shelfLifeDays: 180, phase: "Phase 1", phaseDate: "", model: "Standard", upiId: "asha.surguja@sbi", upiVerifiedBy: ["ASHA23", "DMMU26"], upiPending: null, targetMetric: "revenue", targetValue: 50000, targetUnit: "Rs", targetDeadline: "2026-12-31" },
+  { id: "ASHA24", block: "Sitapur", gp: "Sur", en: "24. Sur ASHA: Poha Manufacturing", hi: "24. सुर आशा: पोहा निर्माण इकाई", unitType: "Kg", wastageLimitPct: 5, shelfLifeDays: 90, phase: "Phase 1", phaseDate: "", model: "Standard", upiId: "asha.surguja@sbi", upiVerifiedBy: ["ASHA24", "DMMU26"], upiPending: null, targetMetric: "revenue", targetValue: 45000, targetUnit: "Rs", targetDeadline: "2026-12-31" },
+  { id: "ASHA25", block: "Sitapur", gp: "Sur", en: "25. Sur ASHA: Bakery Unit", hi: "25. सुर आशा: बेकरी इकाई", unitType: "Packets", wastageLimitPct: 5, shelfLifeDays: 30, phase: "Phase 1", phaseDate: "", model: "Standard", upiId: "asha.surguja@sbi", upiVerifiedBy: ["ASHA25", "DMMU26"], upiPending: null, targetMetric: "revenue", targetValue: 40000, targetUnit: "Rs", targetDeadline: "2026-12-31" },
+  { id: "ASHA26", block: "Sitapur", gp: "Sontarai", en: "26. Sontarai ASHA: Multigrain Flour", hi: "26. सोनतरई आशा: मल्टीग्रेन आटा इकाई", unitType: "Kg", wastageLimitPct: 5, shelfLifeDays: 90, phase: "Phase 1", phaseDate: "", model: "Standard", upiId: "asha.surguja@sbi", upiVerifiedBy: ["ASHA26", "DMMU26"], upiPending: null, targetMetric: "revenue", targetValue: 45000, targetUnit: "Rs", targetDeadline: "2026-12-31" },
+  { id: "ASHA27", block: "Sitapur", gp: "Sontarai", en: "27. Sontarai ASHA: Dona Pattal Unit", hi: "27. सोनतरई आशा: दोना पत्तल इकाई", unitType: "Bundles", wastageLimitPct: 5, shelfLifeDays: 0, phase: "Phase 1", phaseDate: "", model: "Standard", upiId: "asha.surguja@sbi", upiVerifiedBy: ["ASHA27", "DMMU26"], upiPending: null, targetMetric: "revenue", targetValue: 35000, targetUnit: "Rs", targetDeadline: "2026-12-31" },
+  { id: "ASHA28", block: "Udaipur", gp: "Kanwalgiri", en: "28. Kanwalgiri ASHA: Paper Cup / Glass Unit", hi: "28. कनवलगिरी आशा: पेपर कप / गिलास इकाई", unitType: "Boxes", wastageLimitPct: 5, shelfLifeDays: 0, phase: "Phase 1", phaseDate: "", model: "Standard", upiId: "asha.surguja@sbi", upiVerifiedBy: ["ASHA28", "DMMU26"], upiPending: null, targetMetric: "revenue", targetValue: 45000, targetUnit: "Rs", targetDeadline: "2026-12-31" },
+  { id: "ASHA29", block: "Udaipur", gp: "Kanwalgiri", en: "29. Kanwalgiri ASHA: Dona Pattal Unit", hi: "29. कनवलगिरी आशा: दोना पत्तल इकाई", unitType: "Bundles", wastageLimitPct: 5, shelfLifeDays: 0, phase: "Phase 1", phaseDate: "", model: "Standard", upiId: "asha.surguja@sbi", upiVerifiedBy: ["ASHA29", "DMMU26"], upiPending: null, targetMetric: "revenue", targetValue: 35000, targetUnit: "Rs", targetDeadline: "2026-12-31" },
+  { id: "ASHA30", block: "Udaipur", gp: "Kanwalgiri", en: "30. Kanwalgiri ASHA: Puffed Rice (Murra)", hi: "30. कनवलगिरी आशा: मुर्रा (लाई) इकाई", unitType: "Kg", wastageLimitPct: 5, shelfLifeDays: 60, phase: "Phase 1", phaseDate: "", model: "Standard", upiId: "asha.surguja@sbi", upiVerifiedBy: ["ASHA30", "DMMU26"], upiPending: null, targetMetric: "revenue", targetValue: 40000, targetUnit: "Rs", targetDeadline: "2026-12-31" },
+  { id: "ASHA31", block: "Udaipur", gp: "Jajga", en: "31. Jajga ASHA: Fly Ash Brick Unit", hi: "31. जजगा आशा: फ्लाई ऐश ईंट इकाई", unitType: "Bricks", wastageLimitPct: 5, shelfLifeDays: 0, phase: "Phase 1", phaseDate: "", model: "Standard", upiId: "asha.surguja@sbi", upiVerifiedBy: ["ASHA31", "DMMU26"], upiPending: null, targetMetric: "revenue", targetValue: 65000, targetUnit: "Rs", targetDeadline: "2026-12-31" },
+  { id: "ASHA32", block: "Udaipur", gp: "Jajga", en: "32. Jajga ASHA: Chain Link Fencing Wire", hi: "32. जजगा आशा: चेन लिंक फेंसिंग तार", unitType: "Rolls", wastageLimitPct: 5, shelfLifeDays: 0, phase: "Phase 1", phaseDate: "", model: "Standard", upiId: "asha.surguja@sbi", upiVerifiedBy: ["ASHA32", "DMMU26"], upiPending: null, targetMetric: "revenue", targetValue: 65000, targetUnit: "Rs", targetDeadline: "2026-12-31" }
 ];
 
 const MASTER_CHECKLIST_ITEMS = [
@@ -602,7 +611,7 @@ const MASTER_CHECKLIST_ITEMS = [
 // ============================================================================
 // SECTION B: CRYPTOGRAPHIC VAULT, PERSISTENT SESSION & 4-DIGIT PIN LOCK
 // ============================================================================
-const VAULT_STORAGE_KEY = "SURGUJA_ASHA_SECURE_VAULT_PROD_V3";
+const VAULT_STORAGE_KEY = "SURGUJA_ASHA_SECURE_VAULT_PROD_V4";
 const VAULT_SALT = "SURGUJA-NRLM-ASHA-2026-ZERO-SERVER";
 
 let lang = "hi";
@@ -657,6 +666,14 @@ function todayISO() {
   const m = String(d.getMonth() + 1).padStart(2, "0");
   const day = String(d.getDate()).padStart(2, "0");
   return `${y}-${m}-${day}`;
+}
+
+function addDaysISO(baseISO, days) {
+  if (!days || days <= 0) return "";
+  const d = new Date(baseISO + "T00:00:00");
+  if (isNaN(d.getTime())) return "";
+  d.setDate(d.getDate() + Number(days));
+  return d.toISOString().slice(0, 10);
 }
 
 function formatDateDisplay(isoStr) {
@@ -894,7 +911,7 @@ function recordAudit(category, unitId, actionText) {
 }
 
 // ============================================================================
-// SECTION C: EFFECTIVE USER, PERMISSIONS & BILINGUAL HELPERS
+// SECTION C: EFFECTIVE USER, PERMISSIONS, WASTAGE & PAYMENT REMINDERS
 // ============================================================================
 function getEffectiveUser() {
   if (!currentUser) return null;
@@ -941,6 +958,42 @@ function getFilteredUnits() {
   return list;
 }
 
+function getWastageStats(unitId) {
+  const uObj = vault.units.find(x => x.id === unitId) || {};
+  const limitPct = Number(uObj.wastageLimitPct ?? DEFAULT_WASTAGE_LIMIT_PCT);
+  const unitRMOut = vault.rmLogs.filter(r => r.unitId === unitId && r.type === "OUT");
+  const unitFGProd = vault.fgLogs.filter(f => f.unitId === unitId && f.type === "PROD");
+
+  const loggedWaste = unitRMOut.reduce((s, r) => s + Number(r.wastageQty || 0), 0) +
+    unitFGProd.reduce((s, f) => s + Number(f.wastageQty || 0), 0);
+  const totalProcessed = unitRMOut.reduce((s, r) => s + Number(r.qty || 0), 0);
+  const wastePct = totalProcessed > 0 ? Number(((loggedWaste / totalProcessed) * 100).toFixed(1)) : 0;
+
+  const highWasteEvents = [
+    ...unitRMOut.filter(r => Number(r.wastagePct || 0) > limitPct),
+    ...unitFGProd.filter(f => Number(f.wastagePct || 0) > limitPct)
+  ];
+
+  const isWastageAlert = wastePct > limitPct || highWasteEvents.length > 0;
+  const isEscalatedToDistrict = highWasteEvents.length >= 2 || wastePct > limitPct * 1.5;
+
+  return { limitPct, loggedWaste: Number(loggedWaste.toFixed(2)), totalProcessed, wastePct, highWasteCount: highWasteEvents.length, isWastageAlert, isEscalatedToDistrict };
+}
+
+function getPaymentReminders(unitsList) {
+  const unitIds = new Set(unitsList.map(u => u.id));
+  const today = todayISO();
+  const payable = vault.rmLogs
+    .filter(r => unitIds.has(r.unitId) && r.type === "IN" && r.dueDate && (r.paymentMode === "Credit" || r.paymentStatus === "Due"))
+    .map(r => ({ kind: "PAYABLE", unitId: r.unitId, title: `${r.material} (${r.batchNo})`, amount: Number(r.amount || 0), dueDate: r.dueDate, overdue: r.dueDate <= today }));
+
+  const receivable = vault.salesLogs
+    .filter(sl => unitIds.has(sl.unitId) && sl.dueDate && Number(sl.paidAmount ?? sl.total) < Number(sl.total))
+    .map(sl => ({ kind: "RECEIVABLE", unitId: sl.unitId, title: `${sl.buyer} • ${sl.product}`, amount: Math.max(0, Number(sl.total || 0) - Number(sl.paidAmount ?? sl.total)), dueDate: sl.dueDate, overdue: sl.dueDate <= today }));
+
+  return [...payable, ...receivable];
+}
+
 function getUnitMetrics(unitId) {
   const rmIn = vault.rmLogs.filter(r => r.unitId === unitId && r.type === "IN").reduce((s, r) => s + Number(r.qty || 0), 0);
   const rmOut = vault.rmLogs.filter(r => r.unitId === unitId && r.type === "OUT").reduce((s, r) => s + Number(r.qty || 0), 0);
@@ -981,13 +1034,16 @@ function getUnitMetrics(unitId) {
   const achieved = uObj.targetMetric === "production" ? fgProd : totalSales;
   const targetPct = tVal > 0 ? Math.min(100, Math.round((achieved / tVal) * 100)) : 0;
 
+  const w = getWastageStats(unitId);
+
   return {
     rmIn, rmOut, rmAvailable,
     fgProd, fgSold, fgAvailable,
     totalSales, offlineSales, onlineSales, paidSales, creditPending,
     avgDailyRM: Number(avgDailyRM.toFixed(1)), reorderPoint, daysLeft, isReorderAlert,
     checklistPct, completed, applicable,
-    targetPct, achieved, targetValue: tVal
+    targetPct, achieved, targetValue: tVal,
+    wastagePct: w.wastePct, wastageLimitPct: w.limitPct, isWastageAlert: w.isWastageAlert, isEscalatedToDistrict: w.isEscalatedToDistrict
   };
 }
 
@@ -1009,14 +1065,6 @@ function inferShelfLifeDays(unitId, productName) {
   if (/soap|detergent/.test(cleanName)) return 365;
   const u = vault.units.find(x => x.id === unitId);
   return u ? Number(u.shelfLifeDays || 0) : 0;
-}
-
-function addDaysISO(baseISO, days) {
-  if (!days || days <= 0) return "";
-  const d = new Date(baseISO + "T00:00:00");
-  if (isNaN(d.getTime())) return "";
-  d.setDate(d.getDate() + Number(days));
-  return d.toISOString().slice(0, 10);
 }
 
 function getQuietShelfLifeAlerts(unitsList) {
@@ -1130,13 +1178,13 @@ async function handleQuickPinUnlock(ev) {
   await completeLogin(acc, false);
 }
 
-function openSet4DigitPinModal(isFirstSetup = false) {
+function openSet4DigitPinModal() {
   const isHi = lang === "hi";
   openUniversalModal(
     isHi ? "🔢 4-अंकों का सुरक्षा पिन व फिंगरप्रिंट सेट करें" : "🔢 Set 4-Digit Quick PIN & Fingerprint",
     `${currentUser.userId} • ${currentUser.name}`,
     `<form onsubmit="saveDevice4DigitPin(event)" class="space-y-3">
-      <p class="text-sec-var leading-relaxed">${isHi ? "अगली बार लंबा पासवर्ड टाइप किए बिना सिर्फ 4-अंकों के पिन या फिंगरप्रिंट से ऐप खोलें, ताकि आपके फ़ोन से कोई अन्य व्यक्ति डेटा न बदल सके।" : "Next time, unlock instantly with a 4-digit PIN or Fingerprint without typing your full password, keeping your device protected from unauthorized access."}</p>
+      <p class="text-sec-var leading-relaxed">${isHi ? "अगली बार लंबा पासवर्ड टाइप किए बिना सिर्फ 4-अंकों के पिन या फिंगरप्रिंट से ऐप खोलें।" : "Next time, unlock instantly with a 4-digit PIN or Fingerprint without typing your full password."}</p>
       <div>
         <label class="block font-bold mb-1">${isHi ? "नया 4-अंकों का पिन चुनें (0-9) *" : "Choose 4-Digit PIN (0-9) *"}</label>
         <input type="password" id="setup-pin-1" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" required placeholder="1234" class="w-full px-3 py-2.5 civic-input text-center text-base tracking-[0.5em] font-black" />
@@ -1147,7 +1195,7 @@ function openSet4DigitPinModal(isFirstSetup = false) {
       </div>
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
         <button type="submit" class="py-2.5 btn-civic bg-civic-teal text-xs">✓ ${isHi ? "4-अंक पिन सहेजें" : "Save 4-Digit PIN"}</button>
-        <button type="button" onclick="enrollDeviceBiometric()" class="py-2.5 btn-civic bg-civic-blue text-xs">👆 ${isHi ? "फिंगरप्रिंट भी जोड़ें" : "Also Link Fingerprint"}</button>
+        <button type="button" onclick="enrollDeviceBiometric()" class="py-2.5 btn-civic bg-civic-blue text-xs">👆 ${isHi ? "फिंगरप्रिंट बदलें / जोड़ें" : "Change / Link Fingerprint"}</button>
       </div>
     </form>`
   );
@@ -1195,7 +1243,7 @@ async function enrollDeviceBiometric() {
     await saveVault();
     closeUniversalModal();
     renderAll();
-    showToast(lang === "hi" ? "✓ फिंगरप्रिंट / Face ID इस डिवाइस पर सक्रिय हो गया!" : "✓ Fingerprint / Face ID linked to this device!");
+    showToast(lang === "hi" ? "✓ फिंगरप्रिंट अपडेट / सक्रिय हो गया!" : "✓ Fingerprint credential updated & active!");
   } catch (e) {
     showToast(lang === "hi" ? "बायोमेट्रिक रद्द हुआ — आप 4-अंकों का पिन उपयोग कर सकते हैं" : "Biometric cancelled — you can use your 4-digit PIN", true);
   }
@@ -1371,6 +1419,7 @@ async function handleFirstTimeSignUp(ev) {
         en: `${nextNum}. ${newUnitName}`,
         hi: `${nextNum}. ${newUnitName}`,
         unitType: "Kg",
+        wastageLimitPct: 5,
         shelfLifeDays: 90,
         phase: "Phase 1",
         phaseDate: "",
@@ -1497,7 +1546,7 @@ async function completeLogin(acc, promptPinAfter) {
   pullFromGoogleCloud(false);
 
   if (promptPinAfter) {
-    openSet4DigitPinModal(true);
+    openSet4DigitPinModal();
   }
 }
 
@@ -1753,14 +1802,15 @@ function renderHeaderAndNav() {
 }
 
 // ============================================================================
-// SECTION G: TAB 1 — INTERACTIVE DASHBOARD & DRILL-DOWN CHARTS
+// SECTION G: TAB 1 — DASHBOARD, WASTAGE ESCALATION & PAYMENT REMINDERS
 // ============================================================================
 function renderDashboardTab() {
   const isHi = lang === "hi";
   const units = getFilteredUnits();
   const eff = getEffectiveUser();
+  const isTopAdmin = isDistrictTopAuthority(eff);
 
-  let grandSales = 0, offTrackCount = 0, reorderCount = 0, qrPendingCount = 0;
+  let grandSales = 0, offTrackCount = 0, reorderCount = 0, wastageAlertCount = 0, districtEscCount = 0;
   const phaseCounts = { "Phase 1": 0, "Phase 2": 0, "Phase 3": 0, "Hold": 0 };
 
   units.forEach(u => {
@@ -1768,9 +1818,48 @@ function renderDashboardTab() {
     grandSales += m.totalSales;
     if (m.targetPct < 50) offTrackCount++;
     if (m.isReorderAlert) reorderCount++;
-    if (u.upiPending) qrPendingCount++;
+    if (m.isWastageAlert) wastageAlertCount++;
+    if (m.isEscalatedToDistrict) districtEscCount++;
     phaseCounts[u.phase] = (phaseCounts[u.phase] || 0) + 1;
   });
+
+  const reminders = getPaymentReminders(units);
+  const remindersHTML = reminders.length ? `
+    <div class="civic-card p-3.5 space-y-2 border-l-4" style="border-left-color: var(--civic-crimson);">
+      <div class="text-xs font-extrabold text-civic-crimson">
+        ⏰ ${isHi ? `भुगतान स्मरणपत्र / बकाया अनुस्मारक (${reminders.length})` : `Payment Due Reminders (${reminders.length})`}
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+        ${reminders.slice(0, 6).map(rem => `
+          <div class="p-2.5 rounded-xl civic-muted flex items-center justify-between gap-2">
+            <div class="min-w-0">
+              <div class="font-extrabold truncate">${rem.kind === "PAYABLE" ? (isHi ? "देय (RM खरीद):" : "Payable (RM):") : (isHi ? "प्राप्तव्य (उधार बिक्री):" : "Receivable (Credit):")} ${escapeHTML(rem.title)}</div>
+              <div class="text-[10px] text-muted-var">${escapeHTML(rem.unitId)} • ${isHi ? "देय तिथि:" : "Due:"} ${formatDateDisplay(rem.dueDate)}</div>
+            </div>
+            <span class="px-2 py-1 rounded-lg ${rem.overdue ? "bg-civic-crimson" : "bg-civic-ochre"} text-white text-[10px] font-extrabold whitespace-nowrap">${formatINR(rem.amount)}</span>
+          </div>
+        `).join("")}
+      </div>
+    </div>
+  ` : "";
+
+  const wastageBannerHTML = wastageAlertCount > 0 ? `
+    <div class="civic-card p-3.5 border-l-4 flex flex-wrap items-center justify-between gap-2" style="border-left-color: var(--civic-crimson);">
+      <div class="text-xs">
+        <div class="font-extrabold text-civic-crimson">
+          🚨 ${isHi ? `कच्चा माल / उत्पादन अपव्यय (Wastage) अलर्ट: ${wastageAlertCount} इकाई सीमा से अधिक` : `Processing Wastage Alert: ${wastageAlertCount} Unit(s) Above Limit`}
+        </div>
+        <div class="text-sec-var mt-0.5">
+          ${isTopAdmin
+            ? (isHi ? `जिला पर्यवेक्षण: ${districtEscCount} इकाई में निरंतर/अधिक अपव्यय दर्ज हुआ है` : `District Escalation: ${districtEscCount} unit(s) flagged for repeated/high wastage`)
+            : (isHi ? "अनुमत सीमा से अधिक अपव्यय होने पर जिला अधिकारियों को स्वतः अलर्ट भेजा जाता है" : "Wastage above threshold alerts District Officers automatically")}
+        </div>
+      </div>
+      <button type="button" onclick="setActiveTab('stock')" class="px-3 py-1.5 rounded-lg bg-civic-crimson text-white text-[11px] font-bold">
+        ${isHi ? "स्टॉक देखें" : "Inspect Stock"}
+      </button>
+    </div>
+  ` : "";
 
   const quietAlerts = getQuietShelfLifeAlerts(units);
   const shelfWatchHTML = quietAlerts.length ? `
@@ -1789,7 +1878,7 @@ function renderDashboardTab() {
   if (eff.role === "shg" && units.length === 1) {
     const u = units[0];
     const m = getUnitMetrics(u.id);
-    const maxBar = Math.max(m.rmAvailable, m.fgProduced, m.fgAvailable, 10);
+    const maxBar = Math.max(m.rmAvailable, m.fgProd, m.fgAvailable, 10);
 
     return `
       <div class="bg-civic-teal p-4 sm:p-5 rounded-2xl text-white space-y-3 shadow-sm">
@@ -1815,12 +1904,14 @@ function renderDashboardTab() {
             <div class="text-base font-extrabold mt-0.5 text-amber-200">${formatINR(m.totalSales)}</div>
           </div>
           <div onclick="openDrillDown('unit_target', '${u.id}')" class="p-3 rounded-xl bg-white/10 border border-white/15 cursor-pointer hover:bg-white/20">
-            <div class="text-[11px] text-emerald-100">${isHi ? "DMMU लक्ष्य" : "DMMU Target"}</div>
-            <div class="text-base font-extrabold mt-0.5">${m.targetPct}%</div>
+            <div class="text-[11px] text-emerald-100">${isHi ? "अपव्यय दर (Wastage)" : "Wastage Rate"}</div>
+            <div class="text-base font-extrabold mt-0.5 ${m.isWastageAlert ? "text-amber-200" : ""}">${m.wastagePct}% (Max ${m.wastageLimitPct}%)</div>
           </div>
         </div>
       </div>
 
+      ${wastageBannerHTML}
+      ${remindersHTML}
       ${shelfWatchHTML}
 
       ${m.isReorderAlert ? `
@@ -1835,9 +1926,7 @@ function renderDashboardTab() {
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div class="civic-card p-4 space-y-3">
-          <div class="flex items-center justify-between">
-            <h3 class="text-xs font-extrabold">📊 ${isHi ? "इकाई स्टॉक व उत्पादन ग्राफ़ (क्लिक करें)" : "Unit Stock & Output Chart (Click to Inspect)"}</h3>
-          </div>
+          <h3 class="text-xs font-extrabold">📊 ${isHi ? "इकाई स्टॉक व उत्पादन ग्राफ़ (क्लिक करें)" : "Unit Stock & Output Chart (Click to Inspect)"}</h3>
           <div class="grid grid-cols-3 gap-3 items-end h-36 pt-4 px-2 civic-muted rounded-xl">
             <div onclick="openDrillDown('unit_rm', '${u.id}')" class="flex flex-col items-center gap-1 cursor-pointer">
               <span class="text-[10px] font-extrabold">${m.rmAvailable}</span>
@@ -1845,8 +1934,8 @@ function renderDashboardTab() {
               <span class="text-[10px] font-bold text-sec-var">RM</span>
             </div>
             <div onclick="openDrillDown('unit_fg', '${u.id}')" class="flex flex-col items-center gap-1 cursor-pointer">
-              <span class="text-[10px] font-extrabold">${m.fgProduced}</span>
-              <div class="w-10 rounded-t-lg bg-civic-emerald" style="height:${Math.max(12, Math.round((m.fgProduced / maxBar) * 84))}px"></div>
+              <span class="text-[10px] font-extrabold">${m.fgProd}</span>
+              <div class="w-10 rounded-t-lg bg-civic-emerald" style="height:${Math.max(12, Math.round((m.fgProd / maxBar) * 84))}px"></div>
               <span class="text-[10px] font-bold text-sec-var">${isHi ? "उत्पादन" : "Produced"}</span>
             </div>
             <div onclick="openDrillDown('unit_fg', '${u.id}')" class="flex flex-col items-center gap-1 cursor-pointer">
@@ -1894,7 +1983,7 @@ function renderDashboardTab() {
     <div class="bg-civic-teal p-4 sm:p-5 rounded-2xl text-white space-y-3 shadow-sm">
       <div class="flex flex-wrap items-center justify-between gap-2">
         <span class="px-2.5 py-1 rounded-full bg-amber-200 text-slate-900 text-[11px] font-extrabold">
-          ${isHi ? "NRLM कमांड डैशबोर्ड" : "NRLM Command Dashboard"}
+          ${isHi ? "NRLM कमांड डैशबोर्ड (समग्र)" : "NRLM Command Dashboard (Overall)"}
         </span>
         <div class="flex items-center gap-2">
           <button type="button" onclick="pullFromGoogleCloud(true)" class="px-2.5 py-1 rounded-full bg-white/15 hover:bg-white/25 text-[11px] font-extrabold text-white">
@@ -1916,13 +2005,15 @@ function renderDashboardTab() {
           <div class="text-[11px] text-emerald-100">${isHi ? "RM रीऑर्डर अलर्ट" : "RM Reorder Alerts"}</div>
           <div class="text-base sm:text-lg font-extrabold mt-0.5">${reorderCount}</div>
         </div>
-        <div onclick="openDrillDown('qr')" class="p-3 rounded-xl bg-white/10 border border-white/15 cursor-pointer hover:bg-white/20">
-          <div class="text-[11px] text-emerald-100">${isHi ? "QR 1/2 लंबित" : "QR 1/2 Pending"}</div>
-          <div class="text-base sm:text-lg font-extrabold mt-0.5">${qrPendingCount}</div>
+        <div onclick="openDrillDown('wastage')" class="p-3 rounded-xl bg-white/10 border border-white/15 cursor-pointer hover:bg-white/20">
+          <div class="text-[11px] text-emerald-100">${isHi ? "अपव्यय (Wastage) अलर्ट" : "Wastage Alerts"}</div>
+          <div class="text-base sm:text-lg font-extrabold mt-0.5">${wastageAlertCount}</div>
         </div>
       </div>
     </div>
 
+    ${wastageBannerHTML}
+    ${remindersHTML}
     ${shelfWatchHTML}
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -1982,8 +2073,8 @@ function renderDashboardTab() {
             <div class="civic-card p-3.5 space-y-2.5">
               <div class="flex items-center justify-between gap-2">
                 <span class="px-2.5 py-0.5 rounded-full bg-civic-teal text-white text-[10px] font-extrabold">${escapeHTML(u.id)} • ${escapeHTML(u.block)}</span>
-                <span class="px-2.5 py-0.5 rounded-full ${m.targetPct >= 50 ? "bg-civic-emerald" : "bg-civic-crimson"} text-white text-[10px] font-extrabold">
-                  ${isHi ? "लक्ष्य:" : "Target:"} ${m.targetPct}%
+                <span class="px-2.5 py-0.5 rounded-full ${m.isWastageAlert ? "bg-civic-crimson" : (m.targetPct >= 50 ? "bg-civic-emerald" : "bg-civic-ochre")} text-white text-[10px] font-extrabold">
+                  ${m.isWastageAlert ? `Waste ${m.wastagePct}%` : `${isHi ? "लक्ष्य:" : "Target:"} ${m.targetPct}%`}
                 </span>
               </div>
               <div>
@@ -2046,7 +2137,7 @@ function openDrillDown(type, param = "") {
         return `
           <div class="p-3 rounded-xl civic-muted flex items-center justify-between gap-2">
             <div class="min-w-0">
-              <div class="font-extrabold truncate">${escapeHTML(isHi ? u.hi : u.en)}</div>
+              <div class="font-extrabold truncate capitalize">${escapeHTML(isHi ? u.hi : u.en)}</div>
               <div class="text-[11px] text-muted-var">RM: ${m.rmAvailable} • FG: ${m.fgAvailable} • ${isHi ? "बिक्री:" : "Sales:"} ${formatINR(m.totalSales)}</div>
             </div>
             <button type="button" onclick="closeUniversalModal(); jumpToUnitTab('${u.id}', 'sales')" class="px-2.5 py-1.5 rounded-lg bg-civic-teal text-white text-[11px] font-bold shrink-0">${isHi ? "खोलें" : "Open"}</button>
@@ -2065,7 +2156,7 @@ function openDrillDown(type, param = "") {
       pUnits.length ? pUnits.map(u => `
         <div class="p-3 rounded-xl civic-muted flex items-center justify-between gap-2">
           <div>
-            <div class="font-extrabold">${escapeHTML(isHi ? u.hi : u.en)}</div>
+            <div class="font-extrabold capitalize">${escapeHTML(isHi ? u.hi : u.en)}</div>
             <div class="text-[11px] text-muted-var">${escapeHTML(u.block)} • ${u.phaseDate ? formatDateDisplay(u.phaseDate) : (isHi ? "तिथि निर्धारित नहीं" : "Date not set")}</div>
           </div>
           <button type="button" onclick="closeUniversalModal(); jumpToUnitTab('${u.id}', 'checklist')" class="px-2.5 py-1.5 rounded-lg bg-civic-indigo text-white text-[11px] font-bold">${isHi ? "चेकलिस्ट" : "Checklist"}</button>
@@ -2093,18 +2184,18 @@ function openDrillDown(type, param = "") {
     return;
   }
 
-  if (type === "offtrack" || type === "reorder" || type === "qr" || type === "sales") {
+  if (type === "offtrack" || type === "reorder" || type === "wastage" || type === "sales") {
     const matched = units.filter(u => {
       const m = getUnitMetrics(u.id);
       if (type === "offtrack") return m.targetPct < 50;
       if (type === "reorder") return m.isReorderAlert;
-      if (type === "qr") return !!u.upiPending;
+      if (type === "wastage") return m.isWastageAlert;
       return m.totalSales > 0;
     });
     openUniversalModal(
       type === "offtrack" ? (isHi ? "लक्ष्य से पीछे इकाइयाँ" : "Off-Track Units") :
       type === "reorder" ? (isHi ? "RM रीऑर्डर अलर्ट इकाइयाँ" : "RM Reorder Alert Units") :
-      type === "qr" ? (isHi ? "QR 2-पक्षीय सत्यापन लंबित" : "QR 2-Party Pending") :
+      type === "wastage" ? (isHi ? "अपव्यय (Wastage) अलर्ट इकाइयाँ" : "Wastage Alert Units") :
       (isHi ? "बिक्री करने वाली इकाइयाँ" : "Active Sales Units"),
       `${matched.length} ${isHi ? "इकाइयाँ" : "Units"}`,
       matched.length ? matched.map(u => {
@@ -2112,10 +2203,10 @@ function openDrillDown(type, param = "") {
         return `
           <div class="p-3 rounded-xl civic-muted flex items-center justify-between gap-2">
             <div>
-              <div class="font-extrabold">${escapeHTML(isHi ? u.hi : u.en)}</div>
-              <div class="text-[11px] text-muted-var">RM: ${m.rmAvailable} (Min ${m.reorderPoint}) • ${isHi ? "लक्ष्य:" : "Target:"} ${m.targetPct}% • ${formatINR(m.totalSales)}</div>
+              <div class="font-extrabold capitalize">${escapeHTML(isHi ? u.hi : u.en)}</div>
+              <div class="text-[11px] text-muted-var">RM: ${m.rmAvailable} • Waste: ${m.wastagePct}% (Max ${m.wastageLimitPct}%) • ${formatINR(m.totalSales)}</div>
             </div>
-            <button type="button" onclick="closeUniversalModal(); jumpToUnitTab('${u.id}', '${type === "reorder" ? "stock" : "sales"}')" class="px-2.5 py-1.5 rounded-lg bg-civic-teal text-white text-[11px] font-bold">${isHi ? "देखें" : "Inspect"}</button>
+            <button type="button" onclick="closeUniversalModal(); jumpToUnitTab('${u.id}', '${type === "reorder" || type === "wastage" ? "stock" : "sales"}')" class="px-2.5 py-1.5 rounded-lg bg-civic-teal text-white text-[11px] font-bold">${isHi ? "देखें" : "Inspect"}</button>
           </div>
         `;
       }).join("") : `<div class="text-center text-muted-var py-4">${isHi ? "कोई रिकॉर्ड नहीं मिला" : "No matching records"}</div>`
@@ -2130,8 +2221,27 @@ function openDrillDown(type, param = "") {
 }
 
 // ============================================================================
-// SECTION I: TAB 2 — STOCK & PRODUCTION + ADMIN VOID CONTROL
+// SECTION I: TAB 2 — STOCK, STANDARD UNITS, QUICK-FILL, WASTAGE & DUE DATES
 // ============================================================================
+function quickFillRM(batch, material, unitType, payMode) {
+  document.getElementById("rm-batch").value = batch;
+  document.getElementById("rm-material").value = material;
+  const uSel = document.getElementById("rm-unit-type");
+  if (uSel) uSel.value = unitType;
+  const pSel = document.getElementById("rm-paymode");
+  if (pSel) {
+    pSel.value = payMode;
+    toggleHybridAndDueDate("rm");
+  }
+}
+
+function quickFillFG(batch, product, unitType) {
+  document.getElementById("fg-batch").value = batch;
+  document.getElementById("fg-product").value = product;
+  const uSel = document.getElementById("fg-unit-type");
+  if (uSel) uSel.value = unitType;
+}
+
 function renderStockTab() {
   const isHi = lang === "hi";
   const units = getFilteredUnits();
@@ -2152,7 +2262,7 @@ function renderStockTab() {
               <tr class="civic-muted text-[10px] sm:text-[11px] font-extrabold">
                 <th class="p-2">${isHi ? "ASHA इकाई" : "ASHA Unit"}</th>
                 <th class="p-2">${isHi ? "उपलब्ध RM" : "Avail. RM"}</th>
-                <th class="p-2 hidden sm:table-cell">${isHi ? "रीऑर्डर" : "Reorder Pt"}</th>
+                <th class="p-2">${isHi ? "अपव्यय %" : "Waste %"}</th>
                 <th class="p-2">${isHi ? "उपलब्ध FG" : "Avail. FG"}</th>
                 <th class="p-2 text-right">${isHi ? "क्रिया" : "Action"}</th>
               </tr>
@@ -2164,7 +2274,7 @@ function renderStockTab() {
                   <tr>
                     <td class="p-2 font-bold capitalize">${escapeHTML(isHi ? u.hi : u.en)}<div class="text-[10px] text-muted-var">${escapeHTML(u.block)}</div></td>
                     <td class="p-2 font-extrabold whitespace-nowrap ${m.isReorderAlert ? "text-civic-crimson" : "text-civic-blue"}">${m.rmAvailable} ${escapeHTML(u.unitType)}</td>
-                    <td class="p-2 text-muted-var hidden sm:table-cell whitespace-nowrap">${m.reorderPoint} ${escapeHTML(u.unitType)}</td>
+                    <td class="p-2 font-extrabold whitespace-nowrap ${m.isWastageAlert ? "text-civic-crimson" : "text-sec-var"}">${m.wastagePct}%</td>
                     <td class="p-2 font-extrabold text-civic-emerald whitespace-nowrap">${m.fgAvailable} ${escapeHTML(u.unitType)}</td>
                     <td class="p-2 text-right whitespace-nowrap"><button type="button" onclick="jumpToUnitTab('${u.id}', 'stock')" class="px-2.5 py-1.5 rounded-lg bg-civic-blue text-white text-[10px] sm:text-[11px] font-bold whitespace-nowrap">${isHi ? "खोलें" : "Open"}</button></td>
                   </tr>
@@ -2190,8 +2300,8 @@ function renderStockTab() {
           <span class="text-[11px] font-extrabold text-civic-ochre">${escapeHTML(u.block)} • ${escapeHTML(u.id)}</span>
           <h2 class="text-sm sm:text-base font-extrabold capitalize">📦 ${escapeHTML(isHi ? u.hi : u.en)}</h2>
         </div>
-        <span class="px-3 py-1 rounded-full ${m.isReorderAlert ? "bg-civic-crimson" : "bg-civic-emerald"} text-white text-[11px] font-extrabold">
-          ${m.isReorderAlert ? (isHi ? `⚠️ रीऑर्डर अलर्ट (न्यूनतम ${m.reorderPoint} ${u.unitType})` : `⚠️ Reorder Alert (Min ${m.reorderPoint} ${u.unitType})`) : (isHi ? `✓ स्टॉक पर्याप्त (${m.daysLeft} दिन शेष)` : `✓ Stock Healthy (${m.daysLeft}d left)`)}
+        <span class="px-3 py-1 rounded-full ${m.isWastageAlert || m.isReorderAlert ? "bg-civic-crimson" : "bg-civic-emerald"} text-white text-[11px] font-extrabold">
+          ${m.isWastageAlert ? `🚨 ${isHi ? `अपव्यय ${m.wastagePct}% (सीमा ${m.wastageLimitPct}%)` : `Wastage ${m.wastagePct}% (Limit ${m.wastageLimitPct}%)`}` : (m.isReorderAlert ? `⚠️ ${isHi ? `रीऑर्डर अलर्ट (${m.reorderPoint} ${u.unitType})` : `Reorder Alert (${m.reorderPoint} ${u.unitType})`}` : `✓ ${isHi ? "स्टॉक व अपव्यय सामान्य" : "Stock & Wastage Normal"}`)}
         </span>
       </div>
 
@@ -2205,22 +2315,31 @@ function renderStockTab() {
           <div class="text-base font-extrabold text-civic-ochre mt-0.5">${m.reorderPoint} ${escapeHTML(u.unitType)}</div>
         </div>
         <div class="p-3 rounded-xl civic-muted">
-          <div class="text-[11px] text-muted-var">${isHi ? "कुल उत्पादन (FG)" : "Total Produced"}</div>
-          <div class="text-base font-extrabold mt-0.5">${m.fgProd} ${escapeHTML(u.unitType)}</div>
-        </div>
-        <div class="p-3 rounded-xl civic-muted">
           <div class="text-[11px] text-muted-var">${isHi ? "बिक्री हेतु शेष FG" : "Available FG to Sell"}</div>
           <div class="text-base font-extrabold text-civic-emerald mt-0.5">${m.fgAvailable} ${escapeHTML(u.unitType)}</div>
+        </div>
+        <div class="p-3 rounded-xl civic-muted">
+          <div class="text-[11px] text-muted-var">${isHi ? "अपव्यय दर (सीमा)" : "Wastage Rate (Limit)"}</div>
+          <div class="text-base font-extrabold ${m.isWastageAlert ? "text-civic-crimson" : ""} mt-0.5">${m.wastagePct}% / ${m.wastageLimitPct}%</div>
         </div>
       </div>
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <!-- RAW MATERIAL INWARD / USAGE WITH QUICK-FILL, STANDARD UNITS & PAYMENT DUE DATE -->
       <div class="civic-card p-4 space-y-3">
-        <div class="flex items-center justify-between">
-          <h3 class="text-xs font-extrabold">🌾 ${isHi ? "कच्चा माल (RM) आवक / खपत प्रविष्टि" : "Raw Material (RM) Inward / Usage"}</h3>
-          <span class="text-[11px] text-muted-var font-bold">${isHi ? `अधिकतम खपत: ${m.rmAvailable} ${u.unitType}` : `Max usage: ${m.rmAvailable} ${u.unitType}`}</span>
+        <div class="flex items-center justify-between gap-2">
+          <h3 class="text-xs font-extrabold">🌾 ${isHi ? "कच्चा माल (RM) आवक / खपत व अपव्यय" : "Raw Material (RM) Inward / Usage & Wastage"}</h3>
+          <span class="text-[11px] text-muted-var font-bold">${isHi ? `अधिकतम: ${m.rmAvailable} ${u.unitType}` : `Max: ${m.rmAvailable} ${u.unitType}`}</span>
         </div>
+
+        <div class="flex flex-wrap items-center gap-1.5 text-[10px]">
+          <span class="font-bold text-muted-var">${isHi ? "त्वरित भरें:" : "Quick-Fill:"}</span>
+          <button type="button" onclick="quickFillRM('RM-01', 'Wheat & Gram', 'Kg', 'Bank Transfer')" class="px-2 py-1 rounded-lg civic-muted font-bold">🌾 Wheat/Gram (Kg)</button>
+          <button type="button" onclick="quickFillRM('RM-02', 'Mustard / Oilseed', 'Tonnes', 'Credit')" class="px-2 py-1 rounded-lg civic-muted font-bold">🛢️ Oilseed (Tonnes, Credit)</button>
+          <button type="button" onclick="quickFillRM('RM-03', 'Paper / Packaging', 'Bundles', 'UPI')" class="px-2 py-1 rounded-lg civic-muted font-bold">📄 Bundles (UPI)</button>
+        </div>
+
         <form onsubmit="handleSaveRM(event, '${u.id}')" class="space-y-2.5 text-xs">
           <div class="grid grid-cols-2 gap-2">
             <div>
@@ -2236,14 +2355,27 @@ function renderStockTab() {
             </div>
           </div>
 
-          <div class="grid grid-cols-2 gap-2">
-            <div>
+          <div class="grid grid-cols-3 gap-2">
+            <div class="col-span-2">
               <label class="block font-bold mb-1 text-sec-var">${isHi ? "कच्चा माल नाम *" : "Material Name *"}</label>
-              <input type="text" id="rm-material" required placeholder="${isHi ? "उदा. गेहूँ / चना / कागज" : "e.g. Wheat / Paper"}" class="w-full px-3 py-2 civic-input font-semibold" />
+              <input type="text" id="rm-material" required placeholder="${isHi ? "उदा. गेहूँ / चना / कागज" : "e.g. Wheat / Oilseed / Paper"}" class="w-full px-3 py-2 civic-input font-semibold" />
             </div>
             <div>
-              <label class="block font-bold mb-1 text-sec-var">${isHi ? `मात्रा / वजन (${u.unitType}) *` : `Qty / Weight (${u.unitType}) *`}</label>
+              <label class="block font-bold mb-1 text-sec-var">${isHi ? "इकाई (Unit) *" : "Unit *"}</label>
+              <select id="rm-unit-type" class="w-full px-3 py-2 civic-input font-bold">
+                ${STANDARD_UNITS.map(st => `<option value="${st}" ${u.unitType === st ? "selected" : ""}>${st}</option>`).join("")}
+              </select>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block font-bold mb-1 text-sec-var">${isHi ? "मात्रा / वजन *" : "Qty / Weight *"}</label>
               <input type="number" id="rm-qty" step="0.01" min="0.01" required placeholder="0" class="w-full px-3 py-2 civic-input font-extrabold" />
+            </div>
+            <div id="rm-waste-wrap" class="hidden">
+              <label class="block font-bold mb-1 text-civic-crimson">${isHi ? `अपव्यय मात्रा (सीमा ${m.wastageLimitPct}%)` : `Wastage Qty (Limit ${m.wastageLimitPct}%)`}</label>
+              <input type="number" id="rm-waste" step="0.01" min="0" value="0" class="w-full px-3 py-2 civic-input font-extrabold" />
             </div>
           </div>
 
@@ -2254,7 +2386,7 @@ function renderStockTab() {
             </div>
             <div>
               <label class="block font-bold mb-1 text-sec-var">${isHi ? "भुगतान माध्यम" : "Payment Mode"}</label>
-              <select id="rm-paymode" onchange="toggleHybridInput('rm')" class="w-full px-3 py-2 civic-input font-bold">
+              <select id="rm-paymode" onchange="toggleHybridAndDueDate('rm')" class="w-full px-3 py-2 civic-input font-bold">
                 <option value="Bank Transfer">Bank Transfer / NEFT</option>
                 <option value="UPI">UPI</option>
                 <option value="Cash">Cash</option>
@@ -2263,6 +2395,12 @@ function renderStockTab() {
               </select>
             </div>
           </div>
+
+          <div id="rm-due-wrap" class="hidden">
+            <label class="block font-bold mb-1 text-civic-crimson">${isHi ? "भुगतान करने की देय तिथि (RM Payment Due Date)" : "Date to Pay Raw Material Supplier (Due Date)"}</label>
+            <input type="date" id="rm-due-date" value="${addDaysISO(todayISO(), 15)}" class="w-full px-3 py-2 civic-input font-bold" />
+          </div>
+
           <div id="rm-hybrid-wrap" class="hidden">
             <input type="text" id="rm-hybrid-detail" placeholder="${isHi ? "हाइब्रिड विवरण लिखें (उदा. ₹2000 UPI + ₹1000 Bank)" : "Enter Hybrid breakup (e.g. ₹2000 UPI + ₹1000 Bank)"}" class="w-full px-3 py-2 civic-input font-semibold" />
           </div>
@@ -2282,11 +2420,20 @@ function renderStockTab() {
         </form>
       </div>
 
+      <!-- FINISHED GOODS PRODUCTION FORM WITH QUICK-FILL & WASTAGE CHECK -->
       <div class="civic-card p-4 space-y-3">
-        <div class="flex items-center justify-between">
-          <h3 class="text-xs font-extrabold">🏭 ${isHi ? "तैयार माल (FG) उत्पादन प्रविष्टि" : "Finished Goods (FG) Production Entry"}</h3>
+        <div class="flex items-center justify-between gap-2">
+          <h3 class="text-xs font-extrabold">🏭 ${isHi ? "तैयार माल (FG) उत्पादन व अपव्यय" : "Finished Goods (FG) Production & Wastage"}</h3>
           <span class="text-[11px] text-muted-var font-bold">${isHi ? `उपलब्ध RM: ${m.rmAvailable} ${u.unitType}` : `Avail. RM: ${m.rmAvailable} ${u.unitType}`}</span>
         </div>
+
+        <div class="flex flex-wrap items-center gap-1.5 text-[10px]">
+          <span class="font-bold text-muted-var">${isHi ? "त्वरित भरें:" : "Quick-Fill:"}</span>
+          <button type="button" onclick="quickFillFG('FG-01', 'Multigrain Sattu & Atta', 'Kg')" class="px-2 py-1 rounded-lg civic-muted font-bold">🥣 Sattu/Atta (Kg)</button>
+          <button type="button" onclick="quickFillFG('FG-02', 'Filtered Edible Oil', 'Litre')" class="px-2 py-1 rounded-lg civic-muted font-bold">🫗 Edible Oil (Litre)</button>
+          <button type="button" onclick="quickFillFG('FG-03', 'Printed Registers', 'Bundles')" class="px-2 py-1 rounded-lg civic-muted font-bold">📘 Registers (Bundles)</button>
+        </div>
+
         <form onsubmit="handleSaveFG(event, '${u.id}')" class="space-y-2.5 text-xs">
           <div class="grid grid-cols-2 gap-2">
             <div>
@@ -2294,18 +2441,29 @@ function renderStockTab() {
               <input type="text" id="fg-batch" required placeholder="FG-01" class="w-full px-3 py-2 civic-input font-bold uppercase" />
             </div>
             <div>
-              <label class="block font-bold mb-1 text-sec-var">${isHi ? "तैयार उत्पाद का नाम *" : "Finished Product Name *"}</label>
-              <input type="text" id="fg-product" required placeholder="${isHi ? "उदा. मल्टीग्रेन सत्तू" : "e.g. Multigrain Sattu"}" class="w-full px-3 py-2 civic-input font-semibold" />
+              <label class="block font-bold mb-1 text-sec-var">${isHi ? "इकाई (Unit) *" : "Unit *"}</label>
+              <select id="fg-unit-type" class="w-full px-3 py-2 civic-input font-bold">
+                ${STANDARD_UNITS.map(st => `<option value="${st}" ${u.unitType === st ? "selected" : ""}>${st}</option>`).join("")}
+              </select>
             </div>
           </div>
 
-          <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block font-bold mb-1 text-sec-var">${isHi ? "तैयार उत्पाद का नाम *" : "Finished Product Name *"}</label>
+            <input type="text" id="fg-product" required placeholder="${isHi ? "उदा. मल्टीग्रेन सत्तू" : "e.g. Multigrain Sattu"}" class="w-full px-3 py-2 civic-input font-semibold" />
+          </div>
+
+          <div class="grid grid-cols-3 gap-2">
             <div>
-              <label class="block font-bold mb-1 text-sec-var">${isHi ? `उत्पादित मात्रा (${u.unitType}) *` : `Produced Qty (${u.unitType}) *`}</label>
+              <label class="block font-bold mb-1 text-sec-var">${isHi ? "उत्पादित मात्रा *" : "Produced Qty *"}</label>
               <input type="number" id="fg-qty" step="0.01" min="0.01" required placeholder="0" class="w-full px-3 py-2 civic-input font-extrabold" />
             </div>
             <div>
-              <label class="block font-bold mb-1 text-sec-var">${isHi ? "अनुमानित मूल्य (₹)" : "Estimated Value (₹)"}</label>
+              <label class="block font-bold mb-1 text-civic-crimson">${isHi ? "प्रसंस्करण अपव्यय" : "Processing Loss"}</label>
+              <input type="number" id="fg-waste" step="0.01" min="0" value="0" class="w-full px-3 py-2 civic-input font-bold" />
+            </div>
+            <div>
+              <label class="block font-bold mb-1 text-sec-var">${isHi ? "अनुमानित मूल्य (₹)" : "Est. Value (₹)"}</label>
               <input type="number" id="fg-amount" min="0" value="0" class="w-full px-3 py-2 civic-input font-bold" />
             </div>
           </div>
@@ -2326,31 +2484,46 @@ function renderStockTab() {
       </div>
     </div>
 
+    <!-- STOCK HISTORY TABLE WITH DUE DATES & ADMIN VOID -->
     <div class="civic-card p-4 space-y-2.5">
-      <h3 class="text-xs font-extrabold">📜 ${isHi ? "स्टॉक व उत्पादन इतिहास (तिथि व लॉक सिस्टम समय सहित)" : "Stock & Production History (Manual Date + Locked System Stamp)"}</h3>
+      <h3 class="text-xs font-extrabold">📜 ${isHi ? "स्टॉक, अपव्यय व देय तिथि इतिहास" : "Stock, Wastage & Due Date History"}</h3>
       <div class="overflow-x-auto">
         <table class="w-full text-left border-collapse text-xs">
           <thead>
             <tr class="civic-muted text-[11px] font-extrabold">
               <th class="p-2">${isHi ? "श्रेणी" : "Category"}</th>
               <th class="p-2">${isHi ? "बैच व वस्तु" : "Batch & Item"}</th>
-              <th class="p-2">${isHi ? "मात्रा" : "Qty"}</th>
-              <th class="p-2">${isHi ? "लेन-देन तिथि" : "Tx Date"}</th>
-              <th class="p-2">${isHi ? "सिस्टम समय" : "System Stamp"}</th>
+              <th class="p-2">${isHi ? "मात्रा व अपव्यय" : "Qty & Waste"}</th>
+              <th class="p-2">${isHi ? "तिथि / देय" : "Date / Due"}</th>
               ${canVoid ? `<th class="p-2 text-right">Admin</th>` : ""}
             </tr>
           </thead>
           <tbody class="divide-y" style="border-color: var(--border-subtle);">
             ${[
-              ...unitRMLogs.map(r => ({ id: r.id, kind: "rm", cat: r.type === "IN" ? (isHi ? "RM आवक" : "RM In") : (isHi ? "RM खपत" : "RM Used"), badge: r.type === "IN" ? "bg-civic-blue" : "bg-civic-ochre", label: `${r.batchNo} • ${r.material}`, qty: `${r.qty} ${r.unit}`, txDate: r.txDate, sysStamp: r.sysStamp })),
-              ...unitFGLogs.map(f => ({ id: f.id, kind: "fg", cat: isHi ? "FG उत्पादन" : "FG Produced", badge: "bg-civic-emerald", label: `${f.batchNo} • ${f.product}`, qty: `${f.qty} ${f.unit}`, txDate: f.txDate, sysStamp: f.sysStamp }))
+              ...unitRMLogs.map(r => ({
+                id: r.id,
+                kind: "rm",
+                cat: r.type === "IN" ? (isHi ? "RM आवक" : "RM In") : (isHi ? "RM खपत" : "RM Used"),
+                badge: r.type === "IN" ? "bg-civic-blue" : "bg-civic-ochre",
+                label: `${r.batchNo} • ${r.material}`,
+                qty: `${r.qty} ${r.unit || u.unitType}${Number(r.wastageQty || 0) > 0 ? ` (Loss: ${r.wastageQty})` : ""}`,
+                dateInfo: `${formatDateDisplay(r.txDate)}${r.dueDate ? ` • Due: ${formatDateDisplay(r.dueDate)}` : ""}`
+              })),
+              ...unitFGLogs.map(f => ({
+                id: f.id,
+                kind: "fg",
+                cat: isHi ? "FG उत्पादन" : "FG Produced",
+                badge: "bg-civic-emerald",
+                label: `${f.batchNo} • ${f.product}`,
+                qty: `${f.qty} ${f.unit || u.unitType}${Number(f.wastageQty || 0) > 0 ? ` (Loss: ${f.wastageQty})` : ""}`,
+                dateInfo: formatDateDisplay(f.txDate)
+              }))
             ].slice(0, 20).map(row => `
               <tr>
                 <td class="p-2"><span class="px-2 py-0.5 rounded-full ${row.badge} text-white text-[10px] font-bold whitespace-nowrap">${row.cat}</span></td>
                 <td class="p-2 font-bold">${escapeHTML(row.label)}</td>
                 <td class="p-2 font-extrabold whitespace-nowrap">${escapeHTML(row.qty)}</td>
-                <td class="p-2 whitespace-nowrap">${formatDateDisplay(row.txDate)}</td>
-                <td class="p-2 font-mono text-[10px] text-muted-var whitespace-nowrap">${escapeHTML(row.sysStamp)}</td>
+                <td class="p-2 whitespace-nowrap">${escapeHTML(row.dateInfo)}</td>
                 ${canVoid ? `<td class="p-2 text-right"><button type="button" onclick="voidEntryByAdmin('${row.kind}', '${escapeHTML(row.id)}', '${u.id}')" class="px-2 py-1 rounded bg-civic-crimson text-white text-[10px] font-bold">🗑️ Void</button></td>` : ""}
               </tr>
             `).join("")}
@@ -2363,12 +2536,25 @@ function renderStockTab() {
 
 function toggleRMPaymentBox() {
   const type = document.getElementById("rm-type").value;
-  document.getElementById("rm-payment-wrap").classList.toggle("hidden", type !== "IN");
+  const isIn = type === "IN";
+  document.getElementById("rm-payment-wrap").classList.toggle("hidden", !isIn);
+  document.getElementById("rm-waste-wrap").classList.toggle("hidden", isIn);
+  toggleHybridAndDueDate("rm");
 }
 
-function toggleHybridInput(prefix) {
+function toggleHybridAndDueDate(prefix) {
   const mode = document.getElementById(prefix + "-paymode").value;
-  document.getElementById(prefix + "-hybrid-wrap").classList.toggle("hidden", mode !== "Hybrid");
+  const hWrap = document.getElementById(prefix + "-hybrid-wrap");
+  if (hWrap) hWrap.classList.toggle("hidden", mode !== "Hybrid");
+  if (prefix === "rm") {
+    const type = document.getElementById("rm-type").value;
+    const dWrap = document.getElementById("rm-due-wrap");
+    if (dWrap) dWrap.classList.toggle("hidden", !(type === "IN" && mode === "Credit"));
+  }
+  if (prefix === "sl") {
+    const dWrap = document.getElementById("sl-due-wrap");
+    if (dWrap) dWrap.classList.toggle("hidden", mode !== "Credit");
+  }
 }
 
 async function handleSaveRM(ev, unitId) {
@@ -2378,9 +2564,12 @@ async function handleSaveRM(ev, unitId) {
   const type = document.getElementById("rm-type").value;
   const batchNo = sanitizeInput(document.getElementById("rm-batch").value).toUpperCase();
   const material = sanitizeInput(document.getElementById("rm-material").value);
+  const unitType = document.getElementById("rm-unit-type").value || u.unitType;
   const qty = Number(document.getElementById("rm-qty").value || 0);
+  const wastageQty = type === "OUT" ? Number(document.getElementById("rm-waste").value || 0) : 0;
   const amount = type === "IN" ? Number(document.getElementById("rm-amount").value || 0) : 0;
   const paymentMode = type === "IN" ? document.getElementById("rm-paymode").value : "N/A";
+  const dueDate = (type === "IN" && paymentMode === "Credit") ? (document.getElementById("rm-due-date").value || addDaysISO(todayISO(), 15)) : "";
   const hybridBreakup = paymentMode === "Hybrid" ? sanitizeInput(document.getElementById("rm-hybrid-detail").value) : "";
   const txDate = document.getElementById("rm-date").value || todayISO();
 
@@ -2395,6 +2584,7 @@ async function handleSaveRM(ev, unitId) {
     return;
   }
 
+  const wastagePct = qty > 0 ? Number(((wastageQty / qty) * 100).toFixed(1)) : 0;
   const shelfDays = inferShelfLifeDays(unitId, material);
   const expiryDate = type === "IN" ? addDaysISO(txDate, shelfDays) : "";
   const sysStamp = nowSystemStamp();
@@ -2406,9 +2596,13 @@ async function handleSaveRM(ev, unitId) {
     batchNo,
     material,
     qty,
-    unit: u.unitType,
+    wastageQty,
+    wastagePct,
+    unit: unitType,
     amount,
     paymentMode,
+    paymentStatus: paymentMode === "Credit" ? "Due" : "Paid",
+    dueDate,
     hybridBreakup,
     shelfDays,
     expiryDate,
@@ -2418,21 +2612,29 @@ async function handleSaveRM(ev, unitId) {
   });
 
   delete tabErrorFlags["stock"];
-  recordAudit(getEffectiveUser().role === "shg" ? "SHG" : "ADMIN", unitId, `RM ${type}: ${qty} ${u.unitType} ${material} (${batchNo})`);
+  recordAudit(getEffectiveUser().role === "shg" ? "SHG" : "ADMIN", unitId, `RM ${type}: ${qty} ${unitType} ${material} (${batchNo})${wastagePct > m.wastageLimitPct ? ` [WASTAGE ALERT ${wastagePct}% > ${m.wastageLimitPct}% -> DISTRICT FLAGGED]` : ""}`);
   await saveVault();
   renderAll();
-  showToast(lang === "hi" ? "कच्चा माल प्रविष्टि सुरक्षित रूप से सहेजी गई" : "Raw material entry saved");
+  if (wastagePct > m.wastageLimitPct) {
+    showToast(lang === "hi" ? `🚨 अपव्यय अलर्ट (${wastagePct}%) — जिला अधिकारियों को सूचित किया गया!` : `🚨 Wastage Alert (${wastagePct}%) — District Officers alerted!`, true);
+  } else {
+    showToast(lang === "hi" ? "कच्चा माल प्रविष्टि सुरक्षित रूप से सहेजी गई" : "Raw material entry saved");
+  }
 }
 
 async function handleSaveFG(ev, unitId) {
   ev.preventDefault();
   const u = vault.units.find(x => x.id === unitId);
+  const m = getUnitMetrics(unitId);
   const batchNo = sanitizeInput(document.getElementById("fg-batch").value).toUpperCase();
+  const unitType = document.getElementById("fg-unit-type").value || u.unitType;
   const product = sanitizeInput(document.getElementById("fg-product").value);
   const qty = Number(document.getElementById("fg-qty").value || 0);
+  const wastageQty = Number(document.getElementById("fg-waste").value || 0);
   const amount = Number(document.getElementById("fg-amount").value || 0);
   const txDate = document.getElementById("fg-date").value || todayISO();
 
+  const wastagePct = (qty + wastageQty) > 0 ? Number(((wastageQty / (qty + wastageQty)) * 100).toFixed(1)) : 0;
   const shelfDays = inferShelfLifeDays(unitId, product);
   const expiryDate = addDaysISO(txDate, shelfDays);
   const sysStamp = nowSystemStamp();
@@ -2444,7 +2646,9 @@ async function handleSaveFG(ev, unitId) {
     batchNo,
     product,
     qty,
-    unit: u.unitType,
+    wastageQty,
+    wastagePct,
+    unit: unitType,
     amount,
     paymentMode: "N/A",
     hybridBreakup: "",
@@ -2455,15 +2659,28 @@ async function handleSaveFG(ev, unitId) {
     actor: getEffectiveUser().userId
   });
 
-  recordAudit(getEffectiveUser().role === "shg" ? "SHG" : "ADMIN", unitId, `FG Produced: ${qty} ${u.unitType} ${product} (${batchNo})`);
+  recordAudit(getEffectiveUser().role === "shg" ? "SHG" : "ADMIN", unitId, `FG Produced: ${qty} ${unitType} ${product} (${batchNo})${wastagePct > m.wastageLimitPct ? ` [WASTAGE ALERT ${wastagePct}% -> DISTRICT FLAGGED]` : ""}`);
   await saveVault();
   renderAll();
-  showToast(lang === "hi" ? "उत्पादन प्रविष्टि सहेजी गई" : "Production entry saved");
+  if (wastagePct > m.wastageLimitPct) {
+    showToast(lang === "hi" ? `🚨 उत्पादन अपव्यय अलर्ट (${wastagePct}%) — जिला अधिकारियों को सूचित किया गया!` : `🚨 Production Wastage Alert (${wastagePct}%) — District Officers alerted!`, true);
+  } else {
+    showToast(lang === "hi" ? "उत्पादन प्रविष्टि सहेजी गई" : "Production entry saved");
+  }
 }
 
 // ============================================================================
-// SECTION J: TAB 3 — SALES & TRADE ANALYTICS + 2-PARTY UPI QR GOVERNANCE
+// SECTION J: TAB 3 — SALES, CREDIT DUE DATES, QUICK-FILL & 2-PARTY UPI QR
 // ============================================================================
+function quickFillSale(buyer, channel, product, rate, payMode) {
+  document.getElementById("sl-buyer").value = buyer;
+  document.getElementById("sl-channel").value = channel;
+  document.getElementById("sl-product").value = product;
+  document.getElementById("sl-rate").value = rate;
+  document.getElementById("sl-paymode").value = payMode;
+  toggleHybridAndDueDate("sl");
+}
+
 function filterSalesByTimeframe(logs) {
   if (salesTimeFilter === "ALL") return logs;
   const daysMap = { "7D": 7, "30D": 30, "180D": 180, "365D": 365 };
@@ -2606,6 +2823,14 @@ function renderSalesTab() {
           <h3 class="text-xs font-extrabold">💰 ${isHi ? "नई बिक्री दर्ज करें" : "Record New Sale"}</h3>
           <span class="text-[11px] text-muted-var font-bold">${isHi ? `अधिकतम बिक्री हेतु उपलब्ध: ${m.fgAvailable} ${u.unitType}` : `Max available to sell: ${m.fgAvailable} ${u.unitType}`}</span>
         </div>
+
+        <div class="flex flex-wrap items-center gap-1.5 text-[10px]">
+          <span class="font-bold text-muted-var">${isHi ? "त्वरित भरें:" : "Quick-Fill:"}</span>
+          <button type="button" onclick="quickFillSale('Weekly Haat Buyer', 'Offline', 'ASHA Product', 100, 'UPI')" class="px-2 py-1 rounded-lg civic-muted font-bold">🛒 Haat (UPI)</button>
+          <button type="button" onclick="quickFillSale('C-Mart / Dept Buyer', 'Offline', 'ASHA Product', 120, 'Credit')" class="px-2 py-1 rounded-lg civic-muted font-bold">🏛️ Dept (Credit)</button>
+          <button type="button" onclick="quickFillSale('Online Portal Order', 'Online', 'ASHA Product', 150, 'UPI')" class="px-2 py-1 rounded-lg civic-muted font-bold">🌐 Online (UPI)</button>
+        </div>
+
         <form onsubmit="handleSaveSale(event, '${u.id}')" class="space-y-2.5 text-xs">
           <div class="grid grid-cols-2 gap-2">
             <div>
@@ -2646,7 +2871,7 @@ function renderSalesTab() {
           <div class="grid grid-cols-2 gap-2">
             <div>
               <label class="block font-bold mb-1 text-sec-var">${isHi ? "भुगतान माध्यम *" : "Payment Mode *"}</label>
-              <select id="sl-paymode" onchange="toggleHybridInput('sl')" class="w-full px-3 py-2 civic-input font-bold">
+              <select id="sl-paymode" onchange="toggleHybridAndDueDate('sl')" class="w-full px-3 py-2 civic-input font-bold">
                 <option value="UPI">UPI / QR</option>
                 <option value="Bank Transfer">Bank Transfer</option>
                 <option value="Cash">Cash</option>
@@ -2659,6 +2884,12 @@ function renderSalesTab() {
               <input type="number" id="sl-paid" min="0" placeholder="${isHi ? "पूरा प्राप्त हो तो खाली छोड़ें" : "Leave blank if 100% paid"}" class="w-full px-3 py-2 civic-input font-bold" />
             </div>
           </div>
+
+          <div id="sl-due-wrap" class="hidden">
+            <label class="block font-bold mb-1 text-civic-crimson">${isHi ? "उधार भुगतान प्राप्त करने की देय तिथि" : "Expected Payment Receive Due Date"}</label>
+            <input type="date" id="sl-due-date" value="${addDaysISO(todayISO(), 15)}" class="w-full px-3 py-2 civic-input font-bold" />
+          </div>
+
           <div id="sl-hybrid-wrap" class="hidden">
             <input type="text" id="sl-hybrid-detail" placeholder="${isHi ? "हाइब्रिड विवरण लिखें (उदा. ₹1500 UPI + ₹900 Cash)" : "Enter Hybrid breakup (e.g. ₹1500 UPI + ₹900 Cash)"}" class="w-full px-3 py-2 civic-input font-semibold" />
           </div>
@@ -2731,7 +2962,7 @@ function renderSalesTab() {
         <table class="w-full text-left border-collapse text-xs">
           <thead>
             <tr class="civic-muted text-[11px] font-extrabold">
-              <th class="p-2">${isHi ? "तिथि" : "Date"}</th>
+              <th class="p-2">${isHi ? "तिथि / देय" : "Date / Due"}</th>
               <th class="p-2">${isHi ? "खरीदार व माध्यम" : "Buyer & Channel"}</th>
               <th class="p-2">${isHi ? "उत्पाद व मात्रा" : "Product & Qty"}</th>
               <th class="p-2">${isHi ? "भुगतान" : "Payment"}</th>
@@ -2742,7 +2973,7 @@ function renderSalesTab() {
           <tbody class="divide-y" style="border-color: var(--border-subtle);">
             ${filteredSales.slice().reverse().map(sl => `
               <tr>
-                <td class="p-2 whitespace-nowrap">${formatDateDisplay(sl.txDate)}<div class="font-mono text-[9px] text-muted-var">${escapeHTML(sl.sysStamp || "")}</div></td>
+                <td class="p-2 whitespace-nowrap">${formatDateDisplay(sl.txDate)}${sl.dueDate ? `<div class="text-[10px] font-bold text-civic-crimson">Due: ${formatDateDisplay(sl.dueDate)}</div>` : ""}</td>
                 <td class="p-2 font-bold">${escapeHTML(sl.buyer)}<div class="text-[10px] text-muted-var">${escapeHTML(sl.channel)}</div></td>
                 <td class="p-2">${escapeHTML(sl.product)} (${sl.qty} ${escapeHTML(u.unitType)})</td>
                 <td class="p-2">${escapeHTML(sl.paymentMode)}${sl.hybridBreakup ? `<div class="text-[10px] text-muted-var">${escapeHTML(sl.hybridBreakup)}</div>` : ""}</td>
@@ -2785,6 +3016,7 @@ async function handleSaveSale(ev, unitId) {
   const total = Math.round(qty * rate * 100) / 100;
   const paidRaw = document.getElementById("sl-paid").value;
   const paidAmount = paymentMode === "Credit" ? 0 : (paidRaw === "" ? total : Math.min(total, Number(paidRaw)));
+  const dueDate = (paymentMode === "Credit" || paidAmount < total) ? (document.getElementById("sl-due-date").value || addDaysISO(todayISO(), 15)) : "";
 
   vault.salesLogs.push({
     id: "SL" + Date.now(),
@@ -2799,6 +3031,7 @@ async function handleSaveSale(ev, unitId) {
     paymentMode,
     hybridBreakup,
     paidAmount,
+    dueDate,
     txDate,
     sysStamp: nowSystemStamp(),
     actor: getEffectiveUser().userId
@@ -2886,7 +3119,7 @@ function renderWeeklyTab() {
       <div class="flex flex-wrap items-center justify-between gap-2">
         <div>
           <span class="text-[11px] font-extrabold text-civic-emerald">${escapeHTML(u.block)} • ${escapeHTML(u.id)}</span>
-          <h2 class="text-sm sm:text-base font-extrabold">📋 ${isHi ? "शनिवार साप्ताहिक प्रगति रिपोर्ट (स्वतः डेटा सहित)" : "Saturday Weekly Progress Report (Auto-Fetched Data)"}</h2>
+          <h2 class="text-sm sm:text-base font-extrabold capitalize">📋 ${isHi ? "शनिवार साप्ताहिक प्रगति रिपोर्ट (स्वतः डेटा सहित)" : "Saturday Weekly Progress Report (Auto-Fetched Data)"}</h2>
         </div>
         <div class="flex flex-wrap gap-1.5">
           <button type="button" onclick="exportSingleSHGWeeklyExcel('${u.id}')" class="px-3 py-2 btn-civic bg-civic-emerald text-[11px]">📊 ${isHi ? "SHG Excel (.xlsx)" : "SHG Excel (.xlsx)"}</button>
@@ -3235,8 +3468,7 @@ async function saveCustomMilestone(ev) {
 }
 
 // ============================================================================
-// SECTION M: TAB 5 — SETTINGS, 4-DIGIT PIN / BIOMETRIC, USER BLOCKING,
-//            GOOGLE SHEETS 2-WAY SYNC & DEVELOPER PASSWORD VAULT
+// SECTION M: TAB 5 — SETTINGS, ROLE-SCOPED AUDIT LOG, USER BLOCKING & SYNC
 // ============================================================================
 function renderSettingsTab() {
   const isHi = lang === "hi";
@@ -3248,6 +3480,11 @@ function renderSettingsTab() {
   const hasBio = !!ds.credentialId;
   const activeUrl = (vault.cloudConfig && vault.cloudConfig.appsScriptUrl) || DEFAULT_APPS_SCRIPT_URL;
 
+  // SHGs only see their own unit's SHG logs; District/Admin logs are hidden from SHG accounts
+  const visibleAuditLogs = eff.role === "shg"
+    ? vault.auditLogs.filter(log => log.category === "SHG" && log.unitId === eff.unitId)
+    : vault.auditLogs;
+
   return `
     <div class="civic-card p-4 space-y-3">
       <div class="flex flex-wrap items-center justify-between gap-2">
@@ -3256,11 +3493,11 @@ function renderSettingsTab() {
           <p class="text-[11px] text-muted-var">${isHi ? "एक बार साइन इन के बाद 4-अंक पिन या फिंगरप्रिंट से सुरक्षित अनलॉक • AES-256" : "Persistent Login with 4-Digit Quick PIN & Fingerprint Protection • AES-256"}</p>
         </div>
         <div class="flex flex-wrap gap-1.5">
-          <button type="button" onclick="openSet4DigitPinModal(false)" class="px-3 py-2 btn-civic ${hasPin ? "bg-civic-emerald" : "bg-civic-ochre"} text-[11px]">
+          <button type="button" onclick="openSet4DigitPinModal()" class="px-3 py-2 btn-civic ${hasPin ? "bg-civic-emerald" : "bg-civic-ochre"} text-[11px]">
             🔢 ${hasPin ? (isHi ? "4-अंक पिन बदलें" : "Change 4-Digit PIN") : (isHi ? "4-अंक पिन सेट करें" : "Set 4-Digit PIN")}
           </button>
           <button type="button" onclick="enrollDeviceBiometric()" class="px-3 py-2 btn-civic ${hasBio ? "bg-civic-emerald" : "bg-civic-blue"} text-[11px]">
-            👆 ${hasBio ? (isHi ? "फिंगरप्रिंट सक्रिय" : "Fingerprint Active") : (isHi ? "फिंगरप्रिंट जोड़ें" : "Link Fingerprint")}
+            👆 ${hasBio ? (isHi ? "फिंगरप्रिंट बदलें / सक्रिय" : "Change / Fingerprint Active") : (isHi ? "फिंगरप्रिंट जोड़ें" : "Link Fingerprint")}
           </button>
         </div>
       </div>
@@ -3308,7 +3545,6 @@ function renderSettingsTab() {
         </form>
       </div>
 
-      <!-- USER ACCESS CONTROL (BLOCK / UNBLOCK USERS ACROSS ALL DEVICES) -->
       <div class="civic-card p-4 space-y-3 border-l-4" style="border-left-color: var(--civic-crimson);">
         <div class="flex flex-wrap items-center justify-between gap-2">
           <div>
@@ -3358,9 +3594,9 @@ function renderSettingsTab() {
     ` : ""}
 
     <div class="civic-card p-4 space-y-2.5">
-      <h3 class="text-xs font-extrabold">📜 ${isHi ? `परिवर्तन इतिहास (Audit Log — ${vault.auditLogs.length})` : `Changes & Audit History (${vault.auditLogs.length})`}</h3>
+      <h3 class="text-xs font-extrabold">📜 ${isHi ? `परिवर्तन इतिहास (Audit Log — ${visibleAuditLogs.length})` : `Changes & Audit History (${visibleAuditLogs.length})`}</h3>
       <div class="max-h-56 overflow-y-auto space-y-1.5 text-xs">
-        ${vault.auditLogs.slice(0, 35).map(log => `
+        ${visibleAuditLogs.slice(0, 35).map(log => `
           <div class="p-2.5 rounded-xl civic-muted flex items-center justify-between gap-2">
             <div>
               <span class="px-2 py-0.5 rounded-md ${log.category === "SHG" ? "bg-civic-blue" : "bg-civic-indigo"} text-white text-[10px] font-bold">${escapeHTML(log.actorId)}</span>
@@ -3524,21 +3760,11 @@ async function pullFromGoogleCloud(manual) {
       if (Array.isArray(data.blockedUsers)) {
         vault.blockedUsers = Array.from(new Set([...(vault.blockedUsers || []), ...data.blockedUsers]));
       }
-      if (Array.isArray(data.accounts)) {
-        data.accounts.forEach(ra => {
-          if (!ra || !ra.userId) return;
-          const idx = vault.accounts.findIndex(la => la.userId === ra.userId);
-          if (idx === -1) vault.accounts.push(ra);
-          else vault.accounts[idx] = { ...vault.accounts[idx], ...ra };
-        });
-      }
       if (Array.isArray(data.units)) {
         data.units.forEach(ru => {
           if (!ru || !ru.id) return;
           const lu = vault.units.find(x => x.id === ru.id);
-          if (!lu) {
-            vault.units.push(ru);
-          } else {
+          if (lu) {
             if (ru.phase) lu.phase = ru.phase;
             if (ru.phaseDate !== undefined) lu.phaseDate = ru.phaseDate;
             if (ru.model) lu.model = ru.model;
@@ -3560,7 +3786,7 @@ async function pullFromGoogleCloud(manual) {
       vault.cloudConfig.lastSyncedAt = nowSystemStamp();
       await saveVault();
       renderAll();
-      if (manual) showToast(lang === "hi" ? "✓ सभी डिवाइसों का डेटा व चेकलिस्ट सिंक हो गई" : "✓ All devices data, checklists & accounts synced");
+      if (manual) showToast(lang === "hi" ? "✓ सभी डिवाइसों का डेटा व चेकलिस्ट सिंक हो गई" : "✓ All devices data, checklists & alerts synced");
     }
   } catch (e) {
     if (manual) showToast(lang === "hi" ? "Apps Script में नया कोड पेस्ट कर Deploy करें" : "Redeploy updated Apps Script to enable full 2-way pull", true);
@@ -3578,7 +3804,6 @@ async function syncVaultToGoogleCloud(manual) {
       syncedAt: nowSystemStamp(),
       actorId: getEffectiveUser() ? getEffectiveUser().userId : "SYSTEM",
       units: vault.units.map(u => ({ ...u, metrics: getUnitMetrics(u.id) })),
-      accounts: vault.accounts,
       blockedUsers: vault.blockedUsers || [],
       deletedIds: vault.deletedIds || [],
       customChecklistItems: vault.customChecklistItems || [],
@@ -3587,7 +3812,7 @@ async function syncVaultToGoogleCloud(manual) {
       fgLogs: vault.fgLogs,
       salesLogs: vault.salesLogs,
       weeklyReports: vault.weeklyReports,
-      auditLogs: vault.auditLogs
+      auditLogs: vault.auditLogs.slice(0, 60)
     };
     await fetch(url, { method: "POST", mode: "no-cors", headers: { "Content-Type": "text/plain" }, body: JSON.stringify(payload) });
     vault.cloudConfig.lastSyncedAt = nowSystemStamp();
@@ -3630,7 +3855,7 @@ function doPost(e) {
   var fgLogs = mergeRowsById(JSON.parse(props.getProperty("fgLogs") || "[]"), data.fgLogs, delMap);
   var salesLogs = mergeRowsById(JSON.parse(props.getProperty("salesLogs") || "[]"), data.salesLogs, delMap);
   var weeklyReports = mergeRowsById(JSON.parse(props.getProperty("weeklyReports") || "[]"), data.weeklyReports, delMap);
-  var auditLogs = mergeRowsById(JSON.parse(props.getProperty("auditLogs") || "[]"), data.auditLogs, {}).slice(0, 600);
+  var auditLogs = mergeRowsById(JSON.parse(props.getProperty("auditLogs") || "[]"), data.auditLogs, {}).slice(0, 60);
   var customChecklistItems = mergeRowsById(JSON.parse(props.getProperty("customChecklistItems") || "[]"), data.customChecklistItems, {});
 
   var checklistStatus = JSON.parse(props.getProperty("checklistStatus") || "{}");
@@ -3638,12 +3863,18 @@ function doPost(e) {
     Object.keys(data.checklistStatus).forEach(function(uid) {
       if (!checklistStatus[uid]) checklistStatus[uid] = {};
       Object.keys(data.checklistStatus[uid]).forEach(function(cid) {
-        checklistStatus[uid][cid] = data.checklistStatus[uid][cid];
+        if (data.checklistStatus[uid][cid] !== "N/A") {
+          checklistStatus[uid][cid] = data.checklistStatus[uid][cid];
+        } else if (checklistStatus[uid][cid]) {
+          delete checklistStatus[uid][cid];
+        }
       });
     });
   }
 
-  var units = data.units || JSON.parse(props.getProperty("units") || "[]");
+  var compactUnits = (data.units || []).map(function(u) {
+    return { id: u.id, block: u.block, gp: u.gp, en: u.en, phase: u.phase, phaseDate: u.phaseDate || "", model: u.model || "Standard", upiId: u.upiId, upiVerifiedBy: u.upiVerifiedBy, upiPending: u.upiPending || null, targetMetric: u.targetMetric, targetValue: u.targetValue };
+  });
   var blockedUsers = data.blockedUsers || JSON.parse(props.getProperty("blockedUsers") || "[]");
 
   props.setProperty("deletedIds", JSON.stringify(uniqueDel));
@@ -3654,7 +3885,7 @@ function doPost(e) {
   props.setProperty("auditLogs", JSON.stringify(auditLogs));
   props.setProperty("customChecklistItems", JSON.stringify(customChecklistItems));
   props.setProperty("checklistStatus", JSON.stringify(checklistStatus));
-  props.setProperty("units", JSON.stringify(units));
+  props.setProperty("units", JSON.stringify(compactUnits));
   props.setProperty("blockedUsers", JSON.stringify(blockedUsers));
 
   function writeTab(name, headers, rows) {
@@ -3665,7 +3896,7 @@ function doPost(e) {
   }
 
   writeTab("1_Unit_Master_Summary", ["Unit ID","Block","GP","Name","Phase","Launch Date","Model","RM Avail","FG Avail","Total Sales","Target","Checklist %"],
-    units.map(function(u) {
+    compactUnits.map(function(u) {
       var uRmIn = rmLogs.filter(function(r){ return r.unitId === u.id && r.type === "IN"; }).reduce(function(s,r){ return s + Number(r.qty||0); }, 0);
       var uRmOut = rmLogs.filter(function(r){ return r.unitId === u.id && r.type === "OUT"; }).reduce(function(s,r){ return s + Number(r.qty||0); }, 0);
       var uFgProd = fgLogs.filter(function(f){ return f.unitId === u.id; }).reduce(function(s,f){ return s + Number(f.qty||0); }, 0);
@@ -3673,17 +3904,17 @@ function doPost(e) {
       var uSales = salesLogs.filter(function(sl){ return sl.unitId === u.id; }).reduce(function(s,sl){ return s + Number(sl.total||0); }, 0);
       var st = checklistStatus[u.id] || {};
       var app = 0, comp = 0;
-      Object.keys(st).forEach(function(k){ if (st[k] !== "N/A") { app++; if (st[k] === "Completed") comp++; } });
+      Object.keys(st).forEach(function(k){ if (st[k] && st[k] !== "N/A") { app++; if (st[k] === "Completed") comp++; } });
       var pct = app > 0 ? Math.round((comp / app) * 100) : 0;
-      return [u.id, u.block, u.gp, u.en, u.phase, u.phaseDate || "-", u.model || "Standard", Math.max(0, uRmIn - uRmOut), Math.max(0, uFgProd - uFgSold), uSales, u.targetValue || 50000, pct + "%"];
+      return [u.id, u.block, u.gp, u.en, u.phase, u.phaseDate || "-", u.model, Math.max(0, uRmIn - uRmOut), Math.max(0, uFgProd - uFgSold), uSales, u.targetValue || 50000, pct + "%"];
     }));
 
-  writeTab("2_RM_and_FG_Stock", ["Type","Unit","Batch","Item","Qty","Unit Type","Tx Date","System Stamp"],
-    rmLogs.map(function(r){ return ["RM-" + r.type, r.unitId, r.batchNo, r.material, r.qty, r.unit, r.txDate, r.sysStamp]; })
-      .concat(fgLogs.map(function(f){ return ["FG-PROD", f.unitId, f.batchNo, f.product, f.qty, f.unit, f.txDate, f.sysStamp]; })));
+  writeTab("2_RM_and_FG_Stock", ["Type","Unit","Batch","Item","Qty","Waste Qty","Unit Type","Tx Date","Due Date"],
+    rmLogs.map(function(r){ return ["RM-" + r.type, r.unitId, r.batchNo, r.material, r.qty, r.wastageQty || 0, r.unit, r.txDate, r.dueDate || "-"]; })
+      .concat(fgLogs.map(function(f){ return ["FG-PROD", f.unitId, f.batchNo, f.product, f.qty, f.wastageQty || 0, f.unit, f.txDate, "-"]; })));
 
-  writeTab("3_Sales_and_Trade", ["Date","System Stamp","Unit","Buyer","Channel","Product","Qty","Total","Payment"],
-    salesLogs.map(function(s){ return [s.txDate, s.sysStamp, s.unitId, s.buyer, s.channel, s.product, s.qty, s.total, s.paymentMode]; }));
+  writeTab("3_Sales_and_Trade", ["Date","Unit","Buyer","Channel","Product","Qty","Total","Payment","Due Date"],
+    salesLogs.map(function(s){ return [s.txDate, s.unitId, s.buyer, s.channel, s.product, s.qty, s.total, s.paymentMode, s.dueDate || "-"]; }));
 
   writeTab("4_Weekly_Reports", ["Week Date","System Stamp","Unit","Days","Members","Closing RM","Closing FG","Total Sales","Credit"],
     weeklyReports.map(function(w){ return [w.weekDate, w.sysStamp, w.unitId, w.daysOperated, w.activeMembers, w.rmClosing, w.fgClosing, w.salesTotal, w.creditPending]; }));
@@ -3692,7 +3923,7 @@ function doPost(e) {
     auditLogs.map(function(a){ return [a.sysStamp, a.category, a.actorId, a.actorRole, a.unitId, a.action]; }));
 
   writeTab("6_Checklist_Milestones", ["Unit ID","Unit Name","c1","c2","c3","c4","c5","c6","c7","c8","c9","c10","c11","c12","c13","c14","c15","c16","c17"],
-    units.map(function(u){
+    compactUnits.map(function(u){
       var st = checklistStatus[u.id] || {};
       return [u.id, u.en, st.c1||"N/A", st.c2||"N/A", st.c3||"N/A", st.c4||"N/A", st.c5||"N/A", st.c6||"N/A", st.c7||"N/A", st.c8||"N/A", st.c9||"N/A", st.c10||"N/A", st.c11||"N/A", st.c12||"N/A", st.c13||"N/A", st.c14||"N/A", st.c15||"N/A", st.c16||"N/A", st.c17||"N/A"];
     }));
@@ -3728,17 +3959,17 @@ function doGet(e) {
 
 function export7SheetMasterExcel() {
   const wb = XLSX.utils.book_new();
-  const s1 = [["Unit ID", "Block", "GP", "Unit Name", "Phase", "Phase Date", "RM Available", "FG Available", "Total Sales (Rs)", "Checklist %"],
-    ...vault.units.map(u => { const m = getUnitMetrics(u.id); return [u.id, u.block, u.gp, sanitizeExcelCell(u.en), u.phase, u.phaseDate || "-", m.rmAvailable, m.fgAvailable, m.totalSales, m.checklistPct + "%"]; })];
+  const s1 = [["Unit ID", "Block", "GP", "Unit Name", "Phase", "Phase Date", "RM Available", "FG Available", "Total Sales (Rs)", "Wastage %", "Checklist %"],
+    ...vault.units.map(u => { const m = getUnitMetrics(u.id); return [u.id, u.block, u.gp, sanitizeExcelCell(u.en), u.phase, u.phaseDate || "-", m.rmAvailable, m.fgAvailable, m.totalSales, m.wastagePct + "%", m.checklistPct + "%"]; })];
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(s1), "1_Unit_Master_Summary");
 
-  const s2 = [["Category", "Unit ID", "Batch No", "Item", "Qty", "Unit", "Tx Date", "System Recorded"],
-    ...vault.rmLogs.map(r => ["RM-" + r.type, r.unitId, r.batchNo, sanitizeExcelCell(r.material), r.qty, r.unit, r.txDate, r.sysStamp]),
-    ...vault.fgLogs.map(f => ["FG-PROD", f.unitId, f.batchNo, sanitizeExcelCell(f.product), f.qty, f.unit, f.txDate, f.sysStamp])];
+  const s2 = [["Category", "Unit ID", "Batch No", "Item", "Qty", "Wastage Qty", "Unit", "Tx Date", "Due Date"],
+    ...vault.rmLogs.map(r => ["RM-" + r.type, r.unitId, r.batchNo, sanitizeExcelCell(r.material), r.qty, r.wastageQty || 0, r.unit, r.txDate, r.dueDate || "-"]),
+    ...vault.fgLogs.map(f => ["FG-PROD", f.unitId, f.batchNo, sanitizeExcelCell(f.product), f.qty, f.wastageQty || 0, f.unit, f.txDate, "-"])];
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(s2), "2_RM_and_FG_Stock_Ledger");
 
-  const s3 = [["Unit ID", "Buyer", "Channel", "Product", "Qty", "Rate", "Total (Rs)", "Payment", "Tx Date", "System Recorded"],
-    ...vault.salesLogs.map(sl => [sl.unitId, sanitizeExcelCell(sl.buyer), sl.channel, sanitizeExcelCell(sl.product), sl.qty, sl.rate, sl.total, sl.paymentMode, sl.txDate, sl.sysStamp])];
+  const s3 = [["Unit ID", "Buyer", "Channel", "Product", "Qty", "Rate", "Total (Rs)", "Payment", "Tx Date", "Due Date"],
+    ...vault.salesLogs.map(sl => [sl.unitId, sanitizeExcelCell(sl.buyer), sl.channel, sanitizeExcelCell(sl.product), sl.qty, sl.rate, sl.total, sl.paymentMode, sl.txDate, sl.dueDate || "-"])];
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(s3), "3_Sales_and_Trade_Ledger");
 
   const s4 = [["Unit ID", "Week Date", "Days", "Members", "Closing RM", "Closing FG", "Total Sales", "Credit Pending", "Facility Status", "System Recorded"],
@@ -3811,7 +4042,7 @@ async function shareUniversalText(title, text) {
 function shareUnitSummary(unitId) {
   const u = vault.units.find(x => x.id === unitId);
   const m = getUnitMetrics(unitId);
-  const msg = `ASHA Surguja Report (${todayISO()})\nUnit: ${u.en} (${u.block})\nRM Stock: ${m.rmAvailable} ${u.unitType}\nFG Stock: ${m.fgAvailable} ${u.unitType}\nTotal Sales: ${formatINR(m.totalSales)}\nChecklist: ${m.checklistPct}%`;
+  const msg = `ASHA Surguja Report (${todayISO()})\nUnit: ${u.en} (${u.block})\nRM Stock: ${m.rmAvailable} ${u.unitType}\nFG Stock: ${m.fgAvailable} ${u.unitType}\nTotal Sales: ${formatINR(m.totalSales)}\nWastage: ${m.wastagePct}% | Checklist: ${m.checklistPct}%`;
   shareUniversalText(u.en, msg);
 }
 
