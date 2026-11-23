@@ -218,7 +218,7 @@
   <div id="auth-screen" class="fixed inset-0 z-50 flex items-center justify-center p-3 overflow-y-auto" style="background: rgba(9, 13, 20, 0.92);">
     <div class="w-full max-w-[440px] civic-card overflow-hidden my-auto">
       <div class="bg-civic-teal p-5 space-y-2.5">
-        <div class="flex items-center justify-between gap-2">
+        <div class="flex items-center justify-between gap-2 flex-wrap">
           <span class="px-2.5 py-1 rounded-full text-[10px] font-extrabold tracking-wide bg-white/15 text-amber-200 border border-white/20">
             NRLM SURGUJA • AES-256
           </span>
@@ -437,17 +437,15 @@
   </div>
 
   <!-- ===================================================================== -->
-  <!-- 3. ALIGNED CIVIC HEADER & SYNCHRONIZED GLOBAL BLOCK/UNIT FILTERS      -->
+  <!-- 3. CLEAN NON-OVERLAPPING HEADER & GLOBAL BLOCK/UNIT FILTERS          -->
   <!-- ===================================================================== -->
   <header class="bg-civic-teal px-3.5 pb-3 safe-top shadow-sm shrink-0 z-30 space-y-2">
-    <!-- Top Utility Row: Status + Theme + Language + Lock -->
-    <div class="flex items-center justify-between gap-2">
-      <div class="flex items-center gap-1.5 min-w-0">
-        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-white/15 text-emerald-100 border border-white/20 whitespace-nowrap">
-          <span class="w-1.5 h-1.5 rounded-full bg-emerald-300 shrink-0"></span>
-          <span id="hdr-net-text">Cloud Sync • AES-256</span>
-        </span>
-      </div>
+    <!-- Row 1: Sync Pill + Theme / Lang / Lock -->
+    <div class="flex items-center justify-between gap-2 flex-wrap">
+      <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-white/15 text-emerald-100 border border-white/20 whitespace-nowrap">
+        <span class="w-1.5 h-1.5 rounded-full bg-emerald-300 shrink-0"></span>
+        <span id="hdr-net-text">Cloud Sync • AES-256</span>
+      </span>
 
       <div class="flex items-center gap-1.5 shrink-0">
         <button type="button" onclick="cycleTheme()" id="hdr-theme-btn" class="px-2.5 py-1 rounded-lg bg-white/15 border border-white/25 text-white text-[11px] font-bold whitespace-nowrap">
@@ -462,7 +460,7 @@
       </div>
     </div>
 
-    <!-- Identity Row: Avatar + Portal Title + Role + Active User -->
+    <!-- Row 2: Avatar + Portal Title + Role + Active User -->
     <div class="flex items-center gap-2.5 min-w-0">
       <div id="hdr-avatar" class="px-2.5 h-10 min-w-[44px] rounded-full bg-amber-200 text-slate-900 font-black text-[10px] tracking-tight flex items-center justify-center shrink-0 overflow-hidden border-2 border-white/30">
         ASHA
@@ -476,7 +474,7 @@
       </div>
     </div>
 
-    <!-- Filter Row -->
+    <!-- Row 3: Block & Unit Dropdowns + Reset -->
     <div id="global-filter-bar" class="grid grid-cols-12 gap-1.5 items-center pt-0.5">
       <select id="filter-block" onchange="onGlobalBlockChange(this.value)" class="col-span-5 sm:col-span-3 px-2.5 py-1.5 rounded-xl bg-white/15 border border-white/25 text-white text-[11px] font-bold focus:outline-none truncate"></select>
       <select id="filter-unit" onchange="onGlobalUnitChange(this.value)" class="col-span-7 sm:col-span-6 px-2.5 py-1.5 rounded-xl bg-white/15 border border-white/25 text-white text-[11px] font-bold focus:outline-none truncate"></select>
@@ -515,7 +513,7 @@
   </nav>
 
   <!-- ===================================================================== -->
-  <!-- 5. UNIVERSAL MODAL (DRILL-DOWN INSPECTOR, PIN SETUP, QR EDIT)         -->
+  <!-- 5. UNIVERSAL MODAL (FIRST-LOGIN THEME PICKER, PIN SETUP, DRILLDOWN) -->
   <!-- ===================================================================== -->
   <div id="universal-modal" class="hidden fixed inset-0 z-50 flex items-end sm:items-center justify-center p-2 sm:p-4" style="background: rgba(9, 13, 20, 0.78);">
     <div class="w-full max-w-lg civic-card overflow-hidden max-h-[88dvh] flex flex-col">
@@ -609,12 +607,13 @@ const MASTER_CHECKLIST_ITEMS = [
 ];
 
 // ============================================================================
-// SECTION B: CRYPTOGRAPHIC VAULT, PERSISTENT SESSION & 4-DIGIT PIN LOCK
+// SECTION B: CRYPTOGRAPHIC VAULT, THEME MODES & PERSISTENT SESSION
 // ============================================================================
-const VAULT_STORAGE_KEY = "SURGUJA_ASHA_SECURE_VAULT_PROD_V4";
+const VAULT_STORAGE_KEY = "SURGUJA_ASHA_SECURE_VAULT_PROD_V5";
 const VAULT_SALT = "SURGUJA-NRLM-ASHA-2026-ZERO-SERVER";
 
 let lang = "hi";
+let themeMode = "light"; // "light" | "dark" | "contrast" | "system"
 let theme = "light";
 let currentUser = null;
 let devImpersonateId = null;
@@ -630,6 +629,53 @@ let lockoutUntil = 0;
 let inactivityTimer = null;
 let systemClockTimer = null;
 let pendingSignUpPhoto = "";
+
+function resolveSystemTheme() {
+  try {
+    return (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) ? "dark" : "light";
+  } catch (e) {
+    return "light";
+  }
+}
+
+function setThemeMode(mode) {
+  themeMode = mode || "light";
+  theme = themeMode === "system" ? resolveSystemTheme() : themeMode;
+  if (vault && vault.deviceSecurity) {
+    vault.deviceSecurity.themeMode = themeMode;
+    saveVault();
+  }
+  applyTheme();
+  if (currentUser) renderAll();
+}
+
+function applyTheme() {
+  const effectiveTheme = themeMode === "system" ? resolveSystemTheme() : themeMode;
+  theme = effectiveTheme;
+  document.documentElement.setAttribute("data-theme", effectiveTheme);
+  const label = effectiveTheme === "light" ? "☀️ Light" : (effectiveTheme === "dark" ? "🌙 Dark" : "⚡ High-Contrast");
+  ["auth-theme-btn", "hdr-theme-btn"].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = label;
+  });
+}
+
+function cycleTheme() {
+  const order = ["light", "dark", "contrast", "system"];
+  const next = order[(order.indexOf(themeMode) + 1) % order.length];
+  setThemeMode(next);
+}
+
+try {
+  if (window.matchMedia) {
+    window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
+      if (themeMode === "system") {
+        applyTheme();
+        if (currentUser) renderAll();
+      }
+    });
+  }
+} catch (e) {}
 
 function scrollViewportToTop() {
   const vp = document.getElementById("main-viewport");
@@ -840,7 +886,9 @@ function buildSeedState() {
       rememberedUserId: "",
       activeSessionUserId: "",
       pinHash: "",
-      credentialId: ""
+      credentialId: "",
+      themeMode: "light",
+      themeChosenOnce: false
     },
     snoozedExpiryUntil: 0,
     cloudConfig: {
@@ -869,7 +917,7 @@ async function loadVault() {
       if (dec && Array.isArray(dec.units) && Array.isArray(dec.accounts)) {
         if (!dec.cloudConfig) dec.cloudConfig = { appsScriptUrl: DEFAULT_APPS_SCRIPT_URL, masterSheetUrl: "", lastSyncedAt: "" };
         if (!dec.cloudConfig.appsScriptUrl) dec.cloudConfig.appsScriptUrl = DEFAULT_APPS_SCRIPT_URL;
-        if (!dec.deviceSecurity) dec.deviceSecurity = { rememberedUserId: "", activeSessionUserId: "", pinHash: "", credentialId: "" };
+        if (!dec.deviceSecurity) dec.deviceSecurity = { rememberedUserId: "", activeSessionUserId: "", pinHash: "", credentialId: "", themeMode: "light", themeChosenOnce: false };
         if (!Array.isArray(dec.blockedUsers)) dec.blockedUsers = [];
         if (!Array.isArray(dec.deletedIds)) dec.deletedIds = [];
         await ensurePasswordHashes(dec);
@@ -895,7 +943,7 @@ async function saveVault(stateObj = vault) {
   }
 }
 
-function recordAudit(category, unitId, actionText) {
+function recordAudit(category, unitId, actionText, deletedSnapshot = null) {
   const actor = getEffectiveUser();
   vault.auditLogs.unshift({
     id: "AUD" + Date.now() + Math.floor(Math.random() * 99),
@@ -904,6 +952,7 @@ function recordAudit(category, unitId, actionText) {
     actorRole: actor ? actor.designation : "System",
     unitId: unitId || "ALL",
     action: actionText,
+    deletedSnapshot: deletedSnapshot || null,
     sysStamp: nowSystemStamp()
   });
   if (vault.auditLogs.length > 600) vault.auditLogs.length = 600;
@@ -984,7 +1033,7 @@ function getPaymentReminders(unitsList) {
   const unitIds = new Set(unitsList.map(u => u.id));
   const today = todayISO();
   const payable = vault.rmLogs
-    .filter(r => unitIds.has(r.unitId) && r.type === "IN" && r.dueDate && (r.paymentMode === "Credit" || r.paymentStatus === "Due"))
+    .filter(r => unitIds.has(r.unitId) && r.type === "IN" && r.dueDate && (r.paymentMode === "Credit" || r.paymentMode === "Hybrid" || r.paymentStatus === "Due"))
     .map(r => ({ kind: "PAYABLE", unitId: r.unitId, title: `${r.material} (${r.batchNo})`, amount: Number(r.amount || 0), dueDate: r.dueDate, overdue: r.dueDate <= today }));
 
   const receivable = vault.salesLogs
@@ -992,6 +1041,16 @@ function getPaymentReminders(unitsList) {
     .map(sl => ({ kind: "RECEIVABLE", unitId: sl.unitId, title: `${sl.buyer} • ${sl.product}`, amount: Math.max(0, Number(sl.total || 0) - Number(sl.paidAmount ?? sl.total)), dueDate: sl.dueDate, overdue: sl.dueDate <= today }));
 
   return [...payable, ...receivable];
+}
+
+function getUnsubmittedWeeklySHGs(unitsList) {
+  const weekAgoMs = Date.now() - 7 * 86400000;
+  return unitsList.filter(u => {
+    const latest = vault.weeklyReports.filter(w => w.unitId === u.id).slice(-1)[0];
+    if (!latest) return true;
+    const wTime = new Date((latest.weekDate || latest.sysStamp || "2000-01-01") + "T00:00:00").getTime();
+    return isNaN(wTime) || wTime < weekAgoMs;
+  });
 }
 
 function getUnitMetrics(unitId) {
@@ -1048,7 +1107,7 @@ function getUnitMetrics(unitId) {
 }
 
 // ============================================================================
-// SECTION D: SMART SHELF-LIFE INFERENCE & NON-ANNOYING WATCH
+// SECTION D: SMART SHELF-LIFE INFERENCE, AUTO-FILTER SUGGESTIONS & WATCH
 // ============================================================================
 function inferShelfLifeDays(unitId, productName) {
   const cleanName = (productName || "").toLowerCase().trim();
@@ -1065,6 +1124,51 @@ function inferShelfLifeDays(unitId, productName) {
   if (/soap|detergent/.test(cleanName)) return 365;
   const u = vault.units.find(x => x.id === unitId);
   return u ? Number(u.shelfLifeDays || 0) : 0;
+}
+
+function getRecentFrequentNames(kind, unitId) {
+  const counts = new Map();
+  if (kind === "rm") {
+    vault.rmLogs.filter(r => r.unitId === unitId).forEach(r => {
+      if (r.material) counts.set(r.material, (counts.get(r.material) || 0) + 1);
+    });
+  } else {
+    vault.fgLogs.filter(f => f.unitId === unitId).forEach(f => {
+      if (f.product) counts.set(f.product, (counts.get(f.product) || 0) + 1);
+    });
+    vault.salesLogs.filter(s => s.unitId === unitId).forEach(s => {
+      if (s.product) counts.set(s.product, (counts.get(s.product) || 0) + 1);
+    });
+  }
+  return Array.from(counts.entries())
+    .sort((a, b) => b[1] - a[1])
+    .map(([name]) => name);
+}
+
+function updateSuggestionList(kind, unitId, queryText, listElId, inputElId) {
+  const listEl = document.getElementById(listElId);
+  if (!listEl) return;
+  const all = getRecentFrequentNames(kind, unitId);
+  const q = (queryText || "").toLowerCase().trim();
+  const matches = q ? all.filter(x => x.toLowerCase().includes(q)) : all;
+  if (!matches.length) {
+    listEl.classList.add("hidden");
+    listEl.innerHTML = "";
+    return;
+  }
+  listEl.innerHTML = matches.slice(0, 6).map(item => `
+    <button type="button" onclick="selectSuggestion('${escapeHTML(inputElId)}', '${escapeHTML(listElId)}', '${escapeHTML(item)}')" class="w-full px-3 py-2 text-left text-xs font-bold hover:opacity-80 border-b last:border-b-0" style="border-color: var(--border-subtle);">
+      ${escapeHTML(item)}
+    </button>
+  `).join("");
+  listEl.classList.remove("hidden");
+}
+
+function selectSuggestion(inputId, listId, val) {
+  const inp = document.getElementById(inputId);
+  if (inp) inp.value = val;
+  const lst = document.getElementById(listId);
+  if (lst) lst.classList.add("hidden");
 }
 
 function getQuietShelfLifeAlerts(unitsList) {
@@ -1098,8 +1202,31 @@ function snoozeShelfLifeWatch() {
 }
 
 // ============================================================================
-// SECTION E: PERSISTENT LOGIN, 4-DIGIT PIN, BIOMETRIC & INVITE-GATED SIGNUP
+// SECTION E: FIRST-LOGIN THEME PICKER, 4-DIGIT PIN, BIOMETRIC & SIGN-UP
 // ============================================================================
+function openFirstLoginThemeModal() {
+  const isHi = lang === "hi";
+  openUniversalModal(
+    isHi ? "🎨 डिस्प्ले मोड चुनें (Theme Preference)" : "🎨 Choose Display Theme Mode",
+    isHi ? "आप इसे कभी भी Settings में बदल सकते हैं" : "You can switch this anytime in Settings",
+    `<div class="grid grid-cols-2 gap-2 text-xs">
+      <button type="button" onclick="chooseInitialTheme('light')" class="p-3 rounded-xl civic-muted font-extrabold text-center">☀️ ${isHi ? "लाइट (Light)" : "Light"}</button>
+      <button type="button" onclick="chooseInitialTheme('dark')" class="p-3 rounded-xl civic-muted font-extrabold text-center">🌙 ${isHi ? "डार्क (Dark)" : "Dark"}</button>
+      <button type="button" onclick="chooseInitialTheme('contrast')" class="p-3 rounded-xl civic-muted font-extrabold text-center">⚡ ${isHi ? "हाई-कंट्रास्ट" : "High-Contrast"}</button>
+      <button type="button" onclick="chooseInitialTheme('system')" class="p-3 rounded-xl civic-muted font-extrabold text-center">📱 ${isHi ? "सिस्टम डिफ़ॉल्ट" : "System Default"}</button>
+    </div>`
+  );
+}
+
+async function chooseInitialTheme(mode) {
+  vault.deviceSecurity.themeChosenOnce = true;
+  setThemeMode(mode);
+  closeUniversalModal();
+  if (!vault.deviceSecurity.pinHash) {
+    openSet4DigitPinModal();
+  }
+}
+
 function showQuickLockScreen() {
   const ds = vault.deviceSecurity || {};
   const acc = ds.rememberedUserId ? vault.accounts.find(a => a.userId === ds.rememberedUserId) : null;
@@ -1143,7 +1270,7 @@ function switchToFullPasswordLogin(hideReturn = false) {
 }
 
 async function switchAccountCompletely() {
-  vault.deviceSecurity = { rememberedUserId: "", activeSessionUserId: "", pinHash: "", credentialId: "" };
+  vault.deviceSecurity = { rememberedUserId: "", activeSessionUserId: "", pinHash: "", credentialId: "", themeMode, themeChosenOnce: true };
   await saveVault();
   document.getElementById("signin-userid").value = "";
   document.getElementById("signin-pass").value = "";
@@ -1393,7 +1520,7 @@ async function handleFirstTimeSignUp(ev) {
   if (role === "shg") {
     const inviteCode = sanitizeInput(document.getElementById("su-shgcode").value).toUpperCase();
     if (inviteCode !== SHG_INVITE_SIGNUP_CODE && inviteCode !== DISTRICT_OFFICER_SIGNUP_CODE) {
-      showToast(lang === "hi" ? "अमान्य NRLM आमंत्रण कोड! कृपया BPO या DMMU से सही कोड प्राप्त करें।" : "Invalid NRLM Invite Code! Obtain valid code from BPO/DMMU.", true);
+      showToast(lang === "hi" ? "अमान्य NRLM आमंत्रण कोड!" : "Invalid NRLM Invite Code!", true);
       return;
     }
     block = document.getElementById("su-block").value;
@@ -1401,7 +1528,7 @@ async function handleFirstTimeSignUp(ev) {
     shgName = sanitizeInput(document.getElementById("su-shgname").value) || `${block} Mahila SHG`;
     if (unitId === "__NEW__") {
       if (inviteCode !== DISTRICT_OFFICER_SIGNUP_CODE) {
-        showToast(lang === "hi" ? "नया ASHA केंद्र जोड़ने के लिए जिला सत्यापन कोड आवश्यक है" : "District Verification Code required to register a new ASHA center", true);
+        showToast(lang === "hi" ? "नया ASHA केंद्र जोड़ने के लिए जिला सत्यापन कोड आवश्यक है" : "District Verification Code required for new ASHA center", true);
         return;
       }
       const newUnitName = sanitizeInput(document.getElementById("su-new-unit-name").value);
@@ -1413,24 +1540,11 @@ async function handleFirstTimeSignUp(ev) {
       const nextNum = vault.units.length + 1;
       unitId = "ASHA" + String(nextNum).padStart(2, "0");
       vault.units.push({
-        id: unitId,
-        block,
-        gp: newUnitGP,
-        en: `${nextNum}. ${newUnitName}`,
-        hi: `${nextNum}. ${newUnitName}`,
-        unitType: "Kg",
-        wastageLimitPct: 5,
-        shelfLifeDays: 90,
-        phase: "Phase 1",
-        phaseDate: "",
-        model: "Standard",
-        upiId: "asha.surguja@sbi",
-        upiVerifiedBy: [unitId, "DMMU26"],
-        upiPending: null,
-        targetMetric: "revenue",
-        targetValue: 45000,
-        targetUnit: "Rs",
-        targetDeadline: "2026-12-31"
+        id: unitId, block, gp: newUnitGP,
+        en: `${nextNum}. ${newUnitName}`, hi: `${nextNum}. ${newUnitName}`,
+        unitType: "Kg", wastageLimitPct: 5, shelfLifeDays: 90, phase: "Phase 1", phaseDate: "", model: "Standard",
+        upiId: "asha.surguja@sbi", upiVerifiedBy: [unitId, "DMMU26"], upiPending: null,
+        targetMetric: "revenue", targetValue: 45000, targetUnit: "Rs", targetDeadline: "2026-12-31"
       });
       vault.checklistStatus[unitId] = {};
       getAllChecklistItems().forEach(it => { vault.checklistStatus[unitId][it.id] = "N/A"; });
@@ -1439,30 +1553,22 @@ async function handleFirstTimeSignUp(ev) {
     designation = document.getElementById("su-desig").value;
     const code = sanitizeInput(document.getElementById("su-offcode").value).toUpperCase();
     if (code !== DISTRICT_OFFICER_SIGNUP_CODE) {
-      showToast(lang === "hi" ? "अमान्य जिला सत्यापन कोड! अधिकारी पंजीयन अस्वीकृत।" : "Invalid District Verification Code! Officer registration denied.", true);
+      showToast(lang === "hi" ? "अमान्य जिला सत्यापन कोड!" : "Invalid District Verification Code!", true);
       return;
     }
     shgName = designation;
   }
 
   const newAcc = {
-    userId,
-    role,
-    designation,
-    name,
-    shgName,
-    mobile,
-    block,
-    unitId,
-    photo: pendingSignUpPhoto,
-    plainHint: pass,
-    passHash: await sha256Hex(pass)
+    userId, role, designation, name, shgName, mobile, block, unitId,
+    photo: pendingSignUpPhoto, plainHint: pass, passHash: await sha256Hex(pass)
   };
   vault.accounts.push(newAcc);
   pendingSignUpPhoto = "";
   recordAudit(role === "shg" ? "SHG" : "ADMIN", unitId, `New Account Registered: ${userId} (${name})`);
   await saveVault();
-  await completeLogin(newAcc, true);
+  await completeLogin(newAcc, false);
+  openFirstLoginThemeModal();
 }
 
 async function handleSignIn(ev) {
@@ -1500,7 +1606,12 @@ async function handleSignIn(ev) {
     vault.deviceSecurity.pinHash = "";
     vault.deviceSecurity.credentialId = "";
   }
-  await completeLogin(acc, !vault.deviceSecurity.pinHash);
+  const firstTimeSetup = !vault.deviceSecurity.themeChosenOnce || !vault.deviceSecurity.pinHash;
+  await completeLogin(acc, false);
+  if (firstTimeSetup) {
+    if (!vault.deviceSecurity.themeChosenOnce) openFirstLoginThemeModal();
+    else openSet4DigitPinModal();
+  }
 }
 
 function registerFailedLogin(msg) {
@@ -1515,7 +1626,7 @@ function registerFailedLogin(msg) {
   showToast(msg, true);
 }
 
-async function completeLogin(acc, promptPinAfter) {
+async function completeLogin(acc) {
   currentUser = acc;
   devImpersonateId = null;
   activeTab = "dashboard";
@@ -1544,10 +1655,6 @@ async function completeLogin(acc, promptPinAfter) {
   scrollViewportToTop();
 
   pullFromGoogleCloud(false);
-
-  if (promptPinAfter) {
-    openSet4DigitPinModal();
-  }
 }
 
 async function lockSessionNow() {
@@ -1591,23 +1698,8 @@ function startLiveSystemClock() {
 }
 
 // ============================================================================
-// SECTION F: THEME, LANGUAGE, NAVIGATION & GLOBAL FILTERS
+// SECTION F: LANGUAGE, NAVIGATION & GLOBAL FILTERS
 // ============================================================================
-function cycleTheme() {
-  theme = theme === "light" ? "dark" : (theme === "dark" ? "contrast" : "light");
-  applyTheme();
-  if (currentUser) renderAll();
-}
-
-function applyTheme() {
-  document.documentElement.setAttribute("data-theme", theme);
-  const label = theme === "light" ? "☀️ Light" : (theme === "dark" ? "🌙 Dark" : "⚡ High-Contrast");
-  ["auth-theme-btn", "hdr-theme-btn"].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.textContent = label;
-  });
-}
-
 function toggleLang() {
   lang = lang === "hi" ? "en" : "hi";
   applyLanguageStaticLabels();
@@ -1655,7 +1747,6 @@ function switchDeveloperPerspective(uid) {
   } else {
     globalFilterBlock = "ALL";
     globalFilterUnit = "ALL";
-    if (activeTab === "weekly") activeTab = "checklist";
   }
   renderAll();
   scrollViewportToTop();
@@ -1777,6 +1868,11 @@ function renderHeaderAndNav() {
     { id: "settings", icon: "⚙️", label: isHi ? "सेटिंग्स व वॉल्ट" : "Settings & Vault" }
   ];
 
+  // Add Officer Weekly Reports tab for District/Block Officers & Developer
+  if (!isSHG) {
+    navItems.splice(3, 0, { id: "weekly", icon: "📋", label: isHi ? "साप्ताहिक रिपोर्ट" : "Weekly Reports" });
+  }
+
   document.getElementById("sidebar-nav-list").innerHTML = navItems.map(n => {
     const active = activeTab === n.id;
     const hasErr = !!tabErrorFlags[n.id];
@@ -1788,6 +1884,7 @@ function renderHeaderAndNav() {
     `;
   }).join("");
 
+  document.getElementById("mobile-nav-grid").className = `grid grid-cols-${navItems.length} gap-1 max-w-lg mx-auto`;
   document.getElementById("mobile-nav-grid").innerHTML = navItems.map(n => {
     const active = activeTab === n.id;
     const hasErr = !!tabErrorFlags[n.id];
@@ -1802,13 +1899,14 @@ function renderHeaderAndNav() {
 }
 
 // ============================================================================
-// SECTION G: TAB 1 — DASHBOARD, WASTAGE ESCALATION & PAYMENT REMINDERS
+// SECTION G: TAB 1 — DASHBOARD, NON-SUBMITTED SHG ALERT & WASTAGE ALERT
 // ============================================================================
 function renderDashboardTab() {
   const isHi = lang === "hi";
   const units = getFilteredUnits();
   const eff = getEffectiveUser();
   const isTopAdmin = isDistrictTopAuthority(eff);
+  const isOfficerView = eff.role !== "shg";
 
   let grandSales = 0, offTrackCount = 0, reorderCount = 0, wastageAlertCount = 0, districtEscCount = 0;
   const phaseCounts = { "Phase 1": 0, "Phase 2": 0, "Phase 3": 0, "Hold": 0 };
@@ -1822,6 +1920,24 @@ function renderDashboardTab() {
     if (m.isEscalatedToDistrict) districtEscCount++;
     phaseCounts[u.phase] = (phaseCounts[u.phase] || 0) + 1;
   });
+
+  const unsubmittedSHGs = getUnsubmittedWeeklySHGs(units);
+  const weeklyAlertHTML = isOfficerView && unsubmittedSHGs.length ? `
+    <div class="civic-card p-3.5 border-l-4 space-y-2" style="border-left-color: var(--civic-crimson);">
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <div class="text-xs font-extrabold text-civic-crimson">
+          📋 ${isHi ? `साप्ताहिक रिपोर्ट लंबित SHG (${unsubmittedSHGs.length}/${units.length} इकाइयों ने जमा नहीं किया)` : `Weekly Report Not Submitted (${unsubmittedSHGs.length}/${units.length} SHGs Pending)`}
+        </div>
+        <button type="button" onclick="setActiveTab('weekly')" class="px-2.5 py-1 rounded-lg bg-civic-crimson text-white text-[11px] font-bold">
+          ${isHi ? "सूची देखें" : "View All"}
+        </button>
+      </div>
+      <div class="flex flex-wrap gap-1.5 text-[11px]">
+        ${unsubmittedSHGs.slice(0, 8).map(u => `<span class="px-2 py-0.5 rounded-md civic-muted font-bold">${escapeHTML(u.id)} (${escapeHTML(u.gp)})</span>`).join("")}
+        ${unsubmittedSHGs.length > 8 ? `<span class="px-2 py-0.5 rounded-md civic-muted font-bold">+${unsubmittedSHGs.length - 8} more</span>` : ""}
+      </div>
+    </div>
+  ` : "";
 
   const reminders = getPaymentReminders(units);
   const remindersHTML = reminders.length ? `
@@ -1997,9 +2113,9 @@ function renderDashboardTab() {
           <div class="text-[11px] text-emerald-100">${isHi ? "कुल बिक्री" : "Total Sales"}</div>
           <div class="text-base sm:text-lg font-extrabold text-amber-200 mt-0.5">${formatINR(grandSales)}</div>
         </div>
-        <div onclick="openDrillDown('offtrack')" class="p-3 rounded-xl bg-white/10 border border-white/15 cursor-pointer hover:bg-white/20">
-          <div class="text-[11px] text-emerald-100">${isHi ? "लक्ष्य से पीछे" : "Off-Track (<50%)"}</div>
-          <div class="text-base sm:text-lg font-extrabold mt-0.5">${offTrackCount}</div>
+        <div onclick="setActiveTab('weekly')" class="p-3 rounded-xl bg-white/10 border border-white/15 cursor-pointer hover:bg-white/20">
+          <div class="text-[11px] text-emerald-100">${isHi ? "साप्ताहिक रिपोर्ट लंबित" : "Weekly Report Missing"}</div>
+          <div class="text-base sm:text-lg font-extrabold mt-0.5 ${unsubmittedSHGs.length ? "text-amber-200" : ""}">${unsubmittedSHGs.length} / ${units.length}</div>
         </div>
         <div onclick="openDrillDown('reorder')" class="p-3 rounded-xl bg-white/10 border border-white/15 cursor-pointer hover:bg-white/20">
           <div class="text-[11px] text-emerald-100">${isHi ? "RM रीऑर्डर अलर्ट" : "RM Reorder Alerts"}</div>
@@ -2012,6 +2128,7 @@ function renderDashboardTab() {
       </div>
     </div>
 
+    ${weeklyAlertHTML}
     ${wastageBannerHTML}
     ${remindersHTML}
     ${shelfWatchHTML}
@@ -2063,9 +2180,7 @@ function renderDashboardTab() {
     </div>
 
     <div class="space-y-2">
-      <div class="flex items-center justify-between">
-        <h3 class="text-xs font-extrabold">📍 ${isHi ? `ASHA केंद्र विवरण (${units.length})` : `ASHA Units Directory (${units.length})`}</h3>
-      </div>
+      <h3 class="text-xs font-extrabold">📍 ${isHi ? `ASHA केंद्र विवरण (${units.length})` : `ASHA Units Directory (${units.length})`}</h3>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
         ${units.map(u => {
           const m = getUnitMetrics(u.id);
@@ -2184,16 +2299,14 @@ function openDrillDown(type, param = "") {
     return;
   }
 
-  if (type === "offtrack" || type === "reorder" || type === "wastage" || type === "sales") {
+  if (type === "reorder" || type === "wastage" || type === "sales") {
     const matched = units.filter(u => {
       const m = getUnitMetrics(u.id);
-      if (type === "offtrack") return m.targetPct < 50;
       if (type === "reorder") return m.isReorderAlert;
       if (type === "wastage") return m.isWastageAlert;
       return m.totalSales > 0;
     });
     openUniversalModal(
-      type === "offtrack" ? (isHi ? "लक्ष्य से पीछे इकाइयाँ" : "Off-Track Units") :
       type === "reorder" ? (isHi ? "RM रीऑर्डर अलर्ट इकाइयाँ" : "RM Reorder Alert Units") :
       type === "wastage" ? (isHi ? "अपव्यय (Wastage) अलर्ट इकाइयाँ" : "Wastage Alert Units") :
       (isHi ? "बिक्री करने वाली इकाइयाँ" : "Active Sales Units"),
@@ -2221,27 +2334,8 @@ function openDrillDown(type, param = "") {
 }
 
 // ============================================================================
-// SECTION I: TAB 2 — STOCK, STANDARD UNITS, QUICK-FILL, WASTAGE & DUE DATES
+// SECTION I: TAB 2 — STOCK, LIVE AUTO-FILTER SUGGESTIONS, WASTAGE & DUE DATES
 // ============================================================================
-function quickFillRM(batch, material, unitType, payMode) {
-  document.getElementById("rm-batch").value = batch;
-  document.getElementById("rm-material").value = material;
-  const uSel = document.getElementById("rm-unit-type");
-  if (uSel) uSel.value = unitType;
-  const pSel = document.getElementById("rm-paymode");
-  if (pSel) {
-    pSel.value = payMode;
-    toggleHybridAndDueDate("rm");
-  }
-}
-
-function quickFillFG(batch, product, unitType) {
-  document.getElementById("fg-batch").value = batch;
-  document.getElementById("fg-product").value = product;
-  const uSel = document.getElementById("fg-unit-type");
-  if (uSel) uSel.value = unitType;
-}
-
 function renderStockTab() {
   const isHi = lang === "hi";
   const units = getFilteredUnits();
@@ -2250,11 +2344,9 @@ function renderStockTab() {
   if (units.length > 1) {
     return `
       <div class="civic-card p-3.5 sm:p-4 space-y-3">
-        <div class="flex flex-wrap items-center justify-between gap-2">
-          <div>
-            <h2 class="text-sm font-extrabold">📦 ${isHi ? `समेकित स्टॉक व उत्पादन रजिस्टर (${units.length} इकाइयाँ)` : `Consolidated Stock & Production (${units.length} Units)`}</h2>
-            <p class="text-[11px] text-muted-var">${isHi ? "प्रविष्टि दर्ज करने के लिए किसी एक ASHA इकाई पर क्लिक करें" : "Click any ASHA unit below to record RM or Production entries"}</p>
-          </div>
+        <div>
+          <h2 class="text-sm font-extrabold">📦 ${isHi ? `समेकित स्टॉक व उत्पादन रजिस्टर (${units.length} इकाइयाँ)` : `Consolidated Stock & Production (${units.length} Units)`}</h2>
+          <p class="text-[11px] text-muted-var">${isHi ? "प्रविष्टि दर्ज करने के लिए किसी एक ASHA इकाई पर क्लिक करें" : "Click any ASHA unit below to record RM or Production entries"}</p>
         </div>
         <div class="overflow-x-auto">
           <table class="w-full text-left border-collapse text-[11px] sm:text-xs">
@@ -2326,18 +2418,11 @@ function renderStockTab() {
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-      <!-- RAW MATERIAL INWARD / USAGE WITH QUICK-FILL, STANDARD UNITS & PAYMENT DUE DATE -->
+      <!-- RM FORM WITH LIVE AUTO-FILTER MATERIAL SUGGESTIONS & CREDIT/HYBRID DUE DATE -->
       <div class="civic-card p-4 space-y-3">
         <div class="flex items-center justify-between gap-2">
           <h3 class="text-xs font-extrabold">🌾 ${isHi ? "कच्चा माल (RM) आवक / खपत व अपव्यय" : "Raw Material (RM) Inward / Usage & Wastage"}</h3>
           <span class="text-[11px] text-muted-var font-bold">${isHi ? `अधिकतम: ${m.rmAvailable} ${u.unitType}` : `Max: ${m.rmAvailable} ${u.unitType}`}</span>
-        </div>
-
-        <div class="flex flex-wrap items-center gap-1.5 text-[10px]">
-          <span class="font-bold text-muted-var">${isHi ? "त्वरित भरें:" : "Quick-Fill:"}</span>
-          <button type="button" onclick="quickFillRM('RM-01', 'Wheat & Gram', 'Kg', 'Bank Transfer')" class="px-2 py-1 rounded-lg civic-muted font-bold">🌾 Wheat/Gram (Kg)</button>
-          <button type="button" onclick="quickFillRM('RM-02', 'Mustard / Oilseed', 'Tonnes', 'Credit')" class="px-2 py-1 rounded-lg civic-muted font-bold">🛢️ Oilseed (Tonnes, Credit)</button>
-          <button type="button" onclick="quickFillRM('RM-03', 'Paper / Packaging', 'Bundles', 'UPI')" class="px-2 py-1 rounded-lg civic-muted font-bold">📄 Bundles (UPI)</button>
         </div>
 
         <form onsubmit="handleSaveRM(event, '${u.id}')" class="space-y-2.5 text-xs">
@@ -2356,9 +2441,14 @@ function renderStockTab() {
           </div>
 
           <div class="grid grid-cols-3 gap-2">
-            <div class="col-span-2">
+            <div class="col-span-2 relative">
               <label class="block font-bold mb-1 text-sec-var">${isHi ? "कच्चा माल नाम *" : "Material Name *"}</label>
-              <input type="text" id="rm-material" required placeholder="${isHi ? "उदा. गेहूँ / चना / कागज" : "e.g. Wheat / Oilseed / Paper"}" class="w-full px-3 py-2 civic-input font-semibold" />
+              <input type="text" id="rm-material" required autocomplete="off"
+                onfocus="updateSuggestionList('rm', '${u.id}', this.value, 'rm-sugg-list', 'rm-material')"
+                oninput="updateSuggestionList('rm', '${u.id}', this.value, 'rm-sugg-list', 'rm-material')"
+                placeholder="${isHi ? "टाइप करें (हाल/अक्सर उपयोग सूची स्वतः छनेगी)" : "Type to auto-filter recent/frequent items"}"
+                class="w-full px-3 py-2 civic-input font-semibold" />
+              <div id="rm-sugg-list" class="hidden absolute left-0 right-0 mt-1 rounded-xl civic-card shadow-lg z-20 max-h-36 overflow-y-auto"></div>
             </div>
             <div>
               <label class="block font-bold mb-1 text-sec-var">${isHi ? "इकाई (Unit) *" : "Unit *"}</label>
@@ -2396,9 +2486,15 @@ function renderStockTab() {
             </div>
           </div>
 
-          <div id="rm-due-wrap" class="hidden">
-            <label class="block font-bold mb-1 text-civic-crimson">${isHi ? "भुगतान करने की देय तिथि (RM Payment Due Date)" : "Date to Pay Raw Material Supplier (Due Date)"}</label>
-            <input type="date" id="rm-due-date" value="${addDaysISO(todayISO(), 15)}" class="w-full px-3 py-2 civic-input font-bold" />
+          <div id="rm-credit-wrap" class="hidden grid grid-cols-1 sm:grid-cols-2 gap-2 p-2.5 rounded-xl civic-muted">
+            <div>
+              <label class="block font-bold mb-1 text-civic-emerald">${isHi ? "अभी भुगतान की गई राशि (₹)" : "Amount Paid Now (₹)"}</label>
+              <input type="number" id="rm-paid-now" min="0" value="0" class="w-full px-3 py-2 civic-input font-bold" />
+            </div>
+            <div>
+              <label class="block font-bold mb-1 text-civic-crimson">${isHi ? "भुगतान निर्धारित तिथि (Scheduled Date)" : "Scheduled Payment Date"}</label>
+              <input type="date" id="rm-due-date" value="${addDaysISO(todayISO(), 15)}" class="w-full px-3 py-2 civic-input font-bold" />
+            </div>
           </div>
 
           <div id="rm-hybrid-wrap" class="hidden">
@@ -2420,18 +2516,11 @@ function renderStockTab() {
         </form>
       </div>
 
-      <!-- FINISHED GOODS PRODUCTION FORM WITH QUICK-FILL & WASTAGE CHECK -->
+      <!-- FG PRODUCTION FORM WITH LIVE AUTO-FILTER PRODUCT SUGGESTIONS -->
       <div class="civic-card p-4 space-y-3">
         <div class="flex items-center justify-between gap-2">
           <h3 class="text-xs font-extrabold">🏭 ${isHi ? "तैयार माल (FG) उत्पादन व अपव्यय" : "Finished Goods (FG) Production & Wastage"}</h3>
           <span class="text-[11px] text-muted-var font-bold">${isHi ? `उपलब्ध RM: ${m.rmAvailable} ${u.unitType}` : `Avail. RM: ${m.rmAvailable} ${u.unitType}`}</span>
-        </div>
-
-        <div class="flex flex-wrap items-center gap-1.5 text-[10px]">
-          <span class="font-bold text-muted-var">${isHi ? "त्वरित भरें:" : "Quick-Fill:"}</span>
-          <button type="button" onclick="quickFillFG('FG-01', 'Multigrain Sattu & Atta', 'Kg')" class="px-2 py-1 rounded-lg civic-muted font-bold">🥣 Sattu/Atta (Kg)</button>
-          <button type="button" onclick="quickFillFG('FG-02', 'Filtered Edible Oil', 'Litre')" class="px-2 py-1 rounded-lg civic-muted font-bold">🫗 Edible Oil (Litre)</button>
-          <button type="button" onclick="quickFillFG('FG-03', 'Printed Registers', 'Bundles')" class="px-2 py-1 rounded-lg civic-muted font-bold">📘 Registers (Bundles)</button>
         </div>
 
         <form onsubmit="handleSaveFG(event, '${u.id}')" class="space-y-2.5 text-xs">
@@ -2448,9 +2537,14 @@ function renderStockTab() {
             </div>
           </div>
 
-          <div>
+          <div class="relative">
             <label class="block font-bold mb-1 text-sec-var">${isHi ? "तैयार उत्पाद का नाम *" : "Finished Product Name *"}</label>
-            <input type="text" id="fg-product" required placeholder="${isHi ? "उदा. मल्टीग्रेन सत्तू" : "e.g. Multigrain Sattu"}" class="w-full px-3 py-2 civic-input font-semibold" />
+            <input type="text" id="fg-product" required autocomplete="off"
+              onfocus="updateSuggestionList('fg', '${u.id}', this.value, 'fg-sugg-list', 'fg-product')"
+              oninput="updateSuggestionList('fg', '${u.id}', this.value, 'fg-sugg-list', 'fg-product')"
+              placeholder="${isHi ? "टाइप करें (हाल/अक्सर उत्पाद स्वतः छनेंगे)" : "Type to auto-filter recent/frequent products"}"
+              class="w-full px-3 py-2 civic-input font-semibold" />
+            <div id="fg-sugg-list" class="hidden absolute left-0 right-0 mt-1 rounded-xl civic-card shadow-lg z-20 max-h-36 overflow-y-auto"></div>
           </div>
 
           <div class="grid grid-cols-3 gap-2">
@@ -2486,7 +2580,7 @@ function renderStockTab() {
 
     <!-- STOCK HISTORY TABLE WITH DUE DATES & ADMIN VOID -->
     <div class="civic-card p-4 space-y-2.5">
-      <h3 class="text-xs font-extrabold">📜 ${isHi ? "स्टॉक, अपव्यय व देय तिथि इतिहास" : "Stock, Wastage & Due Date History"}</h3>
+      <h3 class="text-xs font-extrabold">📜 ${isHi ? "स्टॉक, अपव्यय व निर्धारित भुगतान तिथि इतिहास" : "Stock, Wastage & Scheduled Payment History"}</h3>
       <div class="overflow-x-auto">
         <table class="w-full text-left border-collapse text-xs">
           <thead>
@@ -2494,24 +2588,22 @@ function renderStockTab() {
               <th class="p-2">${isHi ? "श्रेणी" : "Category"}</th>
               <th class="p-2">${isHi ? "बैच व वस्तु" : "Batch & Item"}</th>
               <th class="p-2">${isHi ? "मात्रा व अपव्यय" : "Qty & Waste"}</th>
-              <th class="p-2">${isHi ? "तिथि / देय" : "Date / Due"}</th>
+              <th class="p-2">${isHi ? "तिथि / निर्धारित" : "Date / Scheduled"}</th>
               ${canVoid ? `<th class="p-2 text-right">Admin</th>` : ""}
             </tr>
           </thead>
           <tbody class="divide-y" style="border-color: var(--border-subtle);">
             ${[
               ...unitRMLogs.map(r => ({
-                id: r.id,
-                kind: "rm",
+                id: r.id, kind: "rm",
                 cat: r.type === "IN" ? (isHi ? "RM आवक" : "RM In") : (isHi ? "RM खपत" : "RM Used"),
                 badge: r.type === "IN" ? "bg-civic-blue" : "bg-civic-ochre",
                 label: `${r.batchNo} • ${r.material}`,
                 qty: `${r.qty} ${r.unit || u.unitType}${Number(r.wastageQty || 0) > 0 ? ` (Loss: ${r.wastageQty})` : ""}`,
-                dateInfo: `${formatDateDisplay(r.txDate)}${r.dueDate ? ` • Due: ${formatDateDisplay(r.dueDate)}` : ""}`
+                dateInfo: `${formatDateDisplay(r.txDate)}${r.dueDate ? ` • Pay: ${formatDateDisplay(r.dueDate)}` : ""}`
               })),
               ...unitFGLogs.map(f => ({
-                id: f.id,
-                kind: "fg",
+                id: f.id, kind: "fg",
                 cat: isHi ? "FG उत्पादन" : "FG Produced",
                 badge: "bg-civic-emerald",
                 label: `${f.batchNo} • ${f.product}`,
@@ -2544,16 +2636,17 @@ function toggleRMPaymentBox() {
 
 function toggleHybridAndDueDate(prefix) {
   const mode = document.getElementById(prefix + "-paymode").value;
+  const isCreditOrHybrid = (mode === "Credit" || mode === "Hybrid");
   const hWrap = document.getElementById(prefix + "-hybrid-wrap");
   if (hWrap) hWrap.classList.toggle("hidden", mode !== "Hybrid");
   if (prefix === "rm") {
     const type = document.getElementById("rm-type").value;
-    const dWrap = document.getElementById("rm-due-wrap");
-    if (dWrap) dWrap.classList.toggle("hidden", !(type === "IN" && mode === "Credit"));
+    const cWrap = document.getElementById("rm-credit-wrap");
+    if (cWrap) cWrap.classList.toggle("hidden", !(type === "IN" && isCreditOrHybrid));
   }
   if (prefix === "sl") {
-    const dWrap = document.getElementById("sl-due-wrap");
-    if (dWrap) dWrap.classList.toggle("hidden", mode !== "Credit");
+    const cWrap = document.getElementById("sl-credit-wrap");
+    if (cWrap) cWrap.classList.toggle("hidden", !isCreditOrHybrid);
   }
 }
 
@@ -2569,7 +2662,9 @@ async function handleSaveRM(ev, unitId) {
   const wastageQty = type === "OUT" ? Number(document.getElementById("rm-waste").value || 0) : 0;
   const amount = type === "IN" ? Number(document.getElementById("rm-amount").value || 0) : 0;
   const paymentMode = type === "IN" ? document.getElementById("rm-paymode").value : "N/A";
-  const dueDate = (type === "IN" && paymentMode === "Credit") ? (document.getElementById("rm-due-date").value || addDaysISO(todayISO(), 15)) : "";
+  const isCreditOrHybrid = (paymentMode === "Credit" || paymentMode === "Hybrid");
+  const paidNow = (type === "IN" && isCreditOrHybrid) ? Number(document.getElementById("rm-paid-now").value || 0) : amount;
+  const dueDate = (type === "IN" && isCreditOrHybrid) ? (document.getElementById("rm-due-date").value || addDaysISO(todayISO(), 15)) : "";
   const hybridBreakup = paymentMode === "Hybrid" ? sanitizeInput(document.getElementById("rm-hybrid-detail").value) : "";
   const txDate = document.getElementById("rm-date").value || todayISO();
 
@@ -2590,24 +2685,10 @@ async function handleSaveRM(ev, unitId) {
   const sysStamp = nowSystemStamp();
 
   vault.rmLogs.push({
-    id: "RM" + Date.now(),
-    unitId,
-    type,
-    batchNo,
-    material,
-    qty,
-    wastageQty,
-    wastagePct,
-    unit: unitType,
-    amount,
-    paymentMode,
-    paymentStatus: paymentMode === "Credit" ? "Due" : "Paid",
-    dueDate,
-    hybridBreakup,
-    shelfDays,
-    expiryDate,
-    txDate,
-    sysStamp,
+    id: "RM" + Date.now(), unitId, type, batchNo, material, qty, wastageQty, wastagePct,
+    unit: unitType, amount, paidNow, paymentMode,
+    paymentStatus: paidNow < amount ? "Due" : "Paid",
+    dueDate, hybridBreakup, shelfDays, expiryDate, txDate, sysStamp,
     actor: getEffectiveUser().userId
   });
 
@@ -2640,22 +2721,8 @@ async function handleSaveFG(ev, unitId) {
   const sysStamp = nowSystemStamp();
 
   vault.fgLogs.push({
-    id: "FG" + Date.now(),
-    unitId,
-    type: "PROD",
-    batchNo,
-    product,
-    qty,
-    wastageQty,
-    wastagePct,
-    unit: unitType,
-    amount,
-    paymentMode: "N/A",
-    hybridBreakup: "",
-    shelfDays,
-    expiryDate,
-    txDate,
-    sysStamp,
+    id: "FG" + Date.now(), unitId, type: "PROD", batchNo, product, qty, wastageQty, wastagePct,
+    unit: unitType, amount, paymentMode: "N/A", hybridBreakup: "", shelfDays, expiryDate, txDate, sysStamp,
     actor: getEffectiveUser().userId
   });
 
@@ -2670,17 +2737,8 @@ async function handleSaveFG(ev, unitId) {
 }
 
 // ============================================================================
-// SECTION J: TAB 3 — SALES, CREDIT DUE DATES, QUICK-FILL & 2-PARTY UPI QR
+// SECTION J: TAB 3 — SALES, CREDIT/HYBRID RECEIVABLES & 2-PARTY UPI QR
 // ============================================================================
-function quickFillSale(buyer, channel, product, rate, payMode) {
-  document.getElementById("sl-buyer").value = buyer;
-  document.getElementById("sl-channel").value = channel;
-  document.getElementById("sl-product").value = product;
-  document.getElementById("sl-rate").value = rate;
-  document.getElementById("sl-paymode").value = payMode;
-  toggleHybridAndDueDate("sl");
-}
-
 function filterSalesByTimeframe(logs) {
   if (salesTimeFilter === "ALL") return logs;
   const daysMap = { "7D": 7, "30D": 30, "180D": 180, "365D": 365 };
@@ -2824,13 +2882,6 @@ function renderSalesTab() {
           <span class="text-[11px] text-muted-var font-bold">${isHi ? `अधिकतम बिक्री हेतु उपलब्ध: ${m.fgAvailable} ${u.unitType}` : `Max available to sell: ${m.fgAvailable} ${u.unitType}`}</span>
         </div>
 
-        <div class="flex flex-wrap items-center gap-1.5 text-[10px]">
-          <span class="font-bold text-muted-var">${isHi ? "त्वरित भरें:" : "Quick-Fill:"}</span>
-          <button type="button" onclick="quickFillSale('Weekly Haat Buyer', 'Offline', 'ASHA Product', 100, 'UPI')" class="px-2 py-1 rounded-lg civic-muted font-bold">🛒 Haat (UPI)</button>
-          <button type="button" onclick="quickFillSale('C-Mart / Dept Buyer', 'Offline', 'ASHA Product', 120, 'Credit')" class="px-2 py-1 rounded-lg civic-muted font-bold">🏛️ Dept (Credit)</button>
-          <button type="button" onclick="quickFillSale('Online Portal Order', 'Online', 'ASHA Product', 150, 'UPI')" class="px-2 py-1 rounded-lg civic-muted font-bold">🌐 Online (UPI)</button>
-        </div>
-
         <form onsubmit="handleSaveSale(event, '${u.id}')" class="space-y-2.5 text-xs">
           <div class="grid grid-cols-2 gap-2">
             <div>
@@ -2851,9 +2902,14 @@ function renderSalesTab() {
               <label class="block font-bold mb-1 text-sec-var">${isHi ? "बैच नंबर" : "Batch No."}</label>
               <input type="text" id="sl-batch" placeholder="FG-01" class="w-full px-3 py-2 civic-input font-bold uppercase" />
             </div>
-            <div>
+            <div class="relative">
               <label class="block font-bold mb-1 text-sec-var">${isHi ? "उत्पाद का नाम *" : "Product Name *"}</label>
-              <input type="text" id="sl-product" required placeholder="${isHi ? "उदा. सत्तू / प्रिंटिंग" : "e.g. Sattu / Printing"}" class="w-full px-3 py-2 civic-input font-semibold" />
+              <input type="text" id="sl-product" required autocomplete="off"
+                onfocus="updateSuggestionList('fg', '${u.id}', this.value, 'sl-sugg-list', 'sl-product')"
+                oninput="updateSuggestionList('fg', '${u.id}', this.value, 'sl-sugg-list', 'sl-product')"
+                placeholder="${isHi ? "टाइप करें (उत्पाद सुझाव स्वतः छनेंगे)" : "Type to auto-filter products"}"
+                class="w-full px-3 py-2 civic-input font-semibold" />
+              <div id="sl-sugg-list" class="hidden absolute left-0 right-0 mt-1 rounded-xl civic-card shadow-lg z-20 max-h-36 overflow-y-auto"></div>
             </div>
           </div>
 
@@ -2885,8 +2941,8 @@ function renderSalesTab() {
             </div>
           </div>
 
-          <div id="sl-due-wrap" class="hidden">
-            <label class="block font-bold mb-1 text-civic-crimson">${isHi ? "उधार भुगतान प्राप्त करने की देय तिथि" : "Expected Payment Receive Due Date"}</label>
+          <div id="sl-credit-wrap" class="hidden p-2.5 rounded-xl civic-muted">
+            <label class="block font-bold mb-1 text-civic-crimson">${isHi ? "उधार / शेष राशि प्राप्त करने की तिथि (Due Date)" : "Expected Credit Receipt Due Date"}</label>
             <input type="date" id="sl-due-date" value="${addDaysISO(todayISO(), 15)}" class="w-full px-3 py-2 civic-input font-bold" />
           </div>
 
@@ -3016,24 +3072,11 @@ async function handleSaveSale(ev, unitId) {
   const total = Math.round(qty * rate * 100) / 100;
   const paidRaw = document.getElementById("sl-paid").value;
   const paidAmount = paymentMode === "Credit" ? 0 : (paidRaw === "" ? total : Math.min(total, Number(paidRaw)));
-  const dueDate = (paymentMode === "Credit" || paidAmount < total) ? (document.getElementById("sl-due-date").value || addDaysISO(todayISO(), 15)) : "";
+  const dueDate = (paymentMode === "Credit" || paymentMode === "Hybrid" || paidAmount < total) ? (document.getElementById("sl-due-date").value || addDaysISO(todayISO(), 15)) : "";
 
   vault.salesLogs.push({
-    id: "SL" + Date.now(),
-    unitId,
-    buyer,
-    channel,
-    batchNo,
-    product,
-    qty,
-    rate,
-    total,
-    paymentMode,
-    hybridBreakup,
-    paidAmount,
-    dueDate,
-    txDate,
-    sysStamp: nowSystemStamp(),
+    id: "SL" + Date.now(), unitId, buyer, channel, batchNo, product, qty, rate, total,
+    paymentMode, hybridBreakup, paidAmount, dueDate, txDate, sysStamp: nowSystemStamp(),
     actor: getEffectiveUser().userId
   });
 
@@ -3073,10 +3116,7 @@ async function proposeNewUPI(ev, unitId) {
     return;
   }
   u.upiPending = {
-    newUpiId: newUpi,
-    proposedBy: eff.userId,
-    proposedRole: eff.designation,
-    proposedAt: nowSystemStamp()
+    newUpiId: newUpi, proposedBy: eff.userId, proposedRole: eff.designation, proposedAt: nowSystemStamp()
   };
   recordAudit(eff.role === "shg" ? "SHG" : "ADMIN", unitId, `Proposed UPI Change (1/2): ${newUpi}`);
   await saveVault();
@@ -3103,11 +3143,59 @@ async function confirmPendingUPI(unitId) {
 }
 
 // ============================================================================
-// SECTION K: TAB 4A — SHG WEEKLY REPORT + EXCEL DOWNLOAD & UNIVERSAL SHARE
+// SECTION K: TAB 4 — WEEKLY REPORTS (SHG SUBMISSION + OFFICER STATUS TRACKER)
 // ============================================================================
 function renderWeeklyTab() {
   const isHi = lang === "hi";
+  const eff = getEffectiveUser();
   const units = getFilteredUnits();
+
+  // District / Block Officer & Developer View: All SHGs Weekly Submission Status
+  if (eff.role !== "shg") {
+    const unsubmitted = getUnsubmittedWeeklySHGs(units);
+    return `
+      <div class="civic-card p-4 space-y-3">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h2 class="text-sm font-extrabold">📋 ${isHi ? `SHG साप्ताहिक रिपोर्ट स्थिति (${units.length - unsubmitted.length}/${units.length} जमा)` : `SHG Weekly Report Tracker (${units.length - unsubmitted.length}/${units.length} Submitted)`}</h2>
+            <p class="text-[11px] text-muted-var">${isHi ? "जिन SHG ने साप्ताहिक रिपोर्ट जमा नहीं की है वे लाल/अंबर चिह्न में दिख रहे हैं" : "SHGs that have not submitted a report in the last 7 days are highlighted"}</p>
+          </div>
+          <span class="px-2.5 py-1 rounded-full ${unsubmitted.length ? "bg-civic-crimson" : "bg-civic-emerald"} text-white text-[10px] font-extrabold">
+            ${unsubmitted.length} ${isHi ? "लंबित (Not Submitted)" : "Not Submitted"}
+          </span>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse text-xs">
+            <thead>
+              <tr class="civic-muted text-[11px] font-extrabold">
+                <th class="p-2">${isHi ? "SHG / ASHA इकाई" : "SHG / ASHA Unit"}</th>
+                <th class="p-2">${isHi ? "स्थिति" : "Status"}</th>
+                <th class="p-2">${isHi ? "अंतिम रिपोर्ट" : "Latest Report"}</th>
+                <th class="p-2">${isHi ? "बिक्री" : "Sales"}</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y" style="border-color: var(--border-subtle);">
+              ${units.map(u => {
+                const latest = vault.weeklyReports.filter(w => w.unitId === u.id).slice(-1)[0];
+                const isMissing = unsubmitted.some(x => x.id === u.id);
+                return `
+                  <tr>
+                    <td class="p-2 font-bold capitalize">${escapeHTML(isHi ? u.hi : u.en)}<div class="text-[10px] text-muted-var">${escapeHTML(u.block)} • ${escapeHTML(u.gp)}</div></td>
+                    <td class="p-2 whitespace-nowrap"><span class="px-2 py-0.5 rounded-full ${isMissing ? "bg-civic-crimson" : "bg-civic-emerald"} text-white text-[10px] font-bold">${isMissing ? (isHi ? "जमा नहीं किया" : "Not Submitted") : (isHi ? "जमा किया" : "Submitted")}</span></td>
+                    <td class="p-2 whitespace-nowrap">${latest ? formatDateDisplay(latest.weekDate) : "-"}</td>
+                    <td class="p-2 font-extrabold whitespace-nowrap">${latest ? formatINR(latest.salesTotal) : "₹0"}</td>
+                  </tr>
+                `;
+              }).join("")}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `;
+  }
+
+  // SHG Single-Unit Weekly Report Submission
   const u = units[0];
   if (!u) return "";
   const m = getUnitMetrics(u.id);
@@ -3152,11 +3240,11 @@ function renderWeeklyTab() {
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
           <div>
-            <label class="block font-bold mb-1 text-sec-var">${isHi ? "भवन, बिजली, पानी व मशीन स्थिति (वैकल्पिक — खाली होने पर N/A)" : "Building, Electricity, Water & Machine Status (Optional — N/A if blank)"}</label>
+            <label class="block font-bold mb-1 text-sec-var">${isHi ? "भवन, बिजली, पानी व मशीन स्थिति (वैकल्पिक — N/A)" : "Building, Electricity, Water & Machine Status (Optional — N/A)"}</label>
             <input type="text" id="wr-facility" placeholder="N/A" class="w-full px-3 py-2 civic-input font-semibold" />
           </div>
           <div>
-            <label class="block font-bold mb-1 text-sec-var">${isHi ? "प्रशिक्षण / सहायता आवश्यकता (वैकल्पिक — खाली होने पर N/A)" : "Training / Support Needed (Optional — N/A if blank)"}</label>
+            <label class="block font-bold mb-1 text-sec-var">${isHi ? "प्रशिक्षण / सहायता आवश्यकता (वैकल्पिक — N/A)" : "Training / Support Needed (Optional — N/A)"}</label>
             <input type="text" id="wr-support" placeholder="N/A" class="w-full px-3 py-2 civic-input font-semibold" />
           </div>
         </div>
@@ -3195,26 +3283,12 @@ async function handleSaveWeeklyReport(ev, unitId) {
   const supportNeeded = sanitizeInput(document.getElementById("wr-support").value) || "N/A";
 
   vault.weeklyReports.push({
-    id: "WR" + Date.now(),
-    unitId,
-    weekDate,
-    daysOperated,
-    activeMembers,
-    rmOpening: 0,
-    rmProcured: m.rmIn,
-    rmConsumed: m.rmOut,
-    rmClosing: m.rmAvailable,
-    fgProduced: m.fgProd,
-    fgClosing: m.fgAvailable,
-    salesOffline: m.offlineSales,
-    salesOnline: m.onlineSales,
-    salesTotal: m.totalSales,
-    paidTotal: m.paidSales,
-    creditPending: m.creditPending,
-    facilityStatus,
-    supportNeeded,
-    sysStamp: nowSystemStamp(),
-    actor: getEffectiveUser().userId
+    id: "WR" + Date.now(), unitId, weekDate, daysOperated, activeMembers,
+    rmOpening: 0, rmProcured: m.rmIn, rmConsumed: m.rmOut, rmClosing: m.rmAvailable,
+    fgProduced: m.fgProd, fgClosing: m.fgAvailable,
+    salesOffline: m.offlineSales, salesOnline: m.onlineSales, salesTotal: m.totalSales,
+    paidTotal: m.paidSales, creditPending: m.creditPending,
+    facilityStatus, supportNeeded, sysStamp: nowSystemStamp(), actor: getEffectiveUser().userId
   });
 
   recordAudit("SHG", unitId, `Submitted Weekly Report (${weekDate}): Sales ${formatINR(m.totalSales)}`);
@@ -3468,7 +3542,7 @@ async function saveCustomMilestone(ev) {
 }
 
 // ============================================================================
-// SECTION M: TAB 5 — SETTINGS, ROLE-SCOPED AUDIT LOG, USER BLOCKING & SYNC
+// SECTION M: TAB 5 — SETTINGS, THEME SELECTOR, REVERSE AUDIT & DELETED DATA
 // ============================================================================
 function renderSettingsTab() {
   const isHi = lang === "hi";
@@ -3480,17 +3554,24 @@ function renderSettingsTab() {
   const hasBio = !!ds.credentialId;
   const activeUrl = (vault.cloudConfig && vault.cloudConfig.appsScriptUrl) || DEFAULT_APPS_SCRIPT_URL;
 
-  // SHGs only see their own unit's SHG logs; District/Admin logs are hidden from SHG accounts
   const visibleAuditLogs = eff.role === "shg"
     ? vault.auditLogs.filter(log => log.category === "SHG" && log.unitId === eff.unitId)
     : vault.auditLogs;
 
+  const themeOptions = [
+    { id: "light", label: isHi ? "☀️ लाइट (Light)" : "☀️ Light" },
+    { id: "dark", label: isHi ? "🌙 डार्क (Dark)" : "🌙 Dark" },
+    { id: "contrast", label: isHi ? "⚡ हाई-कंट्रास्ट" : "⚡ High-Contrast" },
+    { id: "system", label: isHi ? "📱 सिस्टम डिफ़ॉल्ट" : "📱 System Default" }
+  ];
+
   return `
+    <!-- Theme Selector + 4-Digit PIN + Fingerprint + Backup -->
     <div class="civic-card p-4 space-y-3">
       <div class="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h2 class="text-sm font-extrabold">🛡️ ${isHi ? "डिवाइस लॉक (4-अंक पिन / फिंगरप्रिंट) व डेटा बैकअप" : "Device Lock (4-Digit PIN / Fingerprint) & Vault"}</h2>
-          <p class="text-[11px] text-muted-var">${isHi ? "एक बार साइन इन के बाद 4-अंक पिन या फिंगरप्रिंट से सुरक्षित अनलॉक • AES-256" : "Persistent Login with 4-Digit Quick PIN & Fingerprint Protection • AES-256"}</p>
+          <h2 class="text-sm font-extrabold">🛡️ ${isHi ? "डिस्प्ले मोड, पिन / फिंगरप्रिंट लॉक व वॉल्ट" : "Theme Mode, PIN / Fingerprint Lock & Vault"}</h2>
+          <p class="text-[11px] text-muted-var">${isHi ? "लाइट, डार्क, हाई-कंट्रास्ट या सिस्टम डिफ़ॉल्ट चुनें • AES-256" : "Choose Light, Dark, High-Contrast, or System Default • AES-256"}</p>
         </div>
         <div class="flex flex-wrap gap-1.5">
           <button type="button" onclick="openSet4DigitPinModal()" class="px-3 py-2 btn-civic ${hasPin ? "bg-civic-emerald" : "bg-civic-ochre"} text-[11px]">
@@ -3502,7 +3583,15 @@ function renderSettingsTab() {
         </div>
       </div>
 
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+        ${themeOptions.map(opt => `
+          <button type="button" onclick="setThemeMode('${opt.id}')" class="py-2 px-2.5 rounded-xl text-[11px] font-extrabold border transition ${themeMode === opt.id ? "bg-civic-teal text-white" : "civic-muted"}">
+            ${opt.label}
+          </button>
+        `).join("")}
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1">
         <button type="button" onclick="export7SheetMasterExcel()" class="py-2.5 btn-civic bg-civic-teal text-[11px]">
           📊 ${isHi ? "7-शीट मास्टर Excel (.xls)" : "7-Sheet Master Excel (.xls)"}
         </button>
@@ -3520,7 +3609,7 @@ function renderSettingsTab() {
       <div class="civic-card p-4 space-y-3 border-l-4" style="border-left-color: var(--civic-emerald);">
         <div class="flex flex-wrap items-center justify-between gap-2">
           <div>
-            <h3 class="text-xs sm:text-sm font-extrabold">☁️ ${isHi ? "Google Sheets 2-Way लाइव सिंक (चेकलिस्ट, लक्ष्य, खाते व सभी प्रविष्टियाँ)" : "Google Sheets 2-Way Live Sync (Checklists, Targets, Accounts & All Entries)"}</h3>
+            <h3 class="text-xs sm:text-sm font-extrabold">☁️ ${isHi ? "Google Sheets 2-Way लाइव सिंक" : "Google Sheets 2-Way Live Sync"}</h3>
             <p class="text-[11px] text-muted-var">${isHi ? "केवल DMMU, CEO ZP या Developer ही सिंक लिंक बदल सकते हैं" : "Restricted to DMMU, CEO ZP, and Developer Root"}</p>
           </div>
           <span class="px-2.5 py-1 rounded-full whitespace-nowrap bg-civic-emerald text-white text-[10px] font-extrabold">
@@ -3549,7 +3638,7 @@ function renderSettingsTab() {
         <div class="flex flex-wrap items-center justify-between gap-2">
           <div>
             <h3 class="text-xs sm:text-sm font-extrabold">🚫 ${isHi ? "उपयोगकर्ता नियंत्रण व खाता ब्लॉक प्रबंधन (DMMU / CEO ZP / Dev)" : "User Access Control & Block Management (DMMU / CEO ZP / Dev)"}</h3>
-            <p class="text-[11px] text-muted-var">${isHi ? `ब्लॉक किए गए खाते सभी डिवाइस पर लॉगिन नहीं कर पाएंगे • SHG कोड: ${SHG_INVITE_SIGNUP_CODE} | अधिकारी कोड: ${DISTRICT_OFFICER_SIGNUP_CODE}` : `Blocked accounts are locked out across all devices • SHG Code: ${SHG_INVITE_SIGNUP_CODE} | Officer Code: ${DISTRICT_OFFICER_SIGNUP_CODE}`}</p>
+            <p class="text-[11px] text-muted-var">${isHi ? `SHG कोड: ${SHG_INVITE_SIGNUP_CODE} | अधिकारी कोड: ${DISTRICT_OFFICER_SIGNUP_CODE}` : `SHG Code: ${SHG_INVITE_SIGNUP_CODE} | Officer Code: ${DISTRICT_OFFICER_SIGNUP_CODE}`}</p>
           </div>
           <span class="px-2.5 py-0.5 rounded-full bg-civic-crimson text-white text-[10px] font-extrabold">${(vault.blockedUsers || []).length} Blocked</span>
         </div>
@@ -3593,16 +3682,24 @@ function renderSettingsTab() {
       </div>
     ` : ""}
 
+    <!-- REVERSE AUDIT LOG (MOST RECENT FIRST + FULL DELETED ENTRY SNAPSHOT) -->
     <div class="civic-card p-4 space-y-2.5">
-      <h3 class="text-xs font-extrabold">📜 ${isHi ? `परिवर्तन इतिहास (Audit Log — ${visibleAuditLogs.length})` : `Changes & Audit History (${visibleAuditLogs.length})`}</h3>
-      <div class="max-h-56 overflow-y-auto space-y-1.5 text-xs">
-        ${visibleAuditLogs.slice(0, 35).map(log => `
-          <div class="p-2.5 rounded-xl civic-muted flex items-center justify-between gap-2">
-            <div>
-              <span class="px-2 py-0.5 rounded-md ${log.category === "SHG" ? "bg-civic-blue" : "bg-civic-indigo"} text-white text-[10px] font-bold">${escapeHTML(log.actorId)}</span>
-              <span class="font-semibold ml-1">${escapeHTML(log.action)}</span>
+      <h3 class="text-xs font-extrabold">📜 ${isHi ? `परिवर्तन व हटाए गए डेटा का इतिहास (नवीनतम सबसे ऊपर — ${visibleAuditLogs.length})` : `Audit & Deleted Entry History (Newest First — ${visibleAuditLogs.length})`}</h3>
+      <div class="max-h-64 overflow-y-auto space-y-1.5 text-xs">
+        ${visibleAuditLogs.slice(0, 40).map(log => `
+          <div class="p-2.5 rounded-xl civic-muted space-y-1">
+            <div class="flex items-center justify-between gap-2">
+              <div>
+                <span class="px-2 py-0.5 rounded-md ${log.category === "SHG" ? "bg-civic-blue" : "bg-civic-indigo"} text-white text-[10px] font-bold">${escapeHTML(log.actorId)}</span>
+                <span class="font-semibold ml-1">${escapeHTML(log.action)}</span>
+              </div>
+              <span class="font-mono text-[10px] text-muted-var shrink-0">${escapeHTML(log.sysStamp)}</span>
             </div>
-            <span class="font-mono text-[10px] text-muted-var shrink-0">${escapeHTML(log.sysStamp)}</span>
+            ${log.deletedSnapshot ? `
+              <div class="p-2 rounded-lg bg-black/15 font-mono text-[10px] break-all">
+                ${escapeHTML(JSON.stringify(log.deletedSnapshot))}
+              </div>
+            ` : ""}
           </div>
         `).join("")}
       </div>
@@ -3632,15 +3729,25 @@ async function voidEntryByAdmin(kind, entryId, unitId) {
   if (!Array.isArray(vault.deletedIds)) vault.deletedIds = [];
   if (!vault.deletedIds.includes(entryId)) vault.deletedIds.push(entryId);
 
-  if (kind === "rm") vault.rmLogs = vault.rmLogs.filter(x => x.id !== entryId);
-  else if (kind === "fg") vault.fgLogs = vault.fgLogs.filter(x => x.id !== entryId);
-  else if (kind === "sales") vault.salesLogs = vault.salesLogs.filter(x => x.id !== entryId);
-  else if (kind === "weekly") vault.weeklyReports = vault.weeklyReports.filter(x => x.id !== entryId);
+  let removedObj = null;
+  if (kind === "rm") {
+    removedObj = vault.rmLogs.find(x => x.id === entryId) || null;
+    vault.rmLogs = vault.rmLogs.filter(x => x.id !== entryId);
+  } else if (kind === "fg") {
+    removedObj = vault.fgLogs.find(x => x.id === entryId) || null;
+    vault.fgLogs = vault.fgLogs.filter(x => x.id !== entryId);
+  } else if (kind === "sales") {
+    removedObj = vault.salesLogs.find(x => x.id === entryId) || null;
+    vault.salesLogs = vault.salesLogs.filter(x => x.id !== entryId);
+  } else if (kind === "weekly") {
+    removedObj = vault.weeklyReports.find(x => x.id === entryId) || null;
+    vault.weeklyReports = vault.weeklyReports.filter(x => x.id !== entryId);
+  }
 
-  recordAudit("ADMIN", unitId, `Voided/Deleted ${kind.toUpperCase()} entry [${entryId}]`);
+  recordAudit("ADMIN", unitId, `Voided/Deleted ${kind.toUpperCase()} entry [${entryId}]`, removedObj);
   await saveVault();
   renderAll();
-  showToast(lang === "hi" ? "प्रविष्टि निरस्त (Void) की गई व ऑडिट लॉग में दर्ज हुई" : "Entry voided and recorded in Audit Log");
+  showToast(lang === "hi" ? "प्रविष्टि निरस्त (Void) की गई व पूरा विवरण ऑडिट लॉग में दर्ज हुआ" : "Entry voided with full data saved in Audit Log");
 }
 
 function openResetAccountPassModal(uid) {
@@ -4085,6 +4192,7 @@ function renderAll() {
 
 async function initASHAApp() {
   vault = await loadVault();
+  themeMode = (vault.deviceSecurity && vault.deviceSecurity.themeMode) || "light";
   applyTheme();
   applyLanguageStaticLabels();
   selectLoginRole("shg");
@@ -4093,7 +4201,7 @@ async function initASHAApp() {
   if (ds.activeSessionUserId) {
     const activeAcc = vault.accounts.find(a => a.userId === ds.activeSessionUserId);
     if (activeAcc && !isUserBlocked(activeAcc.userId)) {
-      await completeLogin(activeAcc, false);
+      await completeLogin(activeAcc);
       return;
     }
   }
