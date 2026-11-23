@@ -222,14 +222,9 @@
           <span class="px-2.5 py-1 rounded-full text-[10px] font-extrabold tracking-wide bg-white/15 text-amber-200 border border-white/20">
             NRLM SURGUJA • AES-256
           </span>
-          <div class="flex items-center gap-1.5 shrink-0">
-            <button type="button" onclick="cycleTheme()" id="auth-theme-btn" class="px-2.5 py-1 rounded-lg bg-white/15 border border-white/25 text-white text-[11px] font-bold whitespace-nowrap">
-              ☀️ Light
-            </button>
-            <button type="button" onclick="toggleLang()" id="auth-lang-btn" class="px-2.5 py-1 rounded-lg bg-amber-200 text-slate-900 text-[11px] font-extrabold whitespace-nowrap">
-              English
-            </button>
-          </div>
+          <button type="button" onclick="toggleLang()" id="auth-lang-btn" class="px-2.5 py-1 rounded-lg bg-amber-200 text-slate-900 text-[11px] font-extrabold whitespace-nowrap">
+            English
+          </button>
         </div>
         <div>
           <h1 id="auth-title" class="text-base font-extrabold text-white leading-snug">अटल समृद्धि हाट योजना (ASHA) - सरगुजा</h1>
@@ -437,20 +432,16 @@
   </div>
 
   <!-- ===================================================================== -->
-  <!-- 3. CLEAN NON-OVERLAPPING HEADER & GLOBAL BLOCK/UNIT FILTERS          -->
+  <!-- 3. CLEAN HEADER (NO THEME BUTTON) & GLOBAL BLOCK/UNIT FILTERS        -->
   <!-- ===================================================================== -->
   <header class="bg-civic-teal px-3.5 pb-3 safe-top shadow-sm shrink-0 z-30 space-y-2">
-    <!-- Row 1: Sync Pill + Theme / Lang / Lock -->
-    <div class="flex items-center justify-between gap-2 flex-wrap">
+    <div class="flex items-center justify-between gap-2">
       <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-white/15 text-emerald-100 border border-white/20 whitespace-nowrap">
         <span class="w-1.5 h-1.5 rounded-full bg-emerald-300 shrink-0"></span>
         <span id="hdr-net-text">Cloud Sync • AES-256</span>
       </span>
 
       <div class="flex items-center gap-1.5 shrink-0">
-        <button type="button" onclick="cycleTheme()" id="hdr-theme-btn" class="px-2.5 py-1 rounded-lg bg-white/15 border border-white/25 text-white text-[11px] font-bold whitespace-nowrap">
-          ☀️ Light
-        </button>
         <button type="button" onclick="toggleLang()" id="hdr-lang-btn" class="px-2.5 py-1 rounded-lg bg-amber-200 text-slate-900 text-[11px] font-extrabold whitespace-nowrap">
           English
         </button>
@@ -460,7 +451,6 @@
       </div>
     </div>
 
-    <!-- Row 2: Avatar + Portal Title + Role + Active User -->
     <div class="flex items-center gap-2.5 min-w-0">
       <div id="hdr-avatar" class="px-2.5 h-10 min-w-[44px] rounded-full bg-amber-200 text-slate-900 font-black text-[10px] tracking-tight flex items-center justify-center shrink-0 overflow-hidden border-2 border-white/30">
         ASHA
@@ -474,7 +464,6 @@
       </div>
     </div>
 
-    <!-- Row 3: Block & Unit Dropdowns + Reset -->
     <div id="global-filter-bar" class="grid grid-cols-12 gap-1.5 items-center pt-0.5">
       <select id="filter-block" onchange="onGlobalBlockChange(this.value)" class="col-span-5 sm:col-span-3 px-2.5 py-1.5 rounded-xl bg-white/15 border border-white/25 text-white text-[11px] font-bold focus:outline-none truncate"></select>
       <select id="filter-unit" onchange="onGlobalUnitChange(this.value)" class="col-span-7 sm:col-span-6 px-2.5 py-1.5 rounded-xl bg-white/15 border border-white/25 text-white text-[11px] font-bold focus:outline-none truncate"></select>
@@ -607,13 +596,13 @@ const MASTER_CHECKLIST_ITEMS = [
 ];
 
 // ============================================================================
-// SECTION B: CRYPTOGRAPHIC VAULT, THEME MODES & PERSISTENT SESSION
+// SECTION B: CRYPTOGRAPHIC VAULT, THEME MODES, STICKY PREFS & SESSION
 // ============================================================================
-const VAULT_STORAGE_KEY = "SURGUJA_ASHA_SECURE_VAULT_PROD_V5";
+const VAULT_STORAGE_KEY = "SURGUJA_ASHA_SECURE_VAULT_PROD_V6";
 const VAULT_SALT = "SURGUJA-NRLM-ASHA-2026-ZERO-SERVER";
 
 let lang = "hi";
-let themeMode = "light"; // "light" | "dark" | "contrast" | "system"
+let themeMode = "light";
 let theme = "light";
 let currentUser = null;
 let devImpersonateId = null;
@@ -629,6 +618,8 @@ let lockoutUntil = 0;
 let inactivityTimer = null;
 let systemClockTimer = null;
 let pendingSignUpPhoto = "";
+let suggestionLimit = 5;
+let showAllUnsubmittedWeekly = false;
 
 function resolveSystemTheme() {
   try {
@@ -653,17 +644,6 @@ function applyTheme() {
   const effectiveTheme = themeMode === "system" ? resolveSystemTheme() : themeMode;
   theme = effectiveTheme;
   document.documentElement.setAttribute("data-theme", effectiveTheme);
-  const label = effectiveTheme === "light" ? "☀️ Light" : (effectiveTheme === "dark" ? "🌙 Dark" : "⚡ High-Contrast");
-  ["auth-theme-btn", "hdr-theme-btn"].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.textContent = label;
-  });
-}
-
-function cycleTheme() {
-  const order = ["light", "dark", "contrast", "system"];
-  const next = order[(order.indexOf(themeMode) + 1) % order.length];
-  setThemeMode(next);
 }
 
 try {
@@ -814,17 +794,10 @@ function buildDefaultAccounts() {
   const list = [];
   INITIAL_UNITS.forEach((u, idx) => {
     list.push({
-      userId: u.id,
-      role: "shg",
-      designation: "SHG Member / Udyog Sakhi",
-      name: `Udyog Sakhi (${u.gp})`,
-      shgName: `${u.gp} Mahila SHG`,
-      mobile: `9425200${String(idx + 1).padStart(3, "0")}`,
-      block: u.block,
-      unitId: u.id,
-      photo: "",
-      plainHint: "asha123",
-      passHash: ""
+      userId: u.id, role: "shg", designation: "SHG Member / Udyog Sakhi",
+      name: `Udyog Sakhi (${u.gp})`, shgName: `${u.gp} Mahila SHG`,
+      mobile: `9425200${String(idx + 1).padStart(3, "0")}`, block: u.block, unitId: u.id,
+      photo: "", plainHint: "asha123", passHash: ""
     });
   });
 
@@ -839,17 +812,9 @@ function buildDefaultAccounts() {
   ];
   bpoCodes.forEach((b, i) => {
     list.push({
-      userId: b.id,
-      role: "officer",
-      designation: "Block Officer (BPO)",
-      name: b.name,
-      shgName: `BMMU ${b.block}`,
-      mobile: `942530010${i}`,
-      block: b.block,
-      unitId: "ALL",
-      photo: "",
-      plainHint: "bpo123",
-      passHash: ""
+      userId: b.id, role: "officer", designation: "Block Officer (BPO)",
+      name: b.name, shgName: `BMMU ${b.block}`, mobile: `942530010${i}`,
+      block: b.block, unitId: "ALL", photo: "", plainHint: "bpo123", passHash: ""
     });
   });
 
@@ -882,6 +847,7 @@ function buildSeedState() {
     salesLogs: [],
     weeklyReports: [],
     auditLogs: [],
+    recentFormPrefs: {},
     deviceSecurity: {
       rememberedUserId: "",
       activeSessionUserId: "",
@@ -918,6 +884,7 @@ async function loadVault() {
         if (!dec.cloudConfig) dec.cloudConfig = { appsScriptUrl: DEFAULT_APPS_SCRIPT_URL, masterSheetUrl: "", lastSyncedAt: "" };
         if (!dec.cloudConfig.appsScriptUrl) dec.cloudConfig.appsScriptUrl = DEFAULT_APPS_SCRIPT_URL;
         if (!dec.deviceSecurity) dec.deviceSecurity = { rememberedUserId: "", activeSessionUserId: "", pinHash: "", credentialId: "", themeMode: "light", themeChosenOnce: false };
+        if (!dec.recentFormPrefs) dec.recentFormPrefs = {};
         if (!Array.isArray(dec.blockedUsers)) dec.blockedUsers = [];
         if (!Array.isArray(dec.deletedIds)) dec.deletedIds = [];
         await ensurePasswordHashes(dec);
@@ -941,6 +908,27 @@ async function saveVault(stateObj = vault) {
   } catch (e) {
     console.error("Vault save error:", e);
   }
+}
+
+function getUnitFormPrefs(unitId) {
+  const u = vault.units.find(x => x.id === unitId) || {};
+  const saved = (vault.recentFormPrefs && vault.recentFormPrefs[unitId]) || {};
+  return {
+    rmType: saved.rmType || "IN",
+    rmUnit: saved.rmUnit || u.unitType || "Kg",
+    rmPayMode: saved.rmPayMode || "Bank Transfer",
+    rmDueDays: saved.rmDueDays || 15,
+    fgUnit: saved.fgUnit || u.unitType || "Kg",
+    slChannel: saved.slChannel || "Offline",
+    slPayMode: saved.slPayMode || "UPI",
+    slDueDays: saved.slDueDays || 15
+  };
+}
+
+async function updateUnitFormPrefs(unitId, patch) {
+  if (!vault.recentFormPrefs) vault.recentFormPrefs = {};
+  vault.recentFormPrefs[unitId] = { ...(vault.recentFormPrefs[unitId] || {}), ...patch };
+  await saveVault();
 }
 
 function recordAudit(category, unitId, actionText, deletedSnapshot = null) {
@@ -1033,12 +1021,12 @@ function getPaymentReminders(unitsList) {
   const unitIds = new Set(unitsList.map(u => u.id));
   const today = todayISO();
   const payable = vault.rmLogs
-    .filter(r => unitIds.has(r.unitId) && r.type === "IN" && r.dueDate && (r.paymentMode === "Credit" || r.paymentMode === "Hybrid" || r.paymentStatus === "Due"))
-    .map(r => ({ kind: "PAYABLE", unitId: r.unitId, title: `${r.material} (${r.batchNo})`, amount: Number(r.amount || 0), dueDate: r.dueDate, overdue: r.dueDate <= today }));
+    .filter(r => unitIds.has(r.unitId) && r.type === "IN" && r.dueDate && Number(r.creditAmount || 0) > 0)
+    .map(r => ({ kind: "PAYABLE", unitId: r.unitId, title: `${r.material} (${r.batchNo})`, amount: Number(r.creditAmount || 0), dueDate: r.dueDate, overdue: r.dueDate <= today }));
 
   const receivable = vault.salesLogs
-    .filter(sl => unitIds.has(sl.unitId) && sl.dueDate && Number(sl.paidAmount ?? sl.total) < Number(sl.total))
-    .map(sl => ({ kind: "RECEIVABLE", unitId: sl.unitId, title: `${sl.buyer} • ${sl.product}`, amount: Math.max(0, Number(sl.total || 0) - Number(sl.paidAmount ?? sl.total)), dueDate: sl.dueDate, overdue: sl.dueDate <= today }));
+    .filter(sl => unitIds.has(sl.unitId) && sl.dueDate && Number(sl.creditAmount ?? Math.max(0, Number(sl.total || 0) - Number(sl.paidAmount ?? sl.total))) > 0)
+    .map(sl => ({ kind: "RECEIVABLE", unitId: sl.unitId, title: `${sl.buyer} • ${sl.product}`, amount: Number(sl.creditAmount ?? Math.max(0, Number(sl.total || 0) - Number(sl.paidAmount ?? sl.total))), dueDate: sl.dueDate, overdue: sl.dueDate <= today }));
 
   return [...payable, ...receivable];
 }
@@ -1107,7 +1095,7 @@ function getUnitMetrics(unitId) {
 }
 
 // ============================================================================
-// SECTION D: SMART SHELF-LIFE INFERENCE, AUTO-FILTER SUGGESTIONS & WATCH
+// SECTION D: SMART SHELF-LIFE, AUTO-FILTER SUGGESTIONS & LOAD MORE
 // ============================================================================
 function inferShelfLifeDays(unitId, productName) {
   const cleanName = (productName || "").toLowerCase().trim();
@@ -1145,7 +1133,8 @@ function getRecentFrequentNames(kind, unitId) {
     .map(([name]) => name);
 }
 
-function updateSuggestionList(kind, unitId, queryText, listElId, inputElId) {
+function updateSuggestionList(kind, unitId, queryText, listElId, inputElId, resetLimit = true) {
+  if (resetLimit) suggestionLimit = 5;
   const listEl = document.getElementById(listElId);
   if (!listEl) return;
   const all = getRecentFrequentNames(kind, unitId);
@@ -1156,12 +1145,25 @@ function updateSuggestionList(kind, unitId, queryText, listElId, inputElId) {
     listEl.innerHTML = "";
     return;
   }
-  listEl.innerHTML = matches.slice(0, 6).map(item => `
-    <button type="button" onclick="selectSuggestion('${escapeHTML(inputElId)}', '${escapeHTML(listElId)}', '${escapeHTML(item)}')" class="w-full px-3 py-2 text-left text-xs font-bold hover:opacity-80 border-b last:border-b-0" style="border-color: var(--border-subtle);">
+  const slice = matches.slice(0, suggestionLimit);
+  const hasMore = matches.length > suggestionLimit;
+
+  listEl.innerHTML = slice.map(item => `
+    <button type="button" onclick="selectSuggestion('${escapeHTML(inputElId)}', '${escapeHTML(listElId)}', '${escapeHTML(item)}')" class="w-full px-3 py-2 text-left text-xs font-bold hover:opacity-80 border-b" style="border-color: var(--border-subtle);">
       ${escapeHTML(item)}
     </button>
-  `).join("");
+  `).join("") + (hasMore ? `
+    <button type="button" onclick="loadMoreSuggestions('${kind}', '${escapeHTML(unitId)}', '${escapeHTML(listElId)}', '${escapeHTML(inputElId)}')" class="w-full px-3 py-2 text-center text-[11px] font-extrabold text-civic-blue hover:opacity-80">
+      ${lang === "hi" ? "+ और देखें (Load More)" : "+ Load More"}
+    </button>
+  ` : "");
   listEl.classList.remove("hidden");
+}
+
+function loadMoreSuggestions(kind, unitId, listElId, inputElId) {
+  suggestionLimit += 5;
+  const q = (document.getElementById(inputElId) && document.getElementById(inputElId).value) || "";
+  updateSuggestionList(kind, unitId, q, listElId, inputElId, false);
 }
 
 function selectSuggestion(inputId, listId, val) {
@@ -1302,7 +1304,7 @@ async function handleQuickPinUnlock(ev) {
     return;
   }
 
-  await completeLogin(acc, false);
+  await completeLogin(acc);
 }
 
 function openSet4DigitPinModal() {
@@ -1394,7 +1396,7 @@ async function triggerSavedBiometricUnlock() {
       }
     });
     if (assertion) {
-      await completeLogin(acc, false);
+      await completeLogin(acc);
     }
   } catch (e) {
     showToast(lang === "hi" ? "बायोमेट्रिक सत्यापन विफल — कृपया 4-अंकों का पिन डालें" : "Biometric failed — enter your 4-digit PIN", true);
@@ -1567,7 +1569,7 @@ async function handleFirstTimeSignUp(ev) {
   pendingSignUpPhoto = "";
   recordAudit(role === "shg" ? "SHG" : "ADMIN", unitId, `New Account Registered: ${userId} (${name})`);
   await saveVault();
-  await completeLogin(newAcc, false);
+  await completeLogin(newAcc);
   openFirstLoginThemeModal();
 }
 
@@ -1607,7 +1609,7 @@ async function handleSignIn(ev) {
     vault.deviceSecurity.credentialId = "";
   }
   const firstTimeSetup = !vault.deviceSecurity.themeChosenOnce || !vault.deviceSecurity.pinHash;
-  await completeLogin(acc, false);
+  await completeLogin(acc);
   if (firstTimeSetup) {
     if (!vault.deviceSecurity.themeChosenOnce) openFirstLoginThemeModal();
     else openSet4DigitPinModal();
@@ -1631,6 +1633,7 @@ async function completeLogin(acc) {
   devImpersonateId = null;
   activeTab = "dashboard";
   tabErrorFlags = {};
+  showAllUnsubmittedWeekly = false;
 
   vault.deviceSecurity.rememberedUserId = acc.userId;
   vault.deviceSecurity.activeSessionUserId = acc.userId;
@@ -1862,16 +1865,10 @@ function renderHeaderAndNav() {
     { id: "dashboard", icon: "🏠", label: isHi ? "डैशबोर्ड" : "Dashboard" },
     { id: "stock", icon: "📦", label: isHi ? "स्टॉक व उत्पादन" : "Stock & Production" },
     { id: "sales", icon: "📊", label: isHi ? "बिक्री व UPI QR" : "Sales & UPI QR" },
-    isSHG
-      ? { id: "weekly", icon: "📋", label: isHi ? "साप्ताहिक रिपोर्ट" : "Weekly Report" }
-      : { id: "checklist", icon: "✅", label: isHi ? `चेकलिस्ट (${totalCheckCount})` : `Checklist (${totalCheckCount})` },
+    { id: "weekly", icon: "📋", label: isHi ? "साप्ताहिक रिपोर्ट" : (isSHG ? "Weekly Report" : "Weekly Reports") },
+    ...(isSHG ? [] : [{ id: "checklist", icon: "✅", label: isHi ? `चेकलिस्ट (${totalCheckCount})` : `Checklist (${totalCheckCount})` }]),
     { id: "settings", icon: "⚙️", label: isHi ? "सेटिंग्स व वॉल्ट" : "Settings & Vault" }
   ];
-
-  // Add Officer Weekly Reports tab for District/Block Officers & Developer
-  if (!isSHG) {
-    navItems.splice(3, 0, { id: "weekly", icon: "📋", label: isHi ? "साप्ताहिक रिपोर्ट" : "Weekly Reports" });
-  }
 
   document.getElementById("sidebar-nav-list").innerHTML = navItems.map(n => {
     const active = activeTab === n.id;
@@ -1901,6 +1898,11 @@ function renderHeaderAndNav() {
 // ============================================================================
 // SECTION G: TAB 1 — DASHBOARD, NON-SUBMITTED SHG ALERT & WASTAGE ALERT
 // ============================================================================
+function toggleUnsubmittedWeeklyExpand() {
+  showAllUnsubmittedWeekly = !showAllUnsubmittedWeekly;
+  renderAll();
+}
+
 function renderDashboardTab() {
   const isHi = lang === "hi";
   const units = getFilteredUnits();
@@ -1908,13 +1910,12 @@ function renderDashboardTab() {
   const isTopAdmin = isDistrictTopAuthority(eff);
   const isOfficerView = eff.role !== "shg";
 
-  let grandSales = 0, offTrackCount = 0, reorderCount = 0, wastageAlertCount = 0, districtEscCount = 0;
+  let grandSales = 0, reorderCount = 0, wastageAlertCount = 0, districtEscCount = 0;
   const phaseCounts = { "Phase 1": 0, "Phase 2": 0, "Phase 3": 0, "Hold": 0 };
 
   units.forEach(u => {
     const m = getUnitMetrics(u.id);
     grandSales += m.totalSales;
-    if (m.targetPct < 50) offTrackCount++;
     if (m.isReorderAlert) reorderCount++;
     if (m.isWastageAlert) wastageAlertCount++;
     if (m.isEscalatedToDistrict) districtEscCount++;
@@ -1922,6 +1923,9 @@ function renderDashboardTab() {
   });
 
   const unsubmittedSHGs = getUnsubmittedWeeklySHGs(units);
+  const shownUnsub = showAllUnsubmittedWeekly ? unsubmittedSHGs : unsubmittedSHGs.slice(0, 8);
+  const extraCount = unsubmittedSHGs.length - 8;
+
   const weeklyAlertHTML = isOfficerView && unsubmittedSHGs.length ? `
     <div class="civic-card p-3.5 border-l-4 space-y-2" style="border-left-color: var(--civic-crimson);">
       <div class="flex flex-wrap items-center justify-between gap-2">
@@ -1933,8 +1937,16 @@ function renderDashboardTab() {
         </button>
       </div>
       <div class="flex flex-wrap gap-1.5 text-[11px]">
-        ${unsubmittedSHGs.slice(0, 8).map(u => `<span class="px-2 py-0.5 rounded-md civic-muted font-bold">${escapeHTML(u.id)} (${escapeHTML(u.gp)})</span>`).join("")}
-        ${unsubmittedSHGs.length > 8 ? `<span class="px-2 py-0.5 rounded-md civic-muted font-bold">+${unsubmittedSHGs.length - 8} more</span>` : ""}
+        ${shownUnsub.map(u => `<span class="px-2 py-0.5 rounded-md civic-muted font-bold">${escapeHTML(u.id)} (${escapeHTML(u.gp)})</span>`).join("")}
+        ${!showAllUnsubmittedWeekly && extraCount > 0 ? `
+          <button type="button" onclick="toggleUnsubmittedWeeklyExpand()" class="px-2 py-0.5 rounded-md bg-civic-ochre text-white font-bold cursor-pointer">
+            +${extraCount} more
+          </button>
+        ` : (showAllUnsubmittedWeekly && extraCount > 0 ? `
+          <button type="button" onclick="toggleUnsubmittedWeeklyExpand()" class="px-2 py-0.5 rounded-md civic-muted font-bold cursor-pointer">
+            ${isHi ? "कम करें" : "Show Less"}
+          </button>
+        ` : "")}
       </div>
     </div>
   ` : "";
@@ -2334,7 +2346,7 @@ function openDrillDown(type, param = "") {
 }
 
 // ============================================================================
-// SECTION I: TAB 2 — STOCK, LIVE AUTO-FILTER SUGGESTIONS, WASTAGE & DUE DATES
+// SECTION I: TAB 2 — STOCK, STICKY PREFS, CASH + CREDIT -> HYBRID & WASTAGE
 // ============================================================================
 function renderStockTab() {
   const isHi = lang === "hi";
@@ -2382,8 +2394,11 @@ function renderStockTab() {
   const u = units[0];
   if (!u) return "";
   const m = getUnitMetrics(u.id);
+  const prefs = getUnitFormPrefs(u.id);
   const unitRMLogs = vault.rmLogs.filter(r => r.unitId === u.id).slice().reverse();
   const unitFGLogs = vault.fgLogs.filter(f => f.unitId === u.id).slice().reverse();
+  const showRMIn = prefs.rmType === "IN";
+  const showRMCreditFields = showRMIn && (prefs.rmPayMode === "Credit" || prefs.rmPayMode === "Hybrid");
 
   return `
     <div class="civic-card p-4 space-y-3">
@@ -2418,7 +2433,7 @@ function renderStockTab() {
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-      <!-- RM FORM WITH LIVE AUTO-FILTER MATERIAL SUGGESTIONS & CREDIT/HYBRID DUE DATE -->
+      <!-- RAW MATERIAL INWARD / USAGE WITH STICKY PREFS, CASH + CREDIT -> HYBRID & SCHEDULED PAYMENT DATE -->
       <div class="civic-card p-4 space-y-3">
         <div class="flex items-center justify-between gap-2">
           <h3 class="text-xs font-extrabold">🌾 ${isHi ? "कच्चा माल (RM) आवक / खपत व अपव्यय" : "Raw Material (RM) Inward / Usage & Wastage"}</h3>
@@ -2429,9 +2444,9 @@ function renderStockTab() {
           <div class="grid grid-cols-2 gap-2">
             <div>
               <label class="block font-bold mb-1 text-sec-var">${isHi ? "प्रविष्टि प्रकार *" : "Entry Type *"}</label>
-              <select id="rm-type" onchange="toggleRMPaymentBox()" class="w-full px-3 py-2 civic-input font-bold">
-                <option value="IN">${isHi ? "+ कच्चा माल खरीद (Inward)" : "+ RM Purchase (Inward)"}</option>
-                <option value="OUT">${isHi ? "- उत्पादन में उपयोग (Usage)" : "- RM Consumed (Usage)"}</option>
+              <select id="rm-type" onchange="onRMTypeOrModeChange('${u.id}')" class="w-full px-3 py-2 civic-input font-bold">
+                <option value="IN" ${prefs.rmType === "IN" ? "selected" : ""}>${isHi ? "+ कच्चा माल खरीद (Inward)" : "+ RM Purchase (Inward)"}</option>
+                <option value="OUT" ${prefs.rmType === "OUT" ? "selected" : ""}>${isHi ? "- उत्पादन में उपयोग (Usage)" : "- RM Consumed (Usage)"}</option>
               </select>
             </div>
             <div>
@@ -2446,14 +2461,14 @@ function renderStockTab() {
               <input type="text" id="rm-material" required autocomplete="off"
                 onfocus="updateSuggestionList('rm', '${u.id}', this.value, 'rm-sugg-list', 'rm-material')"
                 oninput="updateSuggestionList('rm', '${u.id}', this.value, 'rm-sugg-list', 'rm-material')"
-                placeholder="${isHi ? "टाइप करें (हाल/अक्सर उपयोग सूची स्वतः छनेगी)" : "Type to auto-filter recent/frequent items"}"
+                placeholder="${isHi ? "टाइप करें" : "Type to filter recent/frequent"}"
                 class="w-full px-3 py-2 civic-input font-semibold" />
-              <div id="rm-sugg-list" class="hidden absolute left-0 right-0 mt-1 rounded-xl civic-card shadow-lg z-20 max-h-36 overflow-y-auto"></div>
+              <div id="rm-sugg-list" class="hidden absolute left-0 right-0 mt-1 rounded-xl civic-card shadow-lg z-20 max-h-40 overflow-y-auto"></div>
             </div>
             <div>
               <label class="block font-bold mb-1 text-sec-var">${isHi ? "इकाई (Unit) *" : "Unit *"}</label>
-              <select id="rm-unit-type" class="w-full px-3 py-2 civic-input font-bold">
-                ${STANDARD_UNITS.map(st => `<option value="${st}" ${u.unitType === st ? "selected" : ""}>${st}</option>`).join("")}
+              <select id="rm-unit-type" onchange="updateUnitFormPrefs('${u.id}', { rmUnit: this.value })" class="w-full px-3 py-2 civic-input font-bold">
+                ${STANDARD_UNITS.map(st => `<option value="${st}" ${prefs.rmUnit === st ? "selected" : ""}>${st}</option>`).join("")}
               </select>
             </div>
           </div>
@@ -2463,42 +2478,42 @@ function renderStockTab() {
               <label class="block font-bold mb-1 text-sec-var">${isHi ? "मात्रा / वजन *" : "Qty / Weight *"}</label>
               <input type="number" id="rm-qty" step="0.01" min="0.01" required placeholder="0" class="w-full px-3 py-2 civic-input font-extrabold" />
             </div>
-            <div id="rm-waste-wrap" class="hidden">
+            <div id="rm-waste-wrap" class="${showRMIn ? "hidden" : ""}">
               <label class="block font-bold mb-1 text-civic-crimson">${isHi ? `अपव्यय मात्रा (सीमा ${m.wastageLimitPct}%)` : `Wastage Qty (Limit ${m.wastageLimitPct}%)`}</label>
-              <input type="number" id="rm-waste" step="0.01" min="0" value="0" class="w-full px-3 py-2 civic-input font-extrabold" />
+              <input type="number" id="rm-waste" step="0.01" min="0" placeholder="0" class="w-full px-3 py-2 civic-input font-extrabold" />
             </div>
           </div>
 
-          <div id="rm-payment-wrap" class="grid grid-cols-2 gap-2">
+          <div id="rm-payment-wrap" class="${showRMIn ? "grid" : "hidden"} grid-cols-2 gap-2">
             <div>
-              <label class="block font-bold mb-1 text-sec-var">${isHi ? "खरीद राशि (₹)" : "Purchase Amount (₹)"}</label>
-              <input type="number" id="rm-amount" min="0" value="0" class="w-full px-3 py-2 civic-input font-bold" />
+              <label class="block font-bold mb-1 text-sec-var">${isHi ? "कुल खरीद राशि (₹)" : "Purchase Amount (₹)"}</label>
+              <input type="number" id="rm-amount" min="0" placeholder="0" class="w-full px-3 py-2 civic-input font-bold" />
             </div>
             <div>
               <label class="block font-bold mb-1 text-sec-var">${isHi ? "भुगतान माध्यम" : "Payment Mode"}</label>
-              <select id="rm-paymode" onchange="toggleHybridAndDueDate('rm')" class="w-full px-3 py-2 civic-input font-bold">
-                <option value="Bank Transfer">Bank Transfer / NEFT</option>
-                <option value="UPI">UPI</option>
-                <option value="Cash">Cash</option>
-                <option value="Credit">Credit / Udhaar</option>
-                <option value="Hybrid">Hybrid (Split Payment)</option>
+              <select id="rm-paymode" onchange="onRMTypeOrModeChange('${u.id}')" class="w-full px-3 py-2 civic-input font-bold">
+                <option value="Bank Transfer" ${prefs.rmPayMode === "Bank Transfer" ? "selected" : ""}>Bank Transfer / NEFT</option>
+                <option value="UPI" ${prefs.rmPayMode === "UPI" ? "selected" : ""}>UPI</option>
+                <option value="Cash" ${prefs.rmPayMode === "Cash" ? "selected" : ""}>Cash</option>
+                <option value="Credit" ${prefs.rmPayMode === "Credit" ? "selected" : ""}>Credit</option>
+                <option value="Hybrid" ${prefs.rmPayMode === "Hybrid" ? "selected" : ""}>Hybrid</option>
               </select>
             </div>
           </div>
 
-          <div id="rm-credit-wrap" class="hidden grid grid-cols-1 sm:grid-cols-2 gap-2 p-2.5 rounded-xl civic-muted">
+          <div id="rm-credit-wrap" class="${showRMCreditFields ? "grid" : "hidden"} grid-cols-1 sm:grid-cols-3 gap-2 p-2.5 rounded-xl civic-muted">
             <div>
-              <label class="block font-bold mb-1 text-civic-emerald">${isHi ? "अभी भुगतान की गई राशि (₹)" : "Amount Paid Now (₹)"}</label>
-              <input type="number" id="rm-paid-now" min="0" value="0" class="w-full px-3 py-2 civic-input font-bold" />
+              <label class="block font-bold mb-1 text-civic-emerald">${isHi ? "नकद प्राप्त / भुगतान (Cash ₹)" : "Cash Paid (₹)"}</label>
+              <input type="number" id="rm-cash-paid" min="0" placeholder="0" class="w-full px-3 py-2 civic-input font-bold" />
             </div>
             <div>
-              <label class="block font-bold mb-1 text-civic-crimson">${isHi ? "भुगतान निर्धारित तिथि (Scheduled Date)" : "Scheduled Payment Date"}</label>
-              <input type="date" id="rm-due-date" value="${addDaysISO(todayISO(), 15)}" class="w-full px-3 py-2 civic-input font-bold" />
+              <label class="block font-bold mb-1 text-civic-ochre">${isHi ? "उधार राशि (Credit ₹)" : "Credit Amount (₹)"}</label>
+              <input type="number" id="rm-credit-amt" min="0" placeholder="0" class="w-full px-3 py-2 civic-input font-bold" />
             </div>
-          </div>
-
-          <div id="rm-hybrid-wrap" class="hidden">
-            <input type="text" id="rm-hybrid-detail" placeholder="${isHi ? "हाइब्रिड विवरण लिखें (उदा. ₹2000 UPI + ₹1000 Bank)" : "Enter Hybrid breakup (e.g. ₹2000 UPI + ₹1000 Bank)"}" class="w-full px-3 py-2 civic-input font-semibold" />
+            <div>
+              <label class="block font-bold mb-1 text-civic-crimson">${isHi ? "भुगतान निर्धारित तिथि" : "Payment Scheduled Date"}</label>
+              <input type="date" id="rm-due-date" value="${addDaysISO(todayISO(), prefs.rmDueDays)}" class="w-full px-3 py-2 civic-input font-bold" />
+            </div>
           </div>
 
           <div class="grid grid-cols-2 gap-2">
@@ -2516,7 +2531,7 @@ function renderStockTab() {
         </form>
       </div>
 
-      <!-- FG PRODUCTION FORM WITH LIVE AUTO-FILTER PRODUCT SUGGESTIONS -->
+      <!-- FG PRODUCTION FORM WITH STICKY UNIT & LIVE AUTO-FILTER SUGGESTIONS -->
       <div class="civic-card p-4 space-y-3">
         <div class="flex items-center justify-between gap-2">
           <h3 class="text-xs font-extrabold">🏭 ${isHi ? "तैयार माल (FG) उत्पादन व अपव्यय" : "Finished Goods (FG) Production & Wastage"}</h3>
@@ -2531,8 +2546,8 @@ function renderStockTab() {
             </div>
             <div>
               <label class="block font-bold mb-1 text-sec-var">${isHi ? "इकाई (Unit) *" : "Unit *"}</label>
-              <select id="fg-unit-type" class="w-full px-3 py-2 civic-input font-bold">
-                ${STANDARD_UNITS.map(st => `<option value="${st}" ${u.unitType === st ? "selected" : ""}>${st}</option>`).join("")}
+              <select id="fg-unit-type" onchange="updateUnitFormPrefs('${u.id}', { fgUnit: this.value })" class="w-full px-3 py-2 civic-input font-bold">
+                ${STANDARD_UNITS.map(st => `<option value="${st}" ${prefs.fgUnit === st ? "selected" : ""}>${st}</option>`).join("")}
               </select>
             </div>
           </div>
@@ -2542,9 +2557,9 @@ function renderStockTab() {
             <input type="text" id="fg-product" required autocomplete="off"
               onfocus="updateSuggestionList('fg', '${u.id}', this.value, 'fg-sugg-list', 'fg-product')"
               oninput="updateSuggestionList('fg', '${u.id}', this.value, 'fg-sugg-list', 'fg-product')"
-              placeholder="${isHi ? "टाइप करें (हाल/अक्सर उत्पाद स्वतः छनेंगे)" : "Type to auto-filter recent/frequent products"}"
+              placeholder="${isHi ? "टाइप करें" : "Type to filter recent/frequent"}"
               class="w-full px-3 py-2 civic-input font-semibold" />
-            <div id="fg-sugg-list" class="hidden absolute left-0 right-0 mt-1 rounded-xl civic-card shadow-lg z-20 max-h-36 overflow-y-auto"></div>
+            <div id="fg-sugg-list" class="hidden absolute left-0 right-0 mt-1 rounded-xl civic-card shadow-lg z-20 max-h-40 overflow-y-auto"></div>
           </div>
 
           <div class="grid grid-cols-3 gap-2">
@@ -2554,11 +2569,11 @@ function renderStockTab() {
             </div>
             <div>
               <label class="block font-bold mb-1 text-civic-crimson">${isHi ? "प्रसंस्करण अपव्यय" : "Processing Loss"}</label>
-              <input type="number" id="fg-waste" step="0.01" min="0" value="0" class="w-full px-3 py-2 civic-input font-bold" />
+              <input type="number" id="fg-waste" step="0.01" min="0" placeholder="0" class="w-full px-3 py-2 civic-input font-bold" />
             </div>
             <div>
               <label class="block font-bold mb-1 text-sec-var">${isHi ? "अनुमानित मूल्य (₹)" : "Est. Value (₹)"}</label>
-              <input type="number" id="fg-amount" min="0" value="0" class="w-full px-3 py-2 civic-input font-bold" />
+              <input type="number" id="fg-amount" min="0" placeholder="0" class="w-full px-3 py-2 civic-input font-bold" />
             </div>
           </div>
 
@@ -2578,7 +2593,7 @@ function renderStockTab() {
       </div>
     </div>
 
-    <!-- STOCK HISTORY TABLE WITH DUE DATES & ADMIN VOID -->
+    <!-- STOCK HISTORY TABLE WITH SCHEDULED PAYMENT DATES & ADMIN VOID -->
     <div class="civic-card p-4 space-y-2.5">
       <h3 class="text-xs font-extrabold">📜 ${isHi ? "स्टॉक, अपव्यय व निर्धारित भुगतान तिथि इतिहास" : "Stock, Wastage & Scheduled Payment History"}</h3>
       <div class="overflow-x-auto">
@@ -2626,28 +2641,33 @@ function renderStockTab() {
   `;
 }
 
-function toggleRMPaymentBox() {
-  const type = document.getElementById("rm-type").value;
-  const isIn = type === "IN";
-  document.getElementById("rm-payment-wrap").classList.toggle("hidden", !isIn);
-  document.getElementById("rm-waste-wrap").classList.toggle("hidden", isIn);
-  toggleHybridAndDueDate("rm");
+async function onRMTypeOrModeChange(unitId) {
+  const typeEl = document.getElementById("rm-type");
+  const modeEl = document.getElementById("rm-paymode");
+  if (!typeEl) return;
+  const rmType = typeEl.value;
+  const rmPayMode = modeEl ? modeEl.value : "Bank Transfer";
+  await updateUnitFormPrefs(unitId, { rmType, rmPayMode });
+
+  const isIn = rmType === "IN";
+  const pWrap = document.getElementById("rm-payment-wrap");
+  const wWrap = document.getElementById("rm-waste-wrap");
+  const cWrap = document.getElementById("rm-credit-wrap");
+  if (pWrap) pWrap.classList.toggle("hidden", !isIn);
+  if (wWrap) wWrap.classList.toggle("hidden", isIn);
+  if (cWrap) cWrap.classList.toggle("hidden", !(isIn && (rmPayMode === "Credit" || rmPayMode === "Hybrid")));
 }
 
-function toggleHybridAndDueDate(prefix) {
-  const mode = document.getElementById(prefix + "-paymode").value;
-  const isCreditOrHybrid = (mode === "Credit" || mode === "Hybrid");
-  const hWrap = document.getElementById(prefix + "-hybrid-wrap");
-  if (hWrap) hWrap.classList.toggle("hidden", mode !== "Hybrid");
-  if (prefix === "rm") {
-    const type = document.getElementById("rm-type").value;
-    const cWrap = document.getElementById("rm-credit-wrap");
-    if (cWrap) cWrap.classList.toggle("hidden", !(type === "IN" && isCreditOrHybrid));
-  }
-  if (prefix === "sl") {
-    const cWrap = document.getElementById("sl-credit-wrap");
-    if (cWrap) cWrap.classList.toggle("hidden", !isCreditOrHybrid);
-  }
+async function onSalesModeChange(unitId) {
+  const chEl = document.getElementById("sl-channel");
+  const modeEl = document.getElementById("sl-paymode");
+  if (!modeEl) return;
+  const slChannel = chEl ? chEl.value : "Offline";
+  const slPayMode = modeEl.value;
+  await updateUnitFormPrefs(unitId, { slChannel, slPayMode });
+
+  const cWrap = document.getElementById("sl-credit-wrap");
+  if (cWrap) cWrap.classList.toggle("hidden", !(slPayMode === "Credit" || slPayMode === "Hybrid"));
 }
 
 async function handleSaveRM(ev, unitId) {
@@ -2661,11 +2681,29 @@ async function handleSaveRM(ev, unitId) {
   const qty = Number(document.getElementById("rm-qty").value || 0);
   const wastageQty = type === "OUT" ? Number(document.getElementById("rm-waste").value || 0) : 0;
   const amount = type === "IN" ? Number(document.getElementById("rm-amount").value || 0) : 0;
-  const paymentMode = type === "IN" ? document.getElementById("rm-paymode").value : "N/A";
+  let paymentMode = type === "IN" ? document.getElementById("rm-paymode").value : "N/A";
   const isCreditOrHybrid = (paymentMode === "Credit" || paymentMode === "Hybrid");
-  const paidNow = (type === "IN" && isCreditOrHybrid) ? Number(document.getElementById("rm-paid-now").value || 0) : amount;
-  const dueDate = (type === "IN" && isCreditOrHybrid) ? (document.getElementById("rm-due-date").value || addDaysISO(todayISO(), 15)) : "";
-  const hybridBreakup = paymentMode === "Hybrid" ? sanitizeInput(document.getElementById("rm-hybrid-detail").value) : "";
+
+  let cashPaid = amount;
+  let creditAmount = 0;
+  let dueDate = "";
+  let hybridBreakup = "";
+
+  if (type === "IN" && isCreditOrHybrid) {
+    cashPaid = Number(document.getElementById("rm-cash-paid").value || 0);
+    creditAmount = Number(document.getElementById("rm-credit-amt").value || 0);
+    if (creditAmount === 0 && amount > cashPaid) {
+      creditAmount = Math.max(0, amount - cashPaid);
+    }
+    if (cashPaid > 0 && creditAmount > 0) {
+      paymentMode = "Hybrid";
+      hybridBreakup = `Cash ₹${cashPaid} + Credit ₹${creditAmount}`;
+    } else if (creditAmount > 0 && cashPaid === 0) {
+      paymentMode = "Credit";
+    }
+    dueDate = document.getElementById("rm-due-date").value || addDaysISO(todayISO(), 15);
+  }
+
   const txDate = document.getElementById("rm-date").value || todayISO();
 
   const qtyInput = document.getElementById("rm-qty");
@@ -2686,12 +2724,13 @@ async function handleSaveRM(ev, unitId) {
 
   vault.rmLogs.push({
     id: "RM" + Date.now(), unitId, type, batchNo, material, qty, wastageQty, wastagePct,
-    unit: unitType, amount, paidNow, paymentMode,
-    paymentStatus: paidNow < amount ? "Due" : "Paid",
+    unit: unitType, amount, cashPaid, creditAmount, paymentMode,
+    paymentStatus: creditAmount > 0 ? "Due" : "Paid",
     dueDate, hybridBreakup, shelfDays, expiryDate, txDate, sysStamp,
     actor: getEffectiveUser().userId
   });
 
+  await updateUnitFormPrefs(unitId, { rmType: type, rmUnit: unitType, rmPayMode: paymentMode });
   delete tabErrorFlags["stock"];
   recordAudit(getEffectiveUser().role === "shg" ? "SHG" : "ADMIN", unitId, `RM ${type}: ${qty} ${unitType} ${material} (${batchNo})${wastagePct > m.wastageLimitPct ? ` [WASTAGE ALERT ${wastagePct}% > ${m.wastageLimitPct}% -> DISTRICT FLAGGED]` : ""}`);
   await saveVault();
@@ -2726,6 +2765,7 @@ async function handleSaveFG(ev, unitId) {
     actor: getEffectiveUser().userId
   });
 
+  await updateUnitFormPrefs(unitId, { fgUnit: unitType });
   recordAudit(getEffectiveUser().role === "shg" ? "SHG" : "ADMIN", unitId, `FG Produced: ${qty} ${unitType} ${product} (${batchNo})${wastagePct > m.wastageLimitPct ? ` [WASTAGE ALERT ${wastagePct}% -> DISTRICT FLAGGED]` : ""}`);
   await saveVault();
   renderAll();
@@ -2737,7 +2777,7 @@ async function handleSaveFG(ev, unitId) {
 }
 
 // ============================================================================
-// SECTION J: TAB 3 — SALES, CREDIT/HYBRID RECEIVABLES & 2-PARTY UPI QR
+// SECTION J: TAB 3 — SALES, CASH + CREDIT -> HYBRID & 2-PARTY UPI QR
 // ============================================================================
 function filterSalesByTimeframe(logs) {
   if (salesTimeFilter === "ALL") return logs;
@@ -2853,9 +2893,11 @@ function renderSalesTab() {
   const u = units[0];
   if (!u) return "";
   const m = getUnitMetrics(u.id);
+  const prefs = getUnitFormPrefs(u.id);
   const eff = getEffectiveUser();
   const canEditQR = isDistrictTopAuthority(eff) || (eff.role === "shg" && eff.unitId === u.id);
   const qrPayload = `upi://pay?pa=${encodeURIComponent(u.upiId)}&pn=${encodeURIComponent(u.en)}&cu=INR`;
+  const showSalesCreditFields = (prefs.slPayMode === "Credit" || prefs.slPayMode === "Hybrid");
 
   return `
     <div class="civic-card p-4 space-y-3">
@@ -2890,9 +2932,9 @@ function renderSalesTab() {
             </div>
             <div>
               <label class="block font-bold mb-1 text-sec-var">${isHi ? "बिक्री माध्यम *" : "Sales Channel *"}</label>
-              <select id="sl-channel" class="w-full px-3 py-2 civic-input font-bold">
-                <option value="Offline">${isHi ? "ऑफलाइन (हाट / C-Mart / संस्था)" : "Offline (Haat / C-Mart)"}</option>
-                <option value="Online">${isHi ? "ऑनलाइन (e-Commerce / पोर्टल)" : "Online (Portal / Platform)"}</option>
+              <select id="sl-channel" onchange="onSalesModeChange('${u.id}')" class="w-full px-3 py-2 civic-input font-bold">
+                <option value="Offline" ${prefs.slChannel === "Offline" ? "selected" : ""}>${isHi ? "ऑफलाइन (हाट / C-Mart / संस्था)" : "Offline (Haat / C-Mart)"}</option>
+                <option value="Online" ${prefs.slChannel === "Online" ? "selected" : ""}>${isHi ? "ऑनलाइन (e-Commerce / पोर्टल)" : "Online (Portal / Platform)"}</option>
               </select>
             </div>
           </div>
@@ -2907,9 +2949,9 @@ function renderSalesTab() {
               <input type="text" id="sl-product" required autocomplete="off"
                 onfocus="updateSuggestionList('fg', '${u.id}', this.value, 'sl-sugg-list', 'sl-product')"
                 oninput="updateSuggestionList('fg', '${u.id}', this.value, 'sl-sugg-list', 'sl-product')"
-                placeholder="${isHi ? "टाइप करें (उत्पाद सुझाव स्वतः छनेंगे)" : "Type to auto-filter products"}"
+                placeholder="${isHi ? "टाइप करें" : "Type to filter products"}"
                 class="w-full px-3 py-2 civic-input font-semibold" />
-              <div id="sl-sugg-list" class="hidden absolute left-0 right-0 mt-1 rounded-xl civic-card shadow-lg z-20 max-h-36 overflow-y-auto"></div>
+              <div id="sl-sugg-list" class="hidden absolute left-0 right-0 mt-1 rounded-xl civic-card shadow-lg z-20 max-h-40 overflow-y-auto"></div>
             </div>
           </div>
 
@@ -2927,27 +2969,29 @@ function renderSalesTab() {
           <div class="grid grid-cols-2 gap-2">
             <div>
               <label class="block font-bold mb-1 text-sec-var">${isHi ? "भुगतान माध्यम *" : "Payment Mode *"}</label>
-              <select id="sl-paymode" onchange="toggleHybridAndDueDate('sl')" class="w-full px-3 py-2 civic-input font-bold">
-                <option value="UPI">UPI / QR</option>
-                <option value="Bank Transfer">Bank Transfer</option>
-                <option value="Cash">Cash</option>
-                <option value="Credit">Credit / Udhaar</option>
-                <option value="Hybrid">Hybrid (Split Payment)</option>
+              <select id="sl-paymode" onchange="onSalesModeChange('${u.id}')" class="w-full px-3 py-2 civic-input font-bold">
+                <option value="UPI" ${prefs.slPayMode === "UPI" ? "selected" : ""}>UPI / QR</option>
+                <option value="Bank Transfer" ${prefs.slPayMode === "Bank Transfer" ? "selected" : ""}>Bank Transfer</option>
+                <option value="Cash" ${prefs.slPayMode === "Cash" ? "selected" : ""}>Cash</option>
+                <option value="Credit" ${prefs.slPayMode === "Credit" ? "selected" : ""}>Credit</option>
+                <option value="Hybrid" ${prefs.slPayMode === "Hybrid" ? "selected" : ""}>Hybrid</option>
               </select>
             </div>
             <div>
-              <label class="block font-bold mb-1 text-sec-var">${isHi ? "प्राप्त राशि (₹)" : "Amount Received (₹)"}</label>
-              <input type="number" id="sl-paid" min="0" placeholder="${isHi ? "पूरा प्राप्त हो तो खाली छोड़ें" : "Leave blank if 100% paid"}" class="w-full px-3 py-2 civic-input font-bold" />
+              <label class="block font-bold mb-1 text-sec-var">${isHi ? "प्राप्त राशि (Cash ₹)" : "Cash Received (₹)"}</label>
+              <input type="number" id="sl-cash" min="0" placeholder="0" class="w-full px-3 py-2 civic-input font-bold" />
             </div>
           </div>
 
-          <div id="sl-credit-wrap" class="hidden p-2.5 rounded-xl civic-muted">
-            <label class="block font-bold mb-1 text-civic-crimson">${isHi ? "उधार / शेष राशि प्राप्त करने की तिथि (Due Date)" : "Expected Credit Receipt Due Date"}</label>
-            <input type="date" id="sl-due-date" value="${addDaysISO(todayISO(), 15)}" class="w-full px-3 py-2 civic-input font-bold" />
-          </div>
-
-          <div id="sl-hybrid-wrap" class="hidden">
-            <input type="text" id="sl-hybrid-detail" placeholder="${isHi ? "हाइब्रिड विवरण लिखें (उदा. ₹1500 UPI + ₹900 Cash)" : "Enter Hybrid breakup (e.g. ₹1500 UPI + ₹900 Cash)"}" class="w-full px-3 py-2 civic-input font-semibold" />
+          <div id="sl-credit-wrap" class="${showSalesCreditFields ? "grid" : "hidden"} grid-cols-1 sm:grid-cols-2 gap-2 p-2.5 rounded-xl civic-muted">
+            <div>
+              <label class="block font-bold mb-1 text-civic-ochre">${isHi ? "उधार राशि (Credit ₹)" : "Credit Amount (₹)"}</label>
+              <input type="number" id="sl-credit" min="0" placeholder="0" class="w-full px-3 py-2 civic-input font-bold" />
+            </div>
+            <div>
+              <label class="block font-bold mb-1 text-civic-crimson">${isHi ? "उधार प्राप्ति निर्धारित तिथि" : "Scheduled Receipt Date"}</label>
+              <input type="date" id="sl-due-date" value="${addDaysISO(todayISO(), prefs.slDueDays)}" class="w-full px-3 py-2 civic-input font-bold" />
+            </div>
           </div>
 
           <div class="grid grid-cols-2 gap-2">
@@ -3054,8 +3098,7 @@ async function handleSaveSale(ev, unitId) {
   const product = sanitizeInput(document.getElementById("sl-product").value);
   const qty = Number(document.getElementById("sl-qty").value || 0);
   const rate = Number(document.getElementById("sl-rate").value || 0);
-  const paymentMode = document.getElementById("sl-paymode").value;
-  const hybridBreakup = paymentMode === "Hybrid" ? sanitizeInput(document.getElementById("sl-hybrid-detail").value) : "";
+  let paymentMode = document.getElementById("sl-paymode").value;
   const txDate = document.getElementById("sl-date").value || todayISO();
 
   const qtyInput = document.getElementById("sl-qty");
@@ -3070,16 +3113,35 @@ async function handleSaveSale(ev, unitId) {
   }
 
   const total = Math.round(qty * rate * 100) / 100;
-  const paidRaw = document.getElementById("sl-paid").value;
-  const paidAmount = paymentMode === "Credit" ? 0 : (paidRaw === "" ? total : Math.min(total, Number(paidRaw)));
-  const dueDate = (paymentMode === "Credit" || paymentMode === "Hybrid" || paidAmount < total) ? (document.getElementById("sl-due-date").value || addDaysISO(todayISO(), 15)) : "";
+  const cashRaw = document.getElementById("sl-cash").value;
+  const isCreditOrHybrid = (paymentMode === "Credit" || paymentMode === "Hybrid");
+
+  let cashReceived = cashRaw === "" ? (isCreditOrHybrid ? 0 : total) : Math.min(total, Number(cashRaw));
+  let creditAmount = 0;
+  let dueDate = "";
+  let hybridBreakup = "";
+
+  if (isCreditOrHybrid) {
+    const crRaw = document.getElementById("sl-credit").value;
+    creditAmount = crRaw === "" ? Math.max(0, total - cashReceived) : Math.max(0, Number(crRaw));
+    if (cashReceived > 0 && creditAmount > 0) {
+      paymentMode = "Hybrid";
+      hybridBreakup = `Cash ₹${cashReceived} + Credit ₹${creditAmount}`;
+    } else if (creditAmount > 0 && cashReceived === 0) {
+      paymentMode = "Credit";
+    }
+    dueDate = document.getElementById("sl-due-date").value || addDaysISO(todayISO(), 15);
+  } else {
+    creditAmount = Math.max(0, total - cashReceived);
+  }
 
   vault.salesLogs.push({
     id: "SL" + Date.now(), unitId, buyer, channel, batchNo, product, qty, rate, total,
-    paymentMode, hybridBreakup, paidAmount, dueDate, txDate, sysStamp: nowSystemStamp(),
-    actor: getEffectiveUser().userId
+    paymentMode, hybridBreakup, paidAmount: cashReceived, creditAmount, dueDate, txDate,
+    sysStamp: nowSystemStamp(), actor: getEffectiveUser().userId
   });
 
+  await updateUnitFormPrefs(unitId, { slChannel: channel, slPayMode: paymentMode });
   delete tabErrorFlags["sales"];
   recordAudit(getEffectiveUser().role === "shg" ? "SHG" : "ADMIN", unitId, `Sale Recorded: ${qty} ${u.unitType} ${product} (${formatINR(total)})`);
   await saveVault();
@@ -3150,7 +3212,6 @@ function renderWeeklyTab() {
   const eff = getEffectiveUser();
   const units = getFilteredUnits();
 
-  // District / Block Officer & Developer View: All SHGs Weekly Submission Status
   if (eff.role !== "shg") {
     const unsubmitted = getUnsubmittedWeeklySHGs(units);
     return `
@@ -3158,7 +3219,7 @@ function renderWeeklyTab() {
         <div class="flex flex-wrap items-center justify-between gap-2">
           <div>
             <h2 class="text-sm font-extrabold">📋 ${isHi ? `SHG साप्ताहिक रिपोर्ट स्थिति (${units.length - unsubmitted.length}/${units.length} जमा)` : `SHG Weekly Report Tracker (${units.length - unsubmitted.length}/${units.length} Submitted)`}</h2>
-            <p class="text-[11px] text-muted-var">${isHi ? "जिन SHG ने साप्ताहिक रिपोर्ट जमा नहीं की है वे लाल/अंबर चिह्न में दिख रहे हैं" : "SHGs that have not submitted a report in the last 7 days are highlighted"}</p>
+            <p class="text-[11px] text-muted-var">${isHi ? "जिन SHG ने साप्ताहिक रिपोर्ट जमा नहीं की है वे लाल चिह्न में दिख रहे हैं" : "SHGs that have not submitted a report in the last 7 days are highlighted"}</p>
           </div>
           <span class="px-2.5 py-1 rounded-full ${unsubmitted.length ? "bg-civic-crimson" : "bg-civic-emerald"} text-white text-[10px] font-extrabold">
             ${unsubmitted.length} ${isHi ? "लंबित (Not Submitted)" : "Not Submitted"}
@@ -3195,7 +3256,6 @@ function renderWeeklyTab() {
     `;
   }
 
-  // SHG Single-Unit Weekly Report Submission
   const u = units[0];
   if (!u) return "";
   const m = getUnitMetrics(u.id);
@@ -3566,7 +3626,6 @@ function renderSettingsTab() {
   ];
 
   return `
-    <!-- Theme Selector + 4-Digit PIN + Fingerprint + Backup -->
     <div class="civic-card p-4 space-y-3">
       <div class="flex flex-wrap items-center justify-between gap-2">
         <div>
@@ -3682,7 +3741,6 @@ function renderSettingsTab() {
       </div>
     ` : ""}
 
-    <!-- REVERSE AUDIT LOG (MOST RECENT FIRST + FULL DELETED ENTRY SNAPSHOT) -->
     <div class="civic-card p-4 space-y-2.5">
       <h3 class="text-xs font-extrabold">📜 ${isHi ? `परिवर्तन व हटाए गए डेटा का इतिहास (नवीनतम सबसे ऊपर — ${visibleAuditLogs.length})` : `Audit & Deleted Entry History (Newest First — ${visibleAuditLogs.length})`}</h3>
       <div class="max-h-64 overflow-y-auto space-y-1.5 text-xs">
