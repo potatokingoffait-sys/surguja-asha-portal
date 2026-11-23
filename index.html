@@ -432,7 +432,7 @@
   </div>
 
   <!-- ===================================================================== -->
-  <!-- 3. CLEAN HEADER (NO THEME BUTTON) & GLOBAL BLOCK/UNIT FILTERS        -->
+  <!-- 3. CLEAN HEADER & GLOBAL BLOCK/UNIT FILTERS                         -->
   <!-- ===================================================================== -->
   <header class="bg-civic-teal px-3.5 pb-3 safe-top shadow-sm shrink-0 z-30 space-y-2">
     <div class="flex items-center justify-between gap-2">
@@ -502,7 +502,7 @@
   </nav>
 
   <!-- ===================================================================== -->
-  <!-- 5. UNIVERSAL MODAL (FIRST-LOGIN THEME PICKER, PIN SETUP, DRILLDOWN) -->
+  <!-- 5. UNIVERSAL MODAL                                                    -->
   <!-- ===================================================================== -->
   <div id="universal-modal" class="hidden fixed inset-0 z-50 flex items-end sm:items-center justify-center p-2 sm:p-4" style="background: rgba(9, 13, 20, 0.78);">
     <div class="w-full max-w-lg civic-card overflow-hidden max-h-[88dvh] flex flex-col">
@@ -596,13 +596,13 @@ const MASTER_CHECKLIST_ITEMS = [
 ];
 
 // ============================================================================
-// SECTION B: CRYPTOGRAPHIC VAULT, THEME MODES, STICKY PREFS & SESSION
+// SECTION B: CRYPTOGRAPHIC VAULT, SYSTEM THEME DEFAULT & STICKY PREFS
 // ============================================================================
-const VAULT_STORAGE_KEY = "SURGUJA_ASHA_SECURE_VAULT_PROD_V6";
+const VAULT_STORAGE_KEY = "SURGUJA_ASHA_SECURE_VAULT_PROD_V8";
 const VAULT_SALT = "SURGUJA-NRLM-ASHA-2026-ZERO-SERVER";
 
 let lang = "hi";
-let themeMode = "light";
+let themeMode = "system";
 let theme = "light";
 let currentUser = null;
 let devImpersonateId = null;
@@ -630,7 +630,7 @@ function resolveSystemTheme() {
 }
 
 function setThemeMode(mode) {
-  themeMode = mode || "light";
+  themeMode = mode || "system";
   theme = themeMode === "system" ? resolveSystemTheme() : themeMode;
   if (vault && vault.deviceSecurity) {
     vault.deviceSecurity.themeMode = themeMode;
@@ -853,8 +853,7 @@ function buildSeedState() {
       activeSessionUserId: "",
       pinHash: "",
       credentialId: "",
-      themeMode: "light",
-      themeChosenOnce: false
+      themeMode: "system"
     },
     snoozedExpiryUntil: 0,
     cloudConfig: {
@@ -883,7 +882,7 @@ async function loadVault() {
       if (dec && Array.isArray(dec.units) && Array.isArray(dec.accounts)) {
         if (!dec.cloudConfig) dec.cloudConfig = { appsScriptUrl: DEFAULT_APPS_SCRIPT_URL, masterSheetUrl: "", lastSyncedAt: "" };
         if (!dec.cloudConfig.appsScriptUrl) dec.cloudConfig.appsScriptUrl = DEFAULT_APPS_SCRIPT_URL;
-        if (!dec.deviceSecurity) dec.deviceSecurity = { rememberedUserId: "", activeSessionUserId: "", pinHash: "", credentialId: "", themeMode: "light", themeChosenOnce: false };
+        if (!dec.deviceSecurity) dec.deviceSecurity = { rememberedUserId: "", activeSessionUserId: "", pinHash: "", credentialId: "", themeMode: "system" };
         if (!dec.recentFormPrefs) dec.recentFormPrefs = {};
         if (!Array.isArray(dec.blockedUsers)) dec.blockedUsers = [];
         if (!Array.isArray(dec.deletedIds)) dec.deletedIds = [];
@@ -995,16 +994,26 @@ function getFilteredUnits() {
   return list;
 }
 
+function normalizeQtyByUnit(qty, unit) {
+  const n = Number(qty || 0);
+  if (unit === "Tonnes") return n * 1000;
+  return n;
+}
+
 function getWastageStats(unitId) {
   const uObj = vault.units.find(x => x.id === unitId) || {};
   const limitPct = Number(uObj.wastageLimitPct ?? DEFAULT_WASTAGE_LIMIT_PCT);
   const unitRMOut = vault.rmLogs.filter(r => r.unitId === unitId && r.type === "OUT");
   const unitFGProd = vault.fgLogs.filter(f => f.unitId === unitId && f.type === "PROD");
 
-  const loggedWaste = unitRMOut.reduce((s, r) => s + Number(r.wastageQty || 0), 0) +
-    unitFGProd.reduce((s, f) => s + Number(f.wastageQty || 0), 0);
-  const totalProcessed = unitRMOut.reduce((s, r) => s + Number(r.qty || 0), 0);
-  const wastePct = totalProcessed > 0 ? Number(((loggedWaste / totalProcessed) * 100).toFixed(1)) : 0;
+  const wasteNorm = unitRMOut.reduce((s, r) => s + normalizeQtyByUnit(r.wastageQty || 0, r.unit || uObj.unitType), 0) +
+    unitFGProd.reduce((s, f) => s + normalizeQtyByUnit(f.wastageQty || 0, f.unit || uObj.unitType), 0);
+
+  const outNorm = unitRMOut.reduce((s, r) => s + normalizeQtyByUnit(r.qty || 0, r.unit || uObj.unitType), 0);
+  const prodNorm = unitFGProd.reduce((s, f) => s + normalizeQtyByUnit(f.qty || 0, f.unit || uObj.unitType), 0);
+  const baseNorm = outNorm > 0 ? outNorm : (prodNorm + wasteNorm);
+
+  const wastePct = baseNorm > 0 ? Number(((wasteNorm / baseNorm) * 100).toFixed(1)) : 0;
 
   const highWasteEvents = [
     ...unitRMOut.filter(r => Number(r.wastagePct || 0) > limitPct),
@@ -1014,7 +1023,7 @@ function getWastageStats(unitId) {
   const isWastageAlert = wastePct > limitPct || highWasteEvents.length > 0;
   const isEscalatedToDistrict = highWasteEvents.length >= 2 || wastePct > limitPct * 1.5;
 
-  return { limitPct, loggedWaste: Number(loggedWaste.toFixed(2)), totalProcessed, wastePct, highWasteCount: highWasteEvents.length, isWastageAlert, isEscalatedToDistrict };
+  return { limitPct, loggedWaste: Number(wasteNorm.toFixed(2)), wastePct, highWasteCount: highWasteEvents.length, isWastageAlert, isEscalatedToDistrict };
 }
 
 function getPaymentReminders(unitsList) {
@@ -1204,31 +1213,8 @@ function snoozeShelfLifeWatch() {
 }
 
 // ============================================================================
-// SECTION E: FIRST-LOGIN THEME PICKER, 4-DIGIT PIN, BIOMETRIC & SIGN-UP
+// SECTION E: PERSISTENT LOGIN, 4-DIGIT PIN, BIOMETRIC & SIGN-UP
 // ============================================================================
-function openFirstLoginThemeModal() {
-  const isHi = lang === "hi";
-  openUniversalModal(
-    isHi ? "🎨 डिस्प्ले मोड चुनें (Theme Preference)" : "🎨 Choose Display Theme Mode",
-    isHi ? "आप इसे कभी भी Settings में बदल सकते हैं" : "You can switch this anytime in Settings",
-    `<div class="grid grid-cols-2 gap-2 text-xs">
-      <button type="button" onclick="chooseInitialTheme('light')" class="p-3 rounded-xl civic-muted font-extrabold text-center">☀️ ${isHi ? "लाइट (Light)" : "Light"}</button>
-      <button type="button" onclick="chooseInitialTheme('dark')" class="p-3 rounded-xl civic-muted font-extrabold text-center">🌙 ${isHi ? "डार्क (Dark)" : "Dark"}</button>
-      <button type="button" onclick="chooseInitialTheme('contrast')" class="p-3 rounded-xl civic-muted font-extrabold text-center">⚡ ${isHi ? "हाई-कंट्रास्ट" : "High-Contrast"}</button>
-      <button type="button" onclick="chooseInitialTheme('system')" class="p-3 rounded-xl civic-muted font-extrabold text-center">📱 ${isHi ? "सिस्टम डिफ़ॉल्ट" : "System Default"}</button>
-    </div>`
-  );
-}
-
-async function chooseInitialTheme(mode) {
-  vault.deviceSecurity.themeChosenOnce = true;
-  setThemeMode(mode);
-  closeUniversalModal();
-  if (!vault.deviceSecurity.pinHash) {
-    openSet4DigitPinModal();
-  }
-}
-
 function showQuickLockScreen() {
   const ds = vault.deviceSecurity || {};
   const acc = ds.rememberedUserId ? vault.accounts.find(a => a.userId === ds.rememberedUserId) : null;
@@ -1272,7 +1258,7 @@ function switchToFullPasswordLogin(hideReturn = false) {
 }
 
 async function switchAccountCompletely() {
-  vault.deviceSecurity = { rememberedUserId: "", activeSessionUserId: "", pinHash: "", credentialId: "", themeMode, themeChosenOnce: true };
+  vault.deviceSecurity = { rememberedUserId: "", activeSessionUserId: "", pinHash: "", credentialId: "", themeMode };
   await saveVault();
   document.getElementById("signin-userid").value = "";
   document.getElementById("signin-pass").value = "";
@@ -1304,7 +1290,7 @@ async function handleQuickPinUnlock(ev) {
     return;
   }
 
-  await completeLogin(acc);
+  await completeLogin(acc, false);
 }
 
 function openSet4DigitPinModal() {
@@ -1396,7 +1382,7 @@ async function triggerSavedBiometricUnlock() {
       }
     });
     if (assertion) {
-      await completeLogin(acc);
+      await completeLogin(acc, false);
     }
   } catch (e) {
     showToast(lang === "hi" ? "बायोमेट्रिक सत्यापन विफल — कृपया 4-अंकों का पिन डालें" : "Biometric failed — enter your 4-digit PIN", true);
@@ -1569,8 +1555,7 @@ async function handleFirstTimeSignUp(ev) {
   pendingSignUpPhoto = "";
   recordAudit(role === "shg" ? "SHG" : "ADMIN", unitId, `New Account Registered: ${userId} (${name})`);
   await saveVault();
-  await completeLogin(newAcc);
-  openFirstLoginThemeModal();
+  await completeLogin(newAcc, true);
 }
 
 async function handleSignIn(ev) {
@@ -1608,12 +1593,7 @@ async function handleSignIn(ev) {
     vault.deviceSecurity.pinHash = "";
     vault.deviceSecurity.credentialId = "";
   }
-  const firstTimeSetup = !vault.deviceSecurity.themeChosenOnce || !vault.deviceSecurity.pinHash;
-  await completeLogin(acc);
-  if (firstTimeSetup) {
-    if (!vault.deviceSecurity.themeChosenOnce) openFirstLoginThemeModal();
-    else openSet4DigitPinModal();
-  }
+  await completeLogin(acc, !vault.deviceSecurity.pinHash);
 }
 
 function registerFailedLogin(msg) {
@@ -1628,7 +1608,7 @@ function registerFailedLogin(msg) {
   showToast(msg, true);
 }
 
-async function completeLogin(acc) {
+async function completeLogin(acc, promptPinAfter) {
   currentUser = acc;
   devImpersonateId = null;
   activeTab = "dashboard";
@@ -1658,6 +1638,10 @@ async function completeLogin(acc) {
   scrollViewportToTop();
 
   pullFromGoogleCloud(false);
+
+  if (promptPinAfter) {
+    openSet4DigitPinModal();
+  }
 }
 
 async function lockSessionNow() {
@@ -2346,12 +2330,13 @@ function openDrillDown(type, param = "") {
 }
 
 // ============================================================================
-// SECTION I: TAB 2 — STOCK, STICKY PREFS, CASH + CREDIT -> HYBRID & WASTAGE
+// SECTION I: TAB 2 — STOCK (SYSTEM TIME ONLY FOR DMMU+ & WASTAGE % DISPLAY)
 // ============================================================================
 function renderStockTab() {
   const isHi = lang === "hi";
   const units = getFilteredUnits();
   const canVoid = isDistrictTopAuthority();
+  const showSysTime = isDistrictTopAuthority();
 
   if (units.length > 1) {
     return `
@@ -2433,7 +2418,6 @@ function renderStockTab() {
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-      <!-- RAW MATERIAL INWARD / USAGE WITH STICKY PREFS, CASH + CREDIT -> HYBRID & SCHEDULED PAYMENT DATE -->
       <div class="civic-card p-4 space-y-3">
         <div class="flex items-center justify-between gap-2">
           <h3 class="text-xs font-extrabold">🌾 ${isHi ? "कच्चा माल (RM) आवक / खपत व अपव्यय" : "Raw Material (RM) Inward / Usage & Wastage"}</h3>
@@ -2503,7 +2487,7 @@ function renderStockTab() {
 
           <div id="rm-credit-wrap" class="${showRMCreditFields ? "grid" : "hidden"} grid-cols-1 sm:grid-cols-3 gap-2 p-2.5 rounded-xl civic-muted">
             <div>
-              <label class="block font-bold mb-1 text-civic-emerald">${isHi ? "नकद प्राप्त / भुगतान (Cash ₹)" : "Cash Paid (₹)"}</label>
+              <label class="block font-bold mb-1 text-civic-emerald">${isHi ? "नकद भुगतान (Cash ₹)" : "Cash Paid (₹)"}</label>
               <input type="number" id="rm-cash-paid" min="0" placeholder="0" class="w-full px-3 py-2 civic-input font-bold" />
             </div>
             <div>
@@ -2516,22 +2500,23 @@ function renderStockTab() {
             </div>
           </div>
 
-          <div class="grid grid-cols-2 gap-2">
+          <div class="grid grid-cols-1 ${showSysTime ? "sm:grid-cols-2" : ""} gap-2">
             <div>
               <label class="block font-bold mb-1 text-sec-var">${isHi ? "लेन-देन तिथि (Manual) *" : "Transaction Date (Manual) *"}</label>
               <input type="date" id="rm-date" value="${todayISO()}" required class="w-full px-3 py-2 civic-input font-bold" />
             </div>
-            <div>
-              <label class="block font-bold mb-1 text-sec-var">${isHi ? "सिस्टम समय (Locked)" : "Auto System Time (Locked)"}</label>
-              <div class="w-full px-3 py-2.5 civic-muted rounded-xl font-mono text-[11px] font-bold text-muted-var live-sys-clock">${nowSystemStamp()}</div>
-            </div>
+            ${showSysTime ? `
+              <div>
+                <label class="block font-bold mb-1 text-sec-var">${isHi ? "सिस्टम समय (Locked)" : "Auto System Time (Locked)"}</label>
+                <div class="w-full px-3 py-2.5 civic-muted rounded-xl font-mono text-[11px] font-bold text-muted-var live-sys-clock">${nowSystemStamp()}</div>
+              </div>
+            ` : ""}
           </div>
 
           <button type="submit" class="w-full py-2.5 btn-civic bg-civic-blue text-xs">✓ ${isHi ? "कच्चा माल प्रविष्टि सहेजें" : "Save Raw Material Entry"}</button>
         </form>
       </div>
 
-      <!-- FG PRODUCTION FORM WITH STICKY UNIT & LIVE AUTO-FILTER SUGGESTIONS -->
       <div class="civic-card p-4 space-y-3">
         <div class="flex items-center justify-between gap-2">
           <h3 class="text-xs font-extrabold">🏭 ${isHi ? "तैयार माल (FG) उत्पादन व अपव्यय" : "Finished Goods (FG) Production & Wastage"}</h3>
@@ -2577,15 +2562,17 @@ function renderStockTab() {
             </div>
           </div>
 
-          <div class="grid grid-cols-2 gap-2">
+          <div class="grid grid-cols-1 ${showSysTime ? "sm:grid-cols-2" : ""} gap-2">
             <div>
               <label class="block font-bold mb-1 text-sec-var">${isHi ? "उत्पादन तिथि (Manual) *" : "Production Date (Manual) *"}</label>
               <input type="date" id="fg-date" value="${todayISO()}" required class="w-full px-3 py-2 civic-input font-bold" />
             </div>
-            <div>
-              <label class="block font-bold mb-1 text-sec-var">${isHi ? "सिस्टम समय (Locked)" : "Auto System Time (Locked)"}</label>
-              <div class="w-full px-3 py-2.5 civic-muted rounded-xl font-mono text-[11px] font-bold text-muted-var live-sys-clock">${nowSystemStamp()}</div>
-            </div>
+            ${showSysTime ? `
+              <div>
+                <label class="block font-bold mb-1 text-sec-var">${isHi ? "सिस्टम समय (Locked)" : "Auto System Time (Locked)"}</label>
+                <div class="w-full px-3 py-2.5 civic-muted rounded-xl font-mono text-[11px] font-bold text-muted-var live-sys-clock">${nowSystemStamp()}</div>
+              </div>
+            ` : ""}
           </div>
 
           <button type="submit" class="w-full py-2.5 btn-civic bg-civic-emerald text-xs">✓ ${isHi ? "उत्पादन प्रविष्टि सहेजें" : "Save Production Entry"}</button>
@@ -2593,7 +2580,7 @@ function renderStockTab() {
       </div>
     </div>
 
-    <!-- STOCK HISTORY TABLE WITH SCHEDULED PAYMENT DATES & ADMIN VOID -->
+    <!-- STOCK HISTORY TABLE WITH WASTAGE % & SCHEDULED PAYMENT DATES -->
     <div class="civic-card p-4 space-y-2.5">
       <h3 class="text-xs font-extrabold">📜 ${isHi ? "स्टॉक, अपव्यय व निर्धारित भुगतान तिथि इतिहास" : "Stock, Wastage & Scheduled Payment History"}</h3>
       <div class="overflow-x-auto">
@@ -2609,22 +2596,31 @@ function renderStockTab() {
           </thead>
           <tbody class="divide-y" style="border-color: var(--border-subtle);">
             ${[
-              ...unitRMLogs.map(r => ({
-                id: r.id, kind: "rm",
-                cat: r.type === "IN" ? (isHi ? "RM आवक" : "RM In") : (isHi ? "RM खपत" : "RM Used"),
-                badge: r.type === "IN" ? "bg-civic-blue" : "bg-civic-ochre",
-                label: `${r.batchNo} • ${r.material}`,
-                qty: `${r.qty} ${r.unit || u.unitType}${Number(r.wastageQty || 0) > 0 ? ` (Loss: ${r.wastageQty})` : ""}`,
-                dateInfo: `${formatDateDisplay(r.txDate)}${r.dueDate ? ` • Pay: ${formatDateDisplay(r.dueDate)}` : ""}`
-              })),
-              ...unitFGLogs.map(f => ({
-                id: f.id, kind: "fg",
-                cat: isHi ? "FG उत्पादन" : "FG Produced",
-                badge: "bg-civic-emerald",
-                label: `${f.batchNo} • ${f.product}`,
-                qty: `${f.qty} ${f.unit || u.unitType}${Number(f.wastageQty || 0) > 0 ? ` (Loss: ${f.wastageQty})` : ""}`,
-                dateInfo: formatDateDisplay(f.txDate)
-              }))
+              ...unitRMLogs.map(r => {
+                const wQty = Number(r.wastageQty || 0);
+                const wPct = wQty > 0 ? (Number(r.wastagePct) || (Number(r.qty) > 0 ? Number(((wQty / Number(r.qty)) * 100).toFixed(1)) : 0)) : 0;
+                return {
+                  id: r.id, kind: "rm",
+                  cat: r.type === "IN" ? (isHi ? "RM आवक" : "RM In") : (isHi ? "RM खपत" : "RM Used"),
+                  badge: r.type === "IN" ? "bg-civic-blue" : "bg-civic-ochre",
+                  label: `${r.batchNo} • ${r.material}`,
+                  qty: `${r.qty} ${r.unit || u.unitType}${wQty > 0 ? ` (Loss: ${wQty} • ${wPct}%)` : ""}`,
+                  dateInfo: `${formatDateDisplay(r.txDate)}${r.dueDate ? ` • Pay: ${formatDateDisplay(r.dueDate)}` : ""}`
+                };
+              }),
+              ...unitFGLogs.map(f => {
+                const wQty = Number(f.wastageQty || 0);
+                const denom = Number(f.qty || 0) + wQty;
+                const wPct = wQty > 0 ? (Number(f.wastagePct) || (denom > 0 ? Number(((wQty / denom) * 100).toFixed(1)) : 0)) : 0;
+                return {
+                  id: f.id, kind: "fg",
+                  cat: isHi ? "FG उत्पादन" : "FG Produced",
+                  badge: "bg-civic-emerald",
+                  label: `${f.batchNo} • ${f.product}`,
+                  qty: `${f.qty} ${f.unit || u.unitType}${wQty > 0 ? ` (Loss: ${wQty} • ${wPct}%)` : ""}`,
+                  dateInfo: formatDateDisplay(f.txDate)
+                };
+              })
             ].slice(0, 20).map(row => `
               <tr>
                 <td class="p-2"><span class="px-2 py-0.5 rounded-full ${row.badge} text-white text-[10px] font-bold whitespace-nowrap">${row.cat}</span></td>
@@ -2832,6 +2828,7 @@ function renderSalesTab() {
   const unitIds = new Set(units.map(u => u.id));
   const filteredSales = filterSalesByTimeframe(vault.salesLogs.filter(sl => unitIds.has(sl.unitId)));
   const canVoid = isDistrictTopAuthority();
+  const showSysTime = isDistrictTopAuthority();
 
   const totalRev = filteredSales.reduce((s, x) => s + Number(x.total || 0), 0);
   const offRev = filteredSales.filter(x => x.channel === "Offline").reduce((s, x) => s + Number(x.total || 0), 0);
@@ -2994,15 +2991,17 @@ function renderSalesTab() {
             </div>
           </div>
 
-          <div class="grid grid-cols-2 gap-2">
+          <div class="grid grid-cols-1 ${showSysTime ? "sm:grid-cols-2" : ""} gap-2">
             <div>
               <label class="block font-bold mb-1 text-sec-var">${isHi ? "बिक्री तिथि (Manual) *" : "Sale Date (Manual) *"}</label>
               <input type="date" id="sl-date" value="${todayISO()}" required class="w-full px-3 py-2 civic-input font-bold" />
             </div>
-            <div>
-              <label class="block font-bold mb-1 text-sec-var">${isHi ? "सिस्टम समय (Locked)" : "Auto System Time (Locked)"}</label>
-              <div class="w-full px-3 py-2.5 civic-muted rounded-xl font-mono text-[11px] font-bold text-muted-var live-sys-clock">${nowSystemStamp()}</div>
-            </div>
+            ${showSysTime ? `
+              <div>
+                <label class="block font-bold mb-1 text-sec-var">${isHi ? "सिस्टम समय (Locked)" : "Auto System Time (Locked)"}</label>
+                <div class="w-full px-3 py-2.5 civic-muted rounded-xl font-mono text-[11px] font-bold text-muted-var live-sys-clock">${nowSystemStamp()}</div>
+              </div>
+            ` : ""}
           </div>
 
           <button type="submit" class="w-full py-2.5 btn-civic bg-civic-ochre text-xs">✓ ${isHi ? "बिक्री दर्ज करें" : "Save Sale Record"}</button>
@@ -3391,7 +3390,7 @@ function exportSingleSHGWeeklyExcel(unitId) {
 }
 
 // ============================================================================
-// SECTION L: TAB 4B — 17-POINT MASTER CHECKLIST + STATUS FILTERS + PHASE DATE
+// SECTION L: TAB 4B — CHECKLIST + MERGE / MOVE / ADD ACTIVITY
 // ============================================================================
 function setChecklistStatusFilter(st) {
   checklistStatusFilter = st;
@@ -3399,10 +3398,84 @@ function setChecklistStatusFilter(st) {
   scrollViewportToTop();
 }
 
+function openMergeMoveActivityModal(sourceUnitId) {
+  const isHi = lang === "hi";
+  const src = vault.units.find(x => x.id === sourceUnitId);
+  const otherUnits = vault.units.filter(x => x.id !== sourceUnitId);
+  openUniversalModal(
+    isHi ? "🔀 गतिविधि मर्ज / स्थानांतरण या नई गतिविधि जोड़ें" : "🔀 Merge / Move / Add Activity",
+    `${escapeHTML(src.id)} • ${escapeHTML(src.en)}`,
+    `<form onsubmit="handleMergeMoveActivity(event, '${src.id}')" class="space-y-3">
+      <div>
+        <label class="block font-bold mb-1">${isHi ? "क्रिया चुनें *" : "Action Type *"}</label>
+        <select id="act-action" onchange="toggleMergeTargetSelect()" class="w-full px-3 py-2 civic-input font-bold">
+          <option value="ADD_ACTIVITY">${isHi ? "+ इस इकाई में नई गतिविधि जोड़ें" : "+ Add New Activity to Unit"}</option>
+          <option value="MERGE_UNIT">${isHi ? "🔀 गतिविधि व डेटा अन्य इकाई में मर्ज/स्थानांतरित करें" : "🔀 Merge / Move Activity & Logs to Another Unit"}</option>
+        </select>
+      </div>
+      <div>
+        <label class="block font-bold mb-1">${isHi ? "गतिविधि का नाम *" : "Activity Name *"}</label>
+        <input type="text" id="act-name" required placeholder="${isHi ? "उदा. पैकेजिंग / मिलेट प्रसंस्करण" : "e.g. Packaging / Millet Processing"}" class="w-full px-3 py-2 civic-input font-semibold" />
+      </div>
+      <div id="act-target-wrap" class="hidden">
+        <label class="block font-bold mb-1">${isHi ? "लक्ष्य ASHA इकाई चुनें (किस इकाई में मर्ज/मूव करना है) *" : "Target ASHA Unit (Merge/Move Into) *"}</label>
+        <select id="act-target-unit" class="w-full px-3 py-2 civic-input font-bold">
+          ${otherUnits.map(ou => `<option value="${ou.id}">${escapeHTML(ou.id)} — ${escapeHTML(ou.en)}</option>`).join("")}
+        </select>
+      </div>
+      <button type="submit" class="w-full py-2.5 btn-civic bg-civic-teal text-xs">✓ ${isHi ? "लागू करें" : "Apply Action"}</button>
+    </form>`
+  );
+}
+
+function toggleMergeTargetSelect() {
+  const act = document.getElementById("act-action").value;
+  document.getElementById("act-target-wrap").classList.toggle("hidden", act !== "MERGE_UNIT");
+}
+
+async function handleMergeMoveActivity(ev, sourceUnitId) {
+  ev.preventDefault();
+  if (!isDistrictTopAuthority()) return;
+  const action = document.getElementById("act-action").value;
+  const actName = sanitizeInput(document.getElementById("act-name").value);
+  const src = vault.units.find(x => x.id === sourceUnitId);
+  if (!src || !actName) return;
+
+  if (action === "ADD_ACTIVITY") {
+    src.en = `${src.en} + ${actName}`;
+    src.hi = `${src.hi} + ${actName}`;
+    recordAudit("ADMIN", sourceUnitId, `Added Activity "${actName}" to ${sourceUnitId}`);
+    await saveVault();
+    closeUniversalModal();
+    renderAll();
+    showToast(lang === "hi" ? "नई गतिविधि जोड़ी गई" : "Activity added to unit");
+    return;
+  }
+
+  const targetUnitId = document.getElementById("act-target-unit").value;
+  const dst = vault.units.find(x => x.id === targetUnitId);
+  if (!dst) return;
+
+  vault.rmLogs.forEach(r => { if (r.unitId === sourceUnitId) r.unitId = targetUnitId; });
+  vault.fgLogs.forEach(f => { if (f.unitId === sourceUnitId) f.unitId = targetUnitId; });
+  vault.salesLogs.forEach(s => { if (s.unitId === sourceUnitId) s.unitId = targetUnitId; });
+  vault.weeklyReports.forEach(w => { if (w.unitId === sourceUnitId) w.unitId = targetUnitId; });
+
+  dst.en = `${dst.en} + ${actName}`;
+  dst.hi = `${dst.hi} + ${actName}`;
+
+  recordAudit("ADMIN", targetUnitId, `Merged/Moved Activity "${actName}" from ${sourceUnitId} into ${targetUnitId}`);
+  await saveVault();
+  closeUniversalModal();
+  renderAll();
+  showToast(lang === "hi" ? `गतिविधि ${targetUnitId} में मर्ज/स्थानांतरित हो गई` : `Activity merged/moved to ${targetUnitId}`);
+}
+
 function renderChecklistTab() {
   const isHi = lang === "hi";
   const units = getFilteredUnits();
   const allItems = getAllChecklistItems();
+  const isTopAdmin = isDistrictTopAuthority();
 
   if (units.length > 1) {
     return `
@@ -3412,7 +3485,10 @@ function renderChecklistTab() {
             <h2 class="text-sm font-extrabold">✅ ${isHi ? `समेकित मास्टर चेकलिस्ट (${units.length} इकाइयाँ • ${allItems.length} बिंदु)` : `Master Execution Checklist (${units.length} Units • ${allItems.length} Items)`}</h2>
             <p class="text-[11px] text-muted-var">${isHi ? "चरण तिथि व बिंदु अपडेट करने के लिए किसी इकाई पर क्लिक करें" : "Select a unit to update Phase Launch Date and 17-point status"}</p>
           </div>
-          <button type="button" onclick="openAddMilestoneModal()" class="px-3 py-2 btn-civic bg-civic-ochre text-[11px]">+ ${isHi ? "नया बिंदु जोड़ें" : "Add Milestone"}</button>
+          <div class="flex flex-wrap gap-1.5">
+            ${isTopAdmin ? `<button type="button" onclick="openAddUnitModal()" class="px-3 py-2 btn-civic bg-civic-emerald text-[11px]">+ ${isHi ? "नई इकाई जोड़ें" : "Add Unit"}</button>` : ""}
+            <button type="button" onclick="openAddMilestoneModal()" class="px-3 py-2 btn-civic bg-civic-ochre text-[11px]">+ ${isHi ? "नया बिंदु जोड़ें" : "Add Milestone"}</button>
+          </div>
         </div>
         <div class="overflow-x-auto">
           <table class="w-full text-left border-collapse text-[11px] sm:text-xs">
@@ -3468,8 +3544,9 @@ function renderChecklistTab() {
           <span class="text-[11px] font-extrabold text-civic-ochre">${escapeHTML(u.block)} • ${escapeHTML(u.id)}</span>
           <h2 class="text-sm sm:text-base font-extrabold capitalize">${escapeHTML(isHi ? u.hi : u.en)}</h2>
         </div>
-        <div class="flex items-center gap-1.5">
-          <button type="button" onclick="openAddMilestoneModal()" class="px-3 py-2 btn-civic bg-civic-ochre text-[11px]">+ ${isHi ? "नया बिंदु जोड़ें" : "Add Milestone"}</button>
+        <div class="flex flex-wrap items-center gap-1.5">
+          ${isTopAdmin ? `<button type="button" onclick="openMergeMoveActivityModal('${u.id}')" class="px-3 py-2 btn-civic bg-civic-blue text-[11px]">🔀 ${isHi ? "मर्ज / मूव / गतिविधि" : "Merge / Move / Add"}</button>` : ""}
+          <button type="button" onclick="openAddMilestoneModal()" class="px-3 py-2 btn-civic bg-civic-ochre text-[11px]">+ ${isHi ? "नया बिंदु" : "Add Milestone"}</button>
           <span class="px-3 py-2 rounded-xl bg-civic-emerald text-white text-xs font-extrabold">${m.checklistPct}% (${m.completed}/${m.applicable})</span>
         </div>
       </div>
@@ -3569,7 +3646,7 @@ function openAddMilestoneModal() {
   const isHi = lang === "hi";
   openUniversalModal(
     isHi ? "+ नया चेकलिस्ट बिंदु जोड़ें" : "+ Add Custom Checklist Milestone",
-    isHi ? "सभी 32 ASHA इकाइयों में जुड़ेगा" : "Applies across all 32 ASHA units",
+    isHi ? "सभी ASHA इकाइयों में जुड़ेगा" : "Applies across all ASHA units",
     `<form onsubmit="saveCustomMilestone(event)" class="space-y-3">
       <div>
         <label class="block font-bold mb-1">${isHi ? "बिंदु शीर्षक (English) *" : "Milestone Title (English) *"}</label>
@@ -3602,8 +3679,78 @@ async function saveCustomMilestone(ev) {
 }
 
 // ============================================================================
-// SECTION M: TAB 5 — SETTINGS, THEME SELECTOR, REVERSE AUDIT & DELETED DATA
+// SECTION M: TAB 5 — SETTINGS, ADD/REMOVE UNITS, THEME & REVERSE AUDIT LOG
 // ============================================================================
+function openAddUnitModal() {
+  const isHi = lang === "hi";
+  openUniversalModal(
+    isHi ? "+ नई ASHA इकाई जोड़ें (DMMU / CEO / Dev)" : "+ Add New ASHA Unit (DMMU / CEO / Dev)",
+    isHi ? "सरगुजा जिला इकाई सूची में जोड़ें" : "Add to Surguja ASHA Units",
+    `<form onsubmit="handleAddUnit(event)" class="space-y-3">
+      <div>
+        <label class="block font-bold mb-1">${isHi ? "विकासखंड (Block) *" : "Block *"}</label>
+        <select id="new-u-block" class="w-full px-3 py-2 civic-input font-bold">
+          ${BLOCKS.map(b => `<option value="${b.id}">${lang === "hi" ? b.hi : b.en}</option>`).join("")}
+        </select>
+      </div>
+      <div>
+        <label class="block font-bold mb-1">${isHi ? "ग्राम पंचायत (GP) *" : "Gram Panchayat *"}</label>
+        <input type="text" id="new-u-gp" required class="w-full px-3 py-2 civic-input font-semibold" />
+      </div>
+      <div>
+        <label class="block font-bold mb-1">${isHi ? "इकाई / गतिविधि का नाम *" : "Unit / Activity Name *"}</label>
+        <input type="text" id="new-u-name" required class="w-full px-3 py-2 civic-input font-semibold" />
+      </div>
+      <div>
+        <label class="block font-bold mb-1">${isHi ? "मुख्य इकाई (Primary Unit) *" : "Primary Unit *"}</label>
+        <select id="new-u-type" class="w-full px-3 py-2 civic-input font-bold">
+          ${STANDARD_UNITS.map(st => `<option value="${st}">${st}</option>`).join("")}
+        </select>
+      </div>
+      <button type="submit" class="w-full py-2.5 btn-civic bg-civic-emerald text-xs">✓ ${isHi ? "इकाई जोड़ें" : "Create Unit"}</button>
+    </form>`
+  );
+}
+
+async function handleAddUnit(ev) {
+  ev.preventDefault();
+  if (!isDistrictTopAuthority()) return;
+  const block = document.getElementById("new-u-block").value;
+  const gp = sanitizeInput(document.getElementById("new-u-gp").value);
+  const name = sanitizeInput(document.getElementById("new-u-name").value);
+  const unitType = document.getElementById("new-u-type").value;
+  const nextNum = vault.units.length + 1;
+  const id = "ASHA" + String(nextNum).padStart(2, "0");
+
+  vault.units.push({
+    id, block, gp,
+    en: `${nextNum}. ${name}`, hi: `${nextNum}. ${name}`,
+    unitType, wastageLimitPct: 5, shelfLifeDays: 0, phase: "Phase 1", phaseDate: "", model: "Standard",
+    upiId: "asha.surguja@sbi", upiVerifiedBy: [id, "DMMU26"], upiPending: null,
+    targetMetric: "revenue", targetValue: 50000, targetUnit: "Rs", targetDeadline: "2026-12-31"
+  });
+  vault.checklistStatus[id] = {};
+  getAllChecklistItems().forEach(it => { vault.checklistStatus[id][it.id] = "N/A"; });
+
+  recordAudit("ADMIN", id, `Created New Unit: ${id} (${name}) in ${block}`);
+  await saveVault();
+  closeUniversalModal();
+  renderAll();
+  showToast(lang === "hi" ? `नई इकाई ${id} जोड़ी गई` : `New unit ${id} added`);
+}
+
+async function removeUnitByAdmin(unitId) {
+  if (!isDistrictTopAuthority()) return;
+  const target = vault.units.find(x => x.id === unitId);
+  if (!target) return;
+  vault.units = vault.units.filter(x => x.id !== unitId);
+  if (globalFilterUnit === unitId) globalFilterUnit = "ALL";
+  recordAudit("ADMIN", unitId, `Removed Unit [${unitId}]`, target);
+  await saveVault();
+  renderAll();
+  showToast(lang === "hi" ? `इकाई ${unitId} हटाई गई` : `Unit ${unitId} removed`, true);
+}
+
 function renderSettingsTab() {
   const isHi = lang === "hi";
   const eff = getEffectiveUser();
@@ -3619,10 +3766,10 @@ function renderSettingsTab() {
     : vault.auditLogs;
 
   const themeOptions = [
+    { id: "system", label: isHi ? "📱 सिस्टम डिफ़ॉल्ट" : "📱 System Default" },
     { id: "light", label: isHi ? "☀️ लाइट (Light)" : "☀️ Light" },
     { id: "dark", label: isHi ? "🌙 डार्क (Dark)" : "🌙 Dark" },
-    { id: "contrast", label: isHi ? "⚡ हाई-कंट्रास्ट" : "⚡ High-Contrast" },
-    { id: "system", label: isHi ? "📱 सिस्टम डिफ़ॉल्ट" : "📱 System Default" }
+    { id: "contrast", label: isHi ? "⚡ हाई-कंट्रास्ट" : "⚡ High-Contrast" }
   ];
 
   return `
@@ -3630,7 +3777,7 @@ function renderSettingsTab() {
       <div class="flex flex-wrap items-center justify-between gap-2">
         <div>
           <h2 class="text-sm font-extrabold">🛡️ ${isHi ? "डिस्प्ले मोड, पिन / फिंगरप्रिंट लॉक व वॉल्ट" : "Theme Mode, PIN / Fingerprint Lock & Vault"}</h2>
-          <p class="text-[11px] text-muted-var">${isHi ? "लाइट, डार्क, हाई-कंट्रास्ट या सिस्टम डिफ़ॉल्ट चुनें • AES-256" : "Choose Light, Dark, High-Contrast, or System Default • AES-256"}</p>
+          <p class="text-[11px] text-muted-var">${isHi ? "डिफ़ॉल्ट: सिस्टम मोड • लाइट, डार्क या हाई-कंट्रास्ट बदलें • AES-256" : "Default: System Mode • Switch Light, Dark, or High-Contrast • AES-256"}</p>
         </div>
         <div class="flex flex-wrap gap-1.5">
           <button type="button" onclick="openSet4DigitPinModal()" class="px-3 py-2 btn-civic ${hasPin ? "bg-civic-emerald" : "bg-civic-ochre"} text-[11px]">
@@ -3665,6 +3812,24 @@ function renderSettingsTab() {
     </div>
 
     ${isTopAdmin ? `
+      <div class="civic-card p-4 space-y-3 border-l-4" style="border-left-color: var(--civic-emerald);">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h3 class="text-xs sm:text-sm font-extrabold">🏗️ ${isHi ? "ASHA इकाई जोड़ें या हटाएं (DMMU / CEO ZP / Dev)" : "Add or Remove ASHA Units (DMMU / CEO ZP / Dev)"}</h3>
+            <p class="text-[11px] text-muted-var">${isHi ? `कुल सक्रिय इकाइयाँ: ${vault.units.length}` : `Total Active Units: ${vault.units.length}`}</p>
+          </div>
+          <button type="button" onclick="openAddUnitModal()" class="px-3 py-2 btn-civic bg-civic-emerald text-[11px]">+ ${isHi ? "नई इकाई जोड़ें" : "Add Unit"}</button>
+        </div>
+        <div class="max-h-48 overflow-y-auto space-y-1.5 pr-1 text-xs">
+          ${vault.units.map(u => `
+            <div class="p-2 rounded-xl civic-muted flex items-center justify-between gap-2">
+              <div class="min-w-0 truncate font-bold capitalize">${escapeHTML(u.id)} • ${escapeHTML(isHi ? u.hi : u.en)}</div>
+              <button type="button" onclick="removeUnitByAdmin('${escapeHTML(u.id)}')" class="px-2 py-1 rounded bg-civic-crimson text-white text-[10px] font-bold shrink-0">🗑️ ${isHi ? "हटाएं" : "Remove"}</button>
+            </div>
+          `).join("")}
+        </div>
+      </div>
+
       <div class="civic-card p-4 space-y-3 border-l-4" style="border-left-color: var(--civic-emerald);">
         <div class="flex flex-wrap items-center justify-between gap-2">
           <div>
@@ -4250,7 +4415,7 @@ function renderAll() {
 
 async function initASHAApp() {
   vault = await loadVault();
-  themeMode = (vault.deviceSecurity && vault.deviceSecurity.themeMode) || "light";
+  themeMode = (vault.deviceSecurity && vault.deviceSecurity.themeMode) || "system";
   applyTheme();
   applyLanguageStaticLabels();
   selectLoginRole("shg");
@@ -4259,7 +4424,7 @@ async function initASHAApp() {
   if (ds.activeSessionUserId) {
     const activeAcc = vault.accounts.find(a => a.userId === ds.activeSessionUserId);
     if (activeAcc && !isUserBlocked(activeAcc.userId)) {
-      await completeLogin(activeAcc);
+      await completeLogin(activeAcc, false);
       return;
     }
   }
