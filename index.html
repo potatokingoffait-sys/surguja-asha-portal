@@ -502,7 +502,7 @@
   </nav>
 
   <!-- ===================================================================== -->
-  <!-- 5. UNIVERSAL MODAL                                                    -->
+  <!-- 5. UNIVERSAL MODAL (SECURITY GATE, PIN SETUP, DRILLDOWN)              -->
   <!-- ===================================================================== -->
   <div id="universal-modal" class="hidden fixed inset-0 z-50 flex items-end sm:items-center justify-center p-2 sm:p-4" style="background: rgba(9, 13, 20, 0.78);">
     <div class="w-full max-w-lg civic-card overflow-hidden max-h-[88dvh] flex flex-col">
@@ -598,7 +598,7 @@ const MASTER_CHECKLIST_ITEMS = [
 // ============================================================================
 // SECTION B: CRYPTOGRAPHIC VAULT, SYSTEM THEME DEFAULT & STICKY PREFS
 // ============================================================================
-const VAULT_STORAGE_KEY = "SURGUJA_ASHA_SECURE_VAULT_PROD_V8";
+const VAULT_STORAGE_KEY = "SURGUJA_ASHA_SECURE_VAULT_PROD_V9";
 const VAULT_SALT = "SURGUJA-NRLM-ASHA-2026-ZERO-SERVER";
 
 let lang = "hi";
@@ -620,6 +620,12 @@ let systemClockTimer = null;
 let pendingSignUpPhoto = "";
 let suggestionLimit = 5;
 let showAllUnsubmittedWeekly = false;
+
+// Collapsed Settings Panel Toggles (Hidden behind buttons by default)
+let showUnitMgrPanel = false;
+let showUserBlockPanel = false;
+let showCloudSyncPanel = false;
+let pendingCriticalCallback = null;
 
 function resolveSystemTheme() {
   try {
@@ -840,6 +846,7 @@ function buildSeedState() {
     accounts: buildDefaultAccounts(),
     blockedUsers: [],
     deletedIds: [],
+    removedUnitIds: [],
     customChecklistItems: [],
     checklistStatus,
     rmLogs: [],
@@ -886,6 +893,7 @@ async function loadVault() {
         if (!dec.recentFormPrefs) dec.recentFormPrefs = {};
         if (!Array.isArray(dec.blockedUsers)) dec.blockedUsers = [];
         if (!Array.isArray(dec.deletedIds)) dec.deletedIds = [];
+        if (!Array.isArray(dec.removedUnitIds)) dec.removedUnitIds = [];
         await ensurePasswordHashes(dec);
         return dec;
       }
@@ -947,7 +955,84 @@ function recordAudit(category, unitId, actionText, deletedSnapshot = null) {
 }
 
 // ============================================================================
-// SECTION C: EFFECTIVE USER, PERMISSIONS, WASTAGE & PAYMENT REMINDERS
+// SECTION C: FINGERPRINT / LOGIN PIN SECURITY GATE FOR CRITICAL SETTINGS
+// ============================================================================
+function requireAdminAuthGate(actionTitle, callbackFn) {
+  const isHi = lang === "hi";
+  const ds = vault.deviceSecurity || {};
+  const hasBio = !!ds.credentialId;
+  pendingCriticalCallback = callbackFn;
+
+  openUniversalModal(
+    isHi ? "🔐 सुरक्षा सत्यापन आवश्यक (Admin Auth)" : "🔐 Security Verification Required",
+    actionTitle,
+    `<div class="space-y-3">
+      <p class="text-sec-var leading-relaxed">${isHi ? "यह एक संवेदनशील प्रशासनिक परिवर्तन है। सहेजने के लिए अपना फिंगरप्रिंट या 4-अंकों का PIN / लॉगिन पासवर्ड सत्यापित करें।" : "This is a protected administrative change. Verify with your Fingerprint or 4-Digit PIN / Login Password to save."}</p>
+      ${hasBio ? `
+        <button type="button" onclick="verifyCriticalViaBiometric()" class="w-full py-3 btn-civic bg-civic-blue text-xs">
+          👆 ${isHi ? "फिंगरप्रिंट / Face ID से सत्यापित करें" : "Verify with Fingerprint / Face ID"}
+        </button>
+      ` : ""}
+      <form onsubmit="verifyCriticalViaPinOrPass(event)" class="space-y-2.5">
+        <div>
+          <label class="block font-bold mb-1">${isHi ? "4-अंकों का PIN या लॉगिन पासवर्ड दर्ज करें *" : "Enter 4-Digit PIN or Account Password *"}</label>
+          <input type="password" id="crit-auth-secret" required placeholder="••••" class="w-full px-3 py-2.5 civic-input text-center font-extrabold" />
+        </div>
+        <button type="submit" class="w-full py-2.5 btn-civic bg-civic-teal text-xs">
+          ✓ ${isHi ? "सत्यापित करें और सहेजें" : "Verify & Save Changes"}
+        </button>
+      </form>
+    </div>`
+  );
+}
+
+async function verifyCriticalViaBiometric() {
+  const ds = vault.deviceSecurity || {};
+  if (!ds.credentialId) return;
+  try {
+    const assertion = await navigator.credentials.get({
+      publicKey: {
+        challenge: crypto.getRandomValues(new Uint8Array(32)),
+        allowCredentials: [{ id: base64UrlToUint8(ds.credentialId), type: "public-key" }],
+        userVerification: "required",
+        timeout: 30000
+      }
+    });
+    if (assertion && typeof pendingCriticalCallback === "function") {
+      const fn = pendingCriticalCallback;
+      pendingCriticalCallback = null;
+      closeUniversalModal();
+      await fn();
+    }
+  } catch (e) {
+    showToast(lang === "hi" ? "फिंगरप्रिंट सत्यापन विफल — PIN या पासवर्ड डालें" : "Fingerprint failed — enter PIN or Password", true);
+  }
+}
+
+async function verifyCriticalViaPinOrPass(ev) {
+  ev.preventDefault();
+  const secret = document.getElementById("crit-auth-secret").value.trim();
+  if (!secret || !currentUser) return;
+
+  const ds = vault.deviceSecurity || {};
+  const pinMatch = ds.pinHash && (await sha256Hex("PIN:" + currentUser.userId + ":" + secret)) === ds.pinHash;
+  const passMatch = (await sha256Hex(secret)) === currentUser.passHash;
+
+  if (!pinMatch && !passMatch) {
+    showToast(lang === "hi" ? "गलत PIN या पासवर्ड — परिवर्तन सहेजा नहीं गया" : "Incorrect PIN or Password — changes blocked", true);
+    return;
+  }
+
+  if (typeof pendingCriticalCallback === "function") {
+    const fn = pendingCriticalCallback;
+    pendingCriticalCallback = null;
+    closeUniversalModal();
+    await fn();
+  }
+}
+
+// ============================================================================
+// SECTION D: EFFECTIVE USER, PERMISSIONS, WASTAGE & PAYMENT REMINDERS
 // ============================================================================
 function getEffectiveUser() {
   if (!currentUser) return null;
@@ -1104,7 +1189,7 @@ function getUnitMetrics(unitId) {
 }
 
 // ============================================================================
-// SECTION D: SMART SHELF-LIFE, AUTO-FILTER SUGGESTIONS & LOAD MORE
+// SECTION E: SHELF-LIFE, AUTO-FILTER SUGGESTIONS & LOAD MORE
 // ============================================================================
 function inferShelfLifeDays(unitId, productName) {
   const cleanName = (productName || "").toLowerCase().trim();
@@ -1213,7 +1298,7 @@ function snoozeShelfLifeWatch() {
 }
 
 // ============================================================================
-// SECTION E: PERSISTENT LOGIN, 4-DIGIT PIN, BIOMETRIC & SIGN-UP
+// SECTION F: PERSISTENT LOGIN, 4-DIGIT PIN, BIOMETRIC & SIGN-UP
 // ============================================================================
 function showQuickLockScreen() {
   const ds = vault.deviceSecurity || {};
@@ -1614,6 +1699,9 @@ async function completeLogin(acc, promptPinAfter) {
   activeTab = "dashboard";
   tabErrorFlags = {};
   showAllUnsubmittedWeekly = false;
+  showUnitMgrPanel = false;
+  showUserBlockPanel = false;
+  showCloudSyncPanel = false;
 
   vault.deviceSecurity.rememberedUserId = acc.userId;
   vault.deviceSecurity.activeSessionUserId = acc.userId;
@@ -1685,7 +1773,7 @@ function startLiveSystemClock() {
 }
 
 // ============================================================================
-// SECTION F: LANGUAGE, NAVIGATION & GLOBAL FILTERS
+// SECTION G: LANGUAGE, NAVIGATION & GLOBAL FILTERS
 // ============================================================================
 function toggleLang() {
   lang = lang === "hi" ? "en" : "hi";
@@ -1880,7 +1968,7 @@ function renderHeaderAndNav() {
 }
 
 // ============================================================================
-// SECTION G: TAB 1 — DASHBOARD, NON-SUBMITTED SHG ALERT & WASTAGE ALERT
+// SECTION H: TAB 1 — DASHBOARD, NON-SUBMITTED SHG ALERT & WASTAGE ALERT
 // ============================================================================
 function toggleUnsubmittedWeeklyExpand() {
   showAllUnsubmittedWeekly = !showAllUnsubmittedWeekly;
@@ -2221,7 +2309,7 @@ function renderDashboardTab() {
 }
 
 // ============================================================================
-// SECTION H: DRILL-DOWN INSPECTOR MODAL
+// SECTION I: DRILL-DOWN INSPECTOR MODAL
 // ============================================================================
 function openUniversalModal(title, sub, bodyHTML) {
   document.getElementById("modal-title").textContent = title;
@@ -2330,7 +2418,7 @@ function openDrillDown(type, param = "") {
 }
 
 // ============================================================================
-// SECTION I: TAB 2 — STOCK (SYSTEM TIME ONLY FOR DMMU+ & WASTAGE % DISPLAY)
+// SECTION J: TAB 2 — STOCK & PRODUCTION
 // ============================================================================
 function renderStockTab() {
   const isHi = lang === "hi";
@@ -2580,7 +2668,6 @@ function renderStockTab() {
       </div>
     </div>
 
-    <!-- STOCK HISTORY TABLE WITH WASTAGE % & SCHEDULED PAYMENT DATES -->
     <div class="civic-card p-4 space-y-2.5">
       <h3 class="text-xs font-extrabold">📜 ${isHi ? "स्टॉक, अपव्यय व निर्धारित भुगतान तिथि इतिहास" : "Stock, Wastage & Scheduled Payment History"}</h3>
       <div class="overflow-x-auto">
@@ -2773,7 +2860,7 @@ async function handleSaveFG(ev, unitId) {
 }
 
 // ============================================================================
-// SECTION J: TAB 3 — SALES, CASH + CREDIT -> HYBRID & 2-PARTY UPI QR
+// SECTION K: TAB 3 — SALES & 2-PARTY UPI QR
 // ============================================================================
 function filterSalesByTimeframe(logs) {
   if (salesTimeFilter === "ALL") return logs;
@@ -3204,7 +3291,7 @@ async function confirmPendingUPI(unitId) {
 }
 
 // ============================================================================
-// SECTION K: TAB 4 — WEEKLY REPORTS (SHG SUBMISSION + OFFICER STATUS TRACKER)
+// SECTION L: TAB 4 — WEEKLY REPORTS
 // ============================================================================
 function renderWeeklyTab() {
   const isHi = lang === "hi";
@@ -3390,7 +3477,7 @@ function exportSingleSHGWeeklyExcel(unitId) {
 }
 
 // ============================================================================
-// SECTION L: TAB 4B — CHECKLIST + MERGE / MOVE / ADD ACTIVITY
+// SECTION M: TAB 4B — CHECKLIST + MERGE / MOVE / ADD ACTIVITY
 // ============================================================================
 function setChecklistStatusFilter(st) {
   checklistStatusFilter = st;
@@ -3433,42 +3520,44 @@ function toggleMergeTargetSelect() {
   document.getElementById("act-target-wrap").classList.toggle("hidden", act !== "MERGE_UNIT");
 }
 
-async function handleMergeMoveActivity(ev, sourceUnitId) {
+function handleMergeMoveActivity(ev, sourceUnitId) {
   ev.preventDefault();
   if (!isDistrictTopAuthority()) return;
   const action = document.getElementById("act-action").value;
   const actName = sanitizeInput(document.getElementById("act-name").value);
+  const targetUnitId = document.getElementById("act-target-unit") ? document.getElementById("act-target-unit").value : "";
   const src = vault.units.find(x => x.id === sourceUnitId);
   if (!src || !actName) return;
 
-  if (action === "ADD_ACTIVITY") {
-    src.en = `${src.en} + ${actName}`;
-    src.hi = `${src.hi} + ${actName}`;
-    recordAudit("ADMIN", sourceUnitId, `Added Activity "${actName}" to ${sourceUnitId}`);
-    await saveVault();
-    closeUniversalModal();
-    renderAll();
-    showToast(lang === "hi" ? "नई गतिविधि जोड़ी गई" : "Activity added to unit");
-    return;
-  }
-
-  const targetUnitId = document.getElementById("act-target-unit").value;
-  const dst = vault.units.find(x => x.id === targetUnitId);
-  if (!dst) return;
-
-  vault.rmLogs.forEach(r => { if (r.unitId === sourceUnitId) r.unitId = targetUnitId; });
-  vault.fgLogs.forEach(f => { if (f.unitId === sourceUnitId) f.unitId = targetUnitId; });
-  vault.salesLogs.forEach(s => { if (s.unitId === sourceUnitId) s.unitId = targetUnitId; });
-  vault.weeklyReports.forEach(w => { if (w.unitId === sourceUnitId) w.unitId = targetUnitId; });
-
-  dst.en = `${dst.en} + ${actName}`;
-  dst.hi = `${dst.hi} + ${actName}`;
-
-  recordAudit("ADMIN", targetUnitId, `Merged/Moved Activity "${actName}" from ${sourceUnitId} into ${targetUnitId}`);
-  await saveVault();
   closeUniversalModal();
-  renderAll();
-  showToast(lang === "hi" ? `गतिविधि ${targetUnitId} में मर्ज/स्थानांतरित हो गई` : `Activity merged/moved to ${targetUnitId}`);
+  requireAdminAuthGate(
+    action === "ADD_ACTIVITY" ? `Add Activity "${actName}" to ${sourceUnitId}` : `Merge/Move "${actName}" from ${sourceUnitId} to ${targetUnitId}`,
+    async () => {
+      if (action === "ADD_ACTIVITY") {
+        src.en = `${src.en} + ${actName}`;
+        src.hi = `${src.hi} + ${actName}`;
+        recordAudit("ADMIN", sourceUnitId, `Added Activity "${actName}" to ${sourceUnitId}`);
+        await saveVault();
+        renderAll();
+        showToast(lang === "hi" ? "नई गतिविधि जोड़ी गई" : "Activity added to unit");
+        return;
+      }
+
+      const dst = vault.units.find(x => x.id === targetUnitId);
+      if (!dst) return;
+      vault.rmLogs.forEach(r => { if (r.unitId === sourceUnitId) r.unitId = targetUnitId; });
+      vault.fgLogs.forEach(f => { if (f.unitId === sourceUnitId) f.unitId = targetUnitId; });
+      vault.salesLogs.forEach(s => { if (s.unitId === sourceUnitId) s.unitId = targetUnitId; });
+      vault.weeklyReports.forEach(w => { if (w.unitId === sourceUnitId) w.unitId = targetUnitId; });
+
+      dst.en = `${dst.en} + ${actName}`;
+      dst.hi = `${dst.hi} + ${actName}`;
+      recordAudit("ADMIN", targetUnitId, `Merged/Moved Activity "${actName}" from ${sourceUnitId} into ${targetUnitId}`);
+      await saveVault();
+      renderAll();
+      showToast(lang === "hi" ? `गतिविधि ${targetUnitId} में मर्ज/स्थानांतरित हो गई` : `Activity merged/moved to ${targetUnitId}`);
+    }
+  );
 }
 
 function renderChecklistTab() {
@@ -3485,10 +3574,7 @@ function renderChecklistTab() {
             <h2 class="text-sm font-extrabold">✅ ${isHi ? `समेकित मास्टर चेकलिस्ट (${units.length} इकाइयाँ • ${allItems.length} बिंदु)` : `Master Execution Checklist (${units.length} Units • ${allItems.length} Items)`}</h2>
             <p class="text-[11px] text-muted-var">${isHi ? "चरण तिथि व बिंदु अपडेट करने के लिए किसी इकाई पर क्लिक करें" : "Select a unit to update Phase Launch Date and 17-point status"}</p>
           </div>
-          <div class="flex flex-wrap gap-1.5">
-            ${isTopAdmin ? `<button type="button" onclick="openAddUnitModal()" class="px-3 py-2 btn-civic bg-civic-emerald text-[11px]">+ ${isHi ? "नई इकाई जोड़ें" : "Add Unit"}</button>` : ""}
-            <button type="button" onclick="openAddMilestoneModal()" class="px-3 py-2 btn-civic bg-civic-ochre text-[11px]">+ ${isHi ? "नया बिंदु जोड़ें" : "Add Milestone"}</button>
-          </div>
+          <button type="button" onclick="openAddMilestoneModal()" class="px-3 py-2 btn-civic bg-civic-ochre text-[11px]">+ ${isHi ? "नया बिंदु जोड़ें" : "Add Milestone"}</button>
         </div>
         <div class="overflow-x-auto">
           <table class="w-full text-left border-collapse text-[11px] sm:text-xs">
@@ -3679,13 +3765,28 @@ async function saveCustomMilestone(ev) {
 }
 
 // ============================================================================
-// SECTION M: TAB 5 — SETTINGS, ADD/REMOVE UNITS, THEME & REVERSE AUDIT LOG
+// SECTION N: TAB 5 — SETTINGS (COLLAPSED PANELS + BIOMETRIC/PIN AUTH GATE)
 // ============================================================================
+function toggleUnitMgrPanel() {
+  showUnitMgrPanel = !showUnitMgrPanel;
+  renderAll();
+}
+
+function toggleUserBlockPanel() {
+  showUserBlockPanel = !showUserBlockPanel;
+  renderAll();
+}
+
+function toggleCloudSyncPanel() {
+  showCloudSyncPanel = !showCloudSyncPanel;
+  renderAll();
+}
+
 function openAddUnitModal() {
   const isHi = lang === "hi";
   openUniversalModal(
     isHi ? "+ नई ASHA इकाई जोड़ें (DMMU / CEO / Dev)" : "+ Add New ASHA Unit (DMMU / CEO / Dev)",
-    isHi ? "सरगुजा जिला इकाई सूची में जोड़ें" : "Add to Surguja ASHA Units",
+    isHi ? "सरगुजा जिला इकाई सूची व Google Sheet में जुड़ेगी" : "Syncs to all devices & Google Sheet",
     `<form onsubmit="handleAddUnit(event)" class="space-y-3">
       <div>
         <label class="block font-bold mb-1">${isHi ? "विकासखंड (Block) *" : "Block *"}</label>
@@ -3707,48 +3808,63 @@ function openAddUnitModal() {
           ${STANDARD_UNITS.map(st => `<option value="${st}">${st}</option>`).join("")}
         </select>
       </div>
-      <button type="submit" class="w-full py-2.5 btn-civic bg-civic-emerald text-xs">✓ ${isHi ? "इकाई जोड़ें" : "Create Unit"}</button>
+      <button type="submit" class="w-full py-2.5 btn-civic bg-civic-emerald text-xs">🔐 ${isHi ? "सत्यापित करें और इकाई जोड़ें" : "Verify & Create Unit"}</button>
     </form>`
   );
 }
 
-async function handleAddUnit(ev) {
+function handleAddUnit(ev) {
   ev.preventDefault();
   if (!isDistrictTopAuthority()) return;
   const block = document.getElementById("new-u-block").value;
   const gp = sanitizeInput(document.getElementById("new-u-gp").value);
   const name = sanitizeInput(document.getElementById("new-u-name").value);
   const unitType = document.getElementById("new-u-type").value;
-  const nextNum = vault.units.length + 1;
+  const maxNum = vault.units.reduce((mx, u) => Math.max(mx, Number(String(u.id).replace(/\D/g, "")) || 0), 0);
+  const nextNum = maxNum + 1;
   const id = "ASHA" + String(nextNum).padStart(2, "0");
 
-  vault.units.push({
-    id, block, gp,
-    en: `${nextNum}. ${name}`, hi: `${nextNum}. ${name}`,
-    unitType, wastageLimitPct: 5, shelfLifeDays: 0, phase: "Phase 1", phaseDate: "", model: "Standard",
-    upiId: "asha.surguja@sbi", upiVerifiedBy: [id, "DMMU26"], upiPending: null,
-    targetMetric: "revenue", targetValue: 50000, targetUnit: "Rs", targetDeadline: "2026-12-31"
-  });
-  vault.checklistStatus[id] = {};
-  getAllChecklistItems().forEach(it => { vault.checklistStatus[id][it.id] = "N/A"; });
-
-  recordAudit("ADMIN", id, `Created New Unit: ${id} (${name}) in ${block}`);
-  await saveVault();
   closeUniversalModal();
-  renderAll();
-  showToast(lang === "hi" ? `नई इकाई ${id} जोड़ी गई` : `New unit ${id} added`);
+  requireAdminAuthGate(
+    lang === "hi" ? `नई इकाई ${id} (${name}) जोड़ें` : `Create New Unit ${id} (${name})`,
+    async () => {
+      vault.removedUnitIds = (vault.removedUnitIds || []).filter(x => x !== id);
+      vault.units.push({
+        id, block, gp,
+        en: `${nextNum}. ${name}`, hi: `${nextNum}. ${name}`,
+        unitType, wastageLimitPct: 5, shelfLifeDays: 0, phase: "Phase 1", phaseDate: "", model: "Standard",
+        upiId: "asha.surguja@sbi", upiVerifiedBy: [id, "DMMU26"], upiPending: null,
+        targetMetric: "revenue", targetValue: 50000, targetUnit: "Rs", targetDeadline: "2026-12-31"
+      });
+      vault.checklistStatus[id] = {};
+      getAllChecklistItems().forEach(it => { vault.checklistStatus[id][it.id] = "N/A"; });
+
+      recordAudit("ADMIN", id, `Created New Unit: ${id} (${name}) in ${block}`);
+      await saveVault();
+      renderAll();
+      showToast(lang === "hi" ? `✓ नई इकाई ${id} जोड़ी गई व Google Sheet में सिंक हुई` : `✓ New unit ${id} added & synced to Google Sheet`);
+    }
+  );
 }
 
-async function removeUnitByAdmin(unitId) {
+function removeUnitByAdmin(unitId) {
   if (!isDistrictTopAuthority()) return;
   const target = vault.units.find(x => x.id === unitId);
   if (!target) return;
-  vault.units = vault.units.filter(x => x.id !== unitId);
-  if (globalFilterUnit === unitId) globalFilterUnit = "ALL";
-  recordAudit("ADMIN", unitId, `Removed Unit [${unitId}]`, target);
-  await saveVault();
-  renderAll();
-  showToast(lang === "hi" ? `इकाई ${unitId} हटाई गई` : `Unit ${unitId} removed`, true);
+
+  requireAdminAuthGate(
+    lang === "hi" ? `इकाई ${unitId} (${target.en}) हटाएं` : `Remove Unit ${unitId} (${target.en})`,
+    async () => {
+      if (!Array.isArray(vault.removedUnitIds)) vault.removedUnitIds = [];
+      if (!vault.removedUnitIds.includes(unitId)) vault.removedUnitIds.push(unitId);
+      vault.units = vault.units.filter(x => x.id !== unitId);
+      if (globalFilterUnit === unitId) globalFilterUnit = "ALL";
+      recordAudit("ADMIN", unitId, `Removed Unit [${unitId}]`, target);
+      await saveVault();
+      renderAll();
+      showToast(lang === "hi" ? `✓ इकाई ${unitId} हटाई गई व Google Sheet में अपडेट हुई` : `✓ Unit ${unitId} removed & synced`, true);
+    }
+  );
 }
 
 function renderSettingsTab() {
@@ -3773,6 +3889,7 @@ function renderSettingsTab() {
   ];
 
   return `
+    <!-- Theme Mode, PIN, Biometric & Backups -->
     <div class="civic-card p-4 space-y-3">
       <div class="flex flex-wrap items-center justify-between gap-2">
         <div>
@@ -3812,80 +3929,102 @@ function renderSettingsTab() {
     </div>
 
     ${isTopAdmin ? `
+      <!-- 1. COLLAPSED ADD / REMOVE UNIT PANEL (PIN / FINGERPRINT REQUIRED TO SAVE) -->
       <div class="civic-card p-4 space-y-3 border-l-4" style="border-left-color: var(--civic-emerald);">
         <div class="flex flex-wrap items-center justify-between gap-2">
           <div>
-            <h3 class="text-xs sm:text-sm font-extrabold">🏗️ ${isHi ? "ASHA इकाई जोड़ें या हटाएं (DMMU / CEO ZP / Dev)" : "Add or Remove ASHA Units (DMMU / CEO ZP / Dev)"}</h3>
-            <p class="text-[11px] text-muted-var">${isHi ? `कुल सक्रिय इकाइयाँ: ${vault.units.length}` : `Total Active Units: ${vault.units.length}`}</p>
+            <h3 class="text-xs sm:text-sm font-extrabold">🏗️ ${isHi ? "ASHA इकाई जोड़ें या हटाएं (DMMU / CEO ZP / Dev)" : "Add or Remove a Unit (DMMU / CEO ZP / Dev)"}</h3>
+            <p class="text-[11px] text-muted-var">${isHi ? `सक्रिय इकाइयाँ: ${vault.units.length} • परिवर्तन सहेजने हेतु फिंगरप्रिंट/PIN आवश्यक` : `Active Units: ${vault.units.length} • Fingerprint/PIN required to save changes`}</p>
           </div>
-          <button type="button" onclick="openAddUnitModal()" class="px-3 py-2 btn-civic bg-civic-emerald text-[11px]">+ ${isHi ? "नई इकाई जोड़ें" : "Add Unit"}</button>
+          <button type="button" onclick="toggleUnitMgrPanel()" class="px-3 py-2 btn-civic bg-civic-teal text-[11px]">
+            ${showUnitMgrPanel ? (isHi ? "▲ सूची बंद करें" : "▲ Hide Unit List") : (isHi ? "🏗️ इकाई जोड़ें या हटाएं" : "🏗️ Add or Remove a Unit")}
+          </button>
         </div>
-        <div class="max-h-48 overflow-y-auto space-y-1.5 pr-1 text-xs">
-          ${vault.units.map(u => `
-            <div class="p-2 rounded-xl civic-muted flex items-center justify-between gap-2">
-              <div class="min-w-0 truncate font-bold capitalize">${escapeHTML(u.id)} • ${escapeHTML(isHi ? u.hi : u.en)}</div>
-              <button type="button" onclick="removeUnitByAdmin('${escapeHTML(u.id)}')" class="px-2 py-1 rounded bg-civic-crimson text-white text-[10px] font-bold shrink-0">🗑️ ${isHi ? "हटाएं" : "Remove"}</button>
+
+        ${showUnitMgrPanel ? `
+          <div class="pt-2 border-t space-y-2.5" style="border-color: var(--border-subtle);">
+            <div class="flex justify-end">
+              <button type="button" onclick="openAddUnitModal()" class="px-3 py-2 btn-civic bg-civic-emerald text-[11px]">+ ${isHi ? "नई ASHA इकाई जोड़ें" : "Add New Unit"}</button>
             </div>
-          `).join("")}
-        </div>
+            <div class="max-h-56 overflow-y-auto space-y-1.5 pr-1 text-xs">
+              ${vault.units.map(u => `
+                <div class="p-2.5 rounded-xl civic-muted flex items-center justify-between gap-2">
+                  <div class="min-w-0 truncate font-bold capitalize">${escapeHTML(u.id)} • ${escapeHTML(isHi ? u.hi : u.en)}</div>
+                  <button type="button" onclick="removeUnitByAdmin('${escapeHTML(u.id)}')" class="px-2.5 py-1 rounded bg-civic-crimson text-white text-[10px] font-bold shrink-0">🗑️ ${isHi ? "हटाएं" : "Remove"}</button>
+                </div>
+              `).join("")}
+            </div>
+          </div>
+        ` : ""}
       </div>
 
-      <div class="civic-card p-4 space-y-3 border-l-4" style="border-left-color: var(--civic-emerald);">
-        <div class="flex flex-wrap items-center justify-between gap-2">
-          <div>
-            <h3 class="text-xs sm:text-sm font-extrabold">☁️ ${isHi ? "Google Sheets 2-Way लाइव सिंक" : "Google Sheets 2-Way Live Sync"}</h3>
-            <p class="text-[11px] text-muted-var">${isHi ? "केवल DMMU, CEO ZP या Developer ही सिंक लिंक बदल सकते हैं" : "Restricted to DMMU, CEO ZP, and Developer Root"}</p>
-          </div>
-          <span class="px-2.5 py-1 rounded-full whitespace-nowrap bg-civic-emerald text-white text-[10px] font-extrabold">
-            Cloud Sync Linked
-          </span>
-        </div>
-
-        <form onsubmit="saveGoogleCloudConfig(event)" class="space-y-2.5 text-xs">
-          <div>
-            <label class="block font-bold mb-1 text-sec-var">Google Apps Script Web App URL (Live Sync Endpoint) *</label>
-            <input type="url" id="cfg-script-url" value="${escapeHTML(activeUrl)}" placeholder="https://script.google.com/macros/s/.../exec" class="w-full px-3 py-2 civic-input font-mono text-[11px]" />
-          </div>
-          <div>
-            <label class="block font-bold mb-1 text-sec-var">Master Google Sheet URL (Optional)</label>
-            <input type="url" id="cfg-sheet-url" value="${escapeHTML(vault.cloudConfig.masterSheetUrl || "")}" placeholder="https://docs.google.com/spreadsheets/d/..." class="w-full px-3 py-2 civic-input font-mono text-[11px]" />
-          </div>
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
-            <button type="submit" class="py-2.5 btn-civic bg-civic-emerald text-[11px]">✓ ${isHi ? "लिंक सहेजें व पब्लिश करें" : "Save & Publish Link"}</button>
-            <button type="button" onclick="fullTwoWayCloudSync(true)" class="py-2.5 btn-civic bg-civic-blue text-[11px]">🔄 ${isHi ? "अभी सिंक करें (Push + Pull)" : "Sync All Devices Now"}</button>
-            <button type="button" onclick="copyAppsScriptBackend()" class="py-2.5 btn-civic civic-muted text-[11px]">📋 ${isHi ? "Apps Script कोड कॉपी करें" : "Copy Script Code"}</button>
-          </div>
-        </form>
-      </div>
-
+      <!-- 2. COLLAPSED USER ACCESS CONTROL & BLOCK MANAGEMENT (PIN / FINGERPRINT REQUIRED) -->
       <div class="civic-card p-4 space-y-3 border-l-4" style="border-left-color: var(--civic-crimson);">
         <div class="flex flex-wrap items-center justify-between gap-2">
           <div>
             <h3 class="text-xs sm:text-sm font-extrabold">🚫 ${isHi ? "उपयोगकर्ता नियंत्रण व खाता ब्लॉक प्रबंधन (DMMU / CEO ZP / Dev)" : "User Access Control & Block Management (DMMU / CEO ZP / Dev)"}</h3>
-            <p class="text-[11px] text-muted-var">${isHi ? `SHG कोड: ${SHG_INVITE_SIGNUP_CODE} | अधिकारी कोड: ${DISTRICT_OFFICER_SIGNUP_CODE}` : `SHG Code: ${SHG_INVITE_SIGNUP_CODE} | Officer Code: ${DISTRICT_OFFICER_SIGNUP_CODE}`}</p>
+            <p class="text-[11px] text-muted-var">${isHi ? `ब्लॉक खाते: ${(vault.blockedUsers || []).length} • SHG कोड: ${SHG_INVITE_SIGNUP_CODE} | अधिकारी कोड: ${DISTRICT_OFFICER_SIGNUP_CODE}` : `Blocked: ${(vault.blockedUsers || []).length} • SHG Code: ${SHG_INVITE_SIGNUP_CODE} | Officer Code: ${DISTRICT_OFFICER_SIGNUP_CODE}`}</p>
           </div>
-          <span class="px-2.5 py-0.5 rounded-full bg-civic-crimson text-white text-[10px] font-extrabold">${(vault.blockedUsers || []).length} Blocked</span>
+          <button type="button" onclick="toggleUserBlockPanel()" class="px-3 py-2 btn-civic bg-civic-crimson text-[11px]">
+            ${showUserBlockPanel ? (isHi ? "▲ सूची बंद करें" : "▲ Hide Accounts") : (isHi ? "🚫 खाता नियंत्रण खोलें" : "🚫 Manage / Block Users")}
+          </button>
         </div>
-        <div class="max-h-60 overflow-y-auto space-y-1.5 pr-1">
-          ${vault.accounts.filter(a => a.userId !== "DEV2026").map(a => {
-            const blocked = isUserBlocked(a.userId);
-            return `
-              <div class="p-2.5 rounded-xl civic-muted flex flex-wrap items-center justify-between gap-2 text-xs">
-                <div>
-                  <div class="font-extrabold ${blocked ? "text-civic-crimson line-through" : ""}">${escapeHTML(a.userId)} • ${escapeHTML(a.name)}</div>
-                  <div class="text-[10px] text-muted-var">${escapeHTML(a.designation)} (${escapeHTML(a.block)}) ${isDevRoot ? `• Pass: <span class="font-mono font-bold text-civic-emerald">${escapeHTML(a.plainHint || "Custom")}</span>` : ""}</div>
+
+        ${showUserBlockPanel ? `
+          <div class="pt-2 border-t max-h-64 overflow-y-auto space-y-1.5 pr-1" style="border-color: var(--border-subtle);">
+            ${vault.accounts.filter(a => a.userId !== "DEV2026").map(a => {
+              const blocked = isUserBlocked(a.userId);
+              return `
+                <div class="p-2.5 rounded-xl civic-muted flex flex-wrap items-center justify-between gap-2 text-xs">
+                  <div>
+                    <div class="font-extrabold ${blocked ? "text-civic-crimson line-through" : ""}">${escapeHTML(a.userId)} • ${escapeHTML(a.name)}</div>
+                    <div class="text-[10px] text-muted-var">${escapeHTML(a.designation)} (${escapeHTML(a.block)}) ${isDevRoot ? `• Pass: <span class="font-mono font-bold text-civic-emerald">${escapeHTML(a.plainHint || "Custom")}</span>` : ""}</div>
+                  </div>
+                  <div class="flex items-center gap-1.5">
+                    ${isDevRoot ? `<button type="button" onclick="openResetAccountPassModal('${escapeHTML(a.userId)}')" class="px-2 py-1 rounded-lg civic-card text-[10px] font-bold">🔑 Pass</button>` : ""}
+                    ${isDevRoot ? `<button type="button" onclick="switchDeveloperPerspective('${escapeHTML(a.userId)}')" class="px-2 py-1 rounded-lg bg-civic-teal text-white text-[10px] font-bold">👁 View</button>` : ""}
+                    <button type="button" onclick="toggleBlockUser('${escapeHTML(a.userId)}')" class="px-2.5 py-1 rounded-lg ${blocked ? "bg-civic-emerald" : "bg-civic-crimson"} text-white text-[10px] font-bold">
+                      ${blocked ? (isHi ? "✓ अनब्लॉक" : "✓ Unblock") : (isHi ? "🚫 ब्लॉक करें" : "🚫 Block")}
+                    </button>
+                  </div>
                 </div>
-                <div class="flex items-center gap-1.5">
-                  ${isDevRoot ? `<button type="button" onclick="openResetAccountPassModal('${escapeHTML(a.userId)}')" class="px-2 py-1 rounded-lg civic-card text-[10px] font-bold">🔑 Pass</button>` : ""}
-                  ${isDevRoot ? `<button type="button" onclick="switchDeveloperPerspective('${escapeHTML(a.userId)}')" class="px-2 py-1 rounded-lg bg-civic-teal text-white text-[10px] font-bold">👁 View</button>` : ""}
-                  <button type="button" onclick="toggleBlockUser('${escapeHTML(a.userId)}')" class="px-2.5 py-1 rounded-lg ${blocked ? "bg-civic-emerald" : "bg-civic-crimson"} text-white text-[10px] font-bold">
-                    ${blocked ? (isHi ? "✓ अनब्लॉक" : "✓ Unblock") : (isHi ? "🚫 ब्लॉक करें" : "🚫 Block")}
-                  </button>
-                </div>
-              </div>
-            `;
-          }).join("")}
+              `;
+            }).join("")}
+          </div>
+        ` : ""}
+      </div>
+
+      <!-- 3. COLLAPSED GOOGLE SHEETS 2-WAY LIVE SYNC PANEL (PIN / FINGERPRINT REQUIRED TO SAVE) -->
+      <div class="civic-card p-4 space-y-3 border-l-4" style="border-left-color: var(--civic-blue);">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h3 class="text-xs sm:text-sm font-extrabold">☁️ ${isHi ? "Google Sheets 2-Way लाइव सिंक" : "Google Sheets 2-Way Live Sync"}</h3>
+            <p class="text-[11px] text-muted-var">${isHi ? "सभी डिवाइसों व Google Sheet के साथ स्वचालित सिंक सक्रिय" : "Cloud Sync Linked • Fingerprint/PIN required to modify endpoint"}</p>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <button type="button" onclick="fullTwoWayCloudSync(true)" class="px-3 py-2 btn-civic bg-civic-blue text-[11px]">🔄 ${isHi ? "अभी सिंक करें" : "Sync Now"}</button>
+            <button type="button" onclick="toggleCloudSyncPanel()" class="px-3 py-2 btn-civic civic-muted text-[11px]">
+              ${showCloudSyncPanel ? (isHi ? "▲ बंद करें" : "▲ Hide") : (isHi ? "⚙️ लिंक सेटिंग्स" : "⚙️ Configure")}
+            </button>
+          </div>
         </div>
+
+        ${showCloudSyncPanel ? `
+          <form onsubmit="saveGoogleCloudConfig(event)" class="pt-2 border-t space-y-2.5 text-xs" style="border-color: var(--border-subtle);">
+            <div>
+              <label class="block font-bold mb-1 text-sec-var">Google Apps Script Web App URL (Live Sync Endpoint) *</label>
+              <input type="url" id="cfg-script-url" value="${escapeHTML(activeUrl)}" placeholder="https://script.google.com/macros/s/.../exec" class="w-full px-3 py-2 civic-input font-mono text-[11px]" />
+            </div>
+            <div>
+              <label class="block font-bold mb-1 text-sec-var">Master Google Sheet URL (Optional)</label>
+              <input type="url" id="cfg-sheet-url" value="${escapeHTML(vault.cloudConfig.masterSheetUrl || "")}" placeholder="https://docs.google.com/spreadsheets/d/..." class="w-full px-3 py-2 civic-input font-mono text-[11px]" />
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <button type="submit" class="py-2.5 btn-civic bg-civic-emerald text-[11px]">🔐 ${isHi ? "सत्यापित करें और सहेजें" : "Verify & Save Link"}</button>
+              <button type="button" onclick="copyAppsScriptBackend()" class="py-2.5 btn-civic civic-muted text-[11px]">📋 ${isHi ? "Apps Script कोड कॉपी करें" : "Copy Script Code"}</button>
+            </div>
+          </form>
+        ` : ""}
       </div>
     ` : ""}
 
@@ -3930,47 +4069,59 @@ function renderSettingsTab() {
   `;
 }
 
-async function toggleBlockUser(targetUid) {
+function toggleBlockUser(targetUid) {
   if (!isDistrictTopAuthority()) return;
   if (!Array.isArray(vault.blockedUsers)) vault.blockedUsers = [];
-  const idx = vault.blockedUsers.indexOf(targetUid);
-  if (idx >= 0) {
-    vault.blockedUsers.splice(idx, 1);
-    recordAudit("ADMIN", "ALL", `Unblocked User Account: ${targetUid}`);
-    showToast(lang === "hi" ? `${targetUid} को अनब्लॉक किया गया` : `${targetUid} unblocked`);
-  } else {
-    vault.blockedUsers.push(targetUid);
-    recordAudit("ADMIN", "ALL", `Blocked User Account: ${targetUid}`);
-    showToast(lang === "hi" ? `${targetUid} को ब्लॉक किया गया` : `${targetUid} blocked`, true);
-  }
-  await saveVault();
-  renderAll();
+  const isCurrentlyBlocked = vault.blockedUsers.includes(targetUid);
+
+  requireAdminAuthGate(
+    isCurrentlyBlocked ? `Unblock User ${targetUid}` : `Block User ${targetUid}`,
+    async () => {
+      const idx = vault.blockedUsers.indexOf(targetUid);
+      if (idx >= 0) {
+        vault.blockedUsers.splice(idx, 1);
+        recordAudit("ADMIN", "ALL", `Unblocked User Account: ${targetUid}`);
+        showToast(lang === "hi" ? `${targetUid} को अनब्लॉक किया गया` : `${targetUid} unblocked`);
+      } else {
+        vault.blockedUsers.push(targetUid);
+        recordAudit("ADMIN", "ALL", `Blocked User Account: ${targetUid}`);
+        showToast(lang === "hi" ? `${targetUid} को ब्लॉक किया गया` : `${targetUid} blocked`, true);
+      }
+      await saveVault();
+      renderAll();
+    }
+  );
 }
 
-async function voidEntryByAdmin(kind, entryId, unitId) {
+function voidEntryByAdmin(kind, entryId, unitId) {
   if (!isDistrictTopAuthority()) return;
-  if (!Array.isArray(vault.deletedIds)) vault.deletedIds = [];
-  if (!vault.deletedIds.includes(entryId)) vault.deletedIds.push(entryId);
+  requireAdminAuthGate(
+    `Void/Delete ${kind.toUpperCase()} entry [${entryId}]`,
+    async () => {
+      if (!Array.isArray(vault.deletedIds)) vault.deletedIds = [];
+      if (!vault.deletedIds.includes(entryId)) vault.deletedIds.push(entryId);
 
-  let removedObj = null;
-  if (kind === "rm") {
-    removedObj = vault.rmLogs.find(x => x.id === entryId) || null;
-    vault.rmLogs = vault.rmLogs.filter(x => x.id !== entryId);
-  } else if (kind === "fg") {
-    removedObj = vault.fgLogs.find(x => x.id === entryId) || null;
-    vault.fgLogs = vault.fgLogs.filter(x => x.id !== entryId);
-  } else if (kind === "sales") {
-    removedObj = vault.salesLogs.find(x => x.id === entryId) || null;
-    vault.salesLogs = vault.salesLogs.filter(x => x.id !== entryId);
-  } else if (kind === "weekly") {
-    removedObj = vault.weeklyReports.find(x => x.id === entryId) || null;
-    vault.weeklyReports = vault.weeklyReports.filter(x => x.id !== entryId);
-  }
+      let removedObj = null;
+      if (kind === "rm") {
+        removedObj = vault.rmLogs.find(x => x.id === entryId) || null;
+        vault.rmLogs = vault.rmLogs.filter(x => x.id !== entryId);
+      } else if (kind === "fg") {
+        removedObj = vault.fgLogs.find(x => x.id === entryId) || null;
+        vault.fgLogs = vault.fgLogs.filter(x => x.id !== entryId);
+      } else if (kind === "sales") {
+        removedObj = vault.salesLogs.find(x => x.id === entryId) || null;
+        vault.salesLogs = vault.salesLogs.filter(x => x.id !== entryId);
+      } else if (kind === "weekly") {
+        removedObj = vault.weeklyReports.find(x => x.id === entryId) || null;
+        vault.weeklyReports = vault.weeklyReports.filter(x => x.id !== entryId);
+      }
 
-  recordAudit("ADMIN", unitId, `Voided/Deleted ${kind.toUpperCase()} entry [${entryId}]`, removedObj);
-  await saveVault();
-  renderAll();
-  showToast(lang === "hi" ? "प्रविष्टि निरस्त (Void) की गई व पूरा विवरण ऑडिट लॉग में दर्ज हुआ" : "Entry voided with full data saved in Audit Log");
+      recordAudit("ADMIN", unitId, `Voided/Deleted ${kind.toUpperCase()} entry [${entryId}]`, removedObj);
+      await saveVault();
+      renderAll();
+      showToast(lang === "hi" ? "प्रविष्टि निरस्त (Void) की गई व पूरा विवरण ऑडिट लॉग में दर्ज हुआ" : "Entry voided with full data saved in Audit Log");
+    }
+  );
 }
 
 function openResetAccountPassModal(uid) {
@@ -3979,23 +4130,29 @@ function openResetAccountPassModal(uid) {
     "Developer Root Credential Manager",
     `<form onsubmit="saveAccountNewPass(event, '${escapeHTML(uid)}')" class="space-y-3">
       <input type="text" id="dev-new-pass" required minlength="4" placeholder="Enter new password" class="w-full px-3 py-2 civic-input font-bold" />
-      <button type="submit" class="w-full py-2.5 btn-civic bg-civic-emerald text-xs">✓ Update Password</button>
+      <button type="submit" class="w-full py-2.5 btn-civic bg-civic-emerald text-xs">🔐 Verify & Update Password</button>
     </form>`
   );
 }
 
-async function saveAccountNewPass(ev, uid) {
+function saveAccountNewPass(ev, uid) {
   ev.preventDefault();
   const acc = vault.accounts.find(a => a.userId === uid);
   const newPass = document.getElementById("dev-new-pass").value;
   if (!acc || !newPass) return;
-  acc.plainHint = newPass;
-  acc.passHash = await sha256Hex(newPass);
-  recordAudit("ADMIN", acc.unitId, `Developer updated password for ${uid}`);
-  await saveVault();
+
   closeUniversalModal();
-  renderAll();
-  showToast(`Password updated for ${uid}`);
+  requireAdminAuthGate(
+    `Update Password for ${uid}`,
+    async () => {
+      acc.plainHint = newPass;
+      acc.passHash = await sha256Hex(newPass);
+      recordAudit("ADMIN", acc.unitId, `Developer updated password for ${uid}`);
+      await saveVault();
+      renderAll();
+      showToast(`Password updated for ${uid}`);
+    }
+  );
 }
 
 async function handleSaveUnitTarget(ev) {
@@ -4014,7 +4171,7 @@ async function handleSaveUnitTarget(ev) {
 }
 
 // ============================================================================
-// SECTION N: FULL 100% TWO-WAY GOOGLE SHEETS SYNC (ALL DATA & CHECKLISTS)
+// SECTION O: FULL 100% TWO-WAY GOOGLE SHEETS SYNC (INCLUDING ADDED/REMOVED UNITS)
 // ============================================================================
 let cloudSyncDebounce = null;
 function getActiveCloudUrl() {
@@ -4036,19 +4193,27 @@ window.addEventListener("online", () => {
   }
 });
 
-async function saveGoogleCloudConfig(ev) {
+function saveGoogleCloudConfig(ev) {
   ev.preventDefault();
   const eff = getEffectiveUser();
   if (!isDistrictTopAuthority(eff)) {
     showToast(lang === "hi" ? "अनुमति अस्वीकृत: केवल DMMU, CEO ZP या Developer" : "Access Denied: Only DMMU, CEO ZP, or Developer", true);
     return;
   }
-  vault.cloudConfig.appsScriptUrl = sanitizeInput(document.getElementById("cfg-script-url").value) || DEFAULT_APPS_SCRIPT_URL;
-  vault.cloudConfig.masterSheetUrl = sanitizeInput(document.getElementById("cfg-sheet-url").value);
-  recordAudit("ADMIN", "ALL", "Updated Google Sheets Live Sync Endpoint");
-  await saveVault();
-  renderAll();
-  showToast(lang === "hi" ? "Google Sheets लिंक सहेजा गया" : "Google Sheets link saved");
+  const newScriptUrl = sanitizeInput(document.getElementById("cfg-script-url").value) || DEFAULT_APPS_SCRIPT_URL;
+  const newSheetUrl = sanitizeInput(document.getElementById("cfg-sheet-url").value);
+
+  requireAdminAuthGate(
+    "Update Google Sheets Live Sync Endpoint",
+    async () => {
+      vault.cloudConfig.appsScriptUrl = newScriptUrl;
+      vault.cloudConfig.masterSheetUrl = newSheetUrl;
+      recordAudit("ADMIN", "ALL", "Updated Google Sheets Live Sync Endpoint");
+      await saveVault();
+      renderAll();
+      showToast(lang === "hi" ? "✓ Google Sheets लिंक सहेजा गया" : "✓ Google Sheets link saved");
+    }
+  );
 }
 
 function mergeById(localArr, remoteArr, deletedSet) {
@@ -4072,6 +4237,10 @@ async function pullFromGoogleCloud(manual) {
       const delSet = new Set([...(vault.deletedIds || []), ...(data.deletedIds || [])]);
       vault.deletedIds = Array.from(delSet);
 
+      const remUnitSet = new Set([...(vault.removedUnitIds || []), ...(data.removedUnitIds || [])]);
+      vault.removedUnitIds = Array.from(remUnitSet);
+      vault.units = vault.units.filter(u => !remUnitSet.has(u.id));
+
       vault.rmLogs = mergeById(vault.rmLogs, data.rmLogs, delSet);
       vault.fgLogs = mergeById(vault.fgLogs, data.fgLogs, delSet);
       vault.salesLogs = mergeById(vault.salesLogs, data.salesLogs, delSet);
@@ -4092,9 +4261,20 @@ async function pullFromGoogleCloud(manual) {
       }
       if (Array.isArray(data.units)) {
         data.units.forEach(ru => {
-          if (!ru || !ru.id) return;
+          if (!ru || !ru.id || remUnitSet.has(ru.id)) return;
           const lu = vault.units.find(x => x.id === ru.id);
-          if (lu) {
+          if (!lu) {
+            vault.units.push({
+              id: ru.id, block: ru.block || "Ambikapur", gp: ru.gp || "",
+              en: ru.en || ru.id, hi: ru.hi || ru.en || ru.id,
+              unitType: ru.unitType || "Kg", wastageLimitPct: 5, shelfLifeDays: 0,
+              phase: ru.phase || "Phase 1", phaseDate: ru.phaseDate || "", model: ru.model || "Standard",
+              upiId: ru.upiId || "asha.surguja@sbi", upiVerifiedBy: ru.upiVerifiedBy || [ru.id, "DMMU26"],
+              upiPending: ru.upiPending || null, targetMetric: ru.targetMetric || "revenue", targetValue: ru.targetValue || 50000
+            });
+          } else {
+            if (ru.en) lu.en = ru.en;
+            if (ru.hi) lu.hi = ru.hi;
             if (ru.phase) lu.phase = ru.phase;
             if (ru.phaseDate !== undefined) lu.phaseDate = ru.phaseDate;
             if (ru.model) lu.model = ru.model;
@@ -4116,7 +4296,7 @@ async function pullFromGoogleCloud(manual) {
       vault.cloudConfig.lastSyncedAt = nowSystemStamp();
       await saveVault();
       renderAll();
-      if (manual) showToast(lang === "hi" ? "✓ सभी डिवाइसों का डेटा व चेकलिस्ट सिंक हो गई" : "✓ All devices data, checklists & alerts synced");
+      if (manual) showToast(lang === "hi" ? "✓ सभी डिवाइसों का डेटा, इकाइयाँ व चेकलिस्ट सिंक हो गई" : "✓ All devices data, units & checklists synced");
     }
   } catch (e) {
     if (manual) showToast(lang === "hi" ? "Apps Script में नया कोड पेस्ट कर Deploy करें" : "Redeploy updated Apps Script to enable full 2-way pull", true);
@@ -4136,6 +4316,7 @@ async function syncVaultToGoogleCloud(manual) {
       units: vault.units.map(u => ({ ...u, metrics: getUnitMetrics(u.id) })),
       blockedUsers: vault.blockedUsers || [],
       deletedIds: vault.deletedIds || [],
+      removedUnitIds: vault.removedUnitIds || [],
       customChecklistItems: vault.customChecklistItems || [],
       checklistStatus: vault.checklistStatus || {},
       rmLogs: vault.rmLogs,
@@ -4181,6 +4362,11 @@ function doPost(e) {
   delList.forEach(function(id) { delMap[id] = true; });
   var uniqueDel = Object.keys(delMap);
 
+  var remList = JSON.parse(props.getProperty("removedUnitIds") || "[]").concat(data.removedUnitIds || []);
+  var remMap = {};
+  remList.forEach(function(id) { remMap[id] = true; });
+  var uniqueRemUnits = Object.keys(remMap);
+
   var rmLogs = mergeRowsById(JSON.parse(props.getProperty("rmLogs") || "[]"), data.rmLogs, delMap);
   var fgLogs = mergeRowsById(JSON.parse(props.getProperty("fgLogs") || "[]"), data.fgLogs, delMap);
   var salesLogs = mergeRowsById(JSON.parse(props.getProperty("salesLogs") || "[]"), data.salesLogs, delMap);
@@ -4202,12 +4388,19 @@ function doPost(e) {
     });
   }
 
-  var compactUnits = (data.units || []).map(function(u) {
-    return { id: u.id, block: u.block, gp: u.gp, en: u.en, phase: u.phase, phaseDate: u.phaseDate || "", model: u.model || "Standard", upiId: u.upiId, upiVerifiedBy: u.upiVerifiedBy, upiPending: u.upiPending || null, targetMetric: u.targetMetric, targetValue: u.targetValue };
+  var incomingUnits = (data.units || []).filter(function(u) { return u && u.id && !remMap[u.id]; });
+  var compactUnits = incomingUnits.map(function(u) {
+    return {
+      id: u.id, block: u.block, gp: u.gp, en: u.en, hi: u.hi || u.en, unitType: u.unitType || "Kg",
+      phase: u.phase, phaseDate: u.phaseDate || "", model: u.model || "Standard",
+      upiId: u.upiId, upiVerifiedBy: u.upiVerifiedBy, upiPending: u.upiPending || null,
+      targetMetric: u.targetMetric, targetValue: u.targetValue, metrics: u.metrics || {}
+    };
   });
   var blockedUsers = data.blockedUsers || JSON.parse(props.getProperty("blockedUsers") || "[]");
 
   props.setProperty("deletedIds", JSON.stringify(uniqueDel));
+  props.setProperty("removedUnitIds", JSON.stringify(uniqueRemUnits));
   props.setProperty("rmLogs", JSON.stringify(rmLogs));
   props.setProperty("fgLogs", JSON.stringify(fgLogs));
   props.setProperty("salesLogs", JSON.stringify(salesLogs));
@@ -4225,26 +4418,27 @@ function doPost(e) {
     rows.forEach(function(r) { sh.appendRow(r); });
   }
 
-  writeTab("1_Unit_Master_Summary", ["Unit ID","Block","GP","Name","Phase","Launch Date","Model","RM Avail","FG Avail","Total Sales","Target","Checklist %"],
+  writeTab("1_Unit_Master_Summary", ["Unit ID","Block","GP","Name","Phase","Launch Date","Model","RM Avail","FG Avail","Total Sales","Wastage %","Target","Checklist %"],
     compactUnits.map(function(u) {
       var uRmIn = rmLogs.filter(function(r){ return r.unitId === u.id && r.type === "IN"; }).reduce(function(s,r){ return s + Number(r.qty||0); }, 0);
       var uRmOut = rmLogs.filter(function(r){ return r.unitId === u.id && r.type === "OUT"; }).reduce(function(s,r){ return s + Number(r.qty||0); }, 0);
-      var uFgProd = fgLogs.filter(function(f){ return f.unitId === u.id; }).reduce(function(s,f){ return s + Number(f.qty||0); }, 0);
+      var uFgProd = fgLogs.filter(function(f){ return f.unitId === u.id && f.type === "PROD"; }).reduce(function(s,f){ return s + Number(f.qty||0); }, 0);
       var uFgSold = salesLogs.filter(function(sl){ return sl.unitId === u.id; }).reduce(function(s,sl){ return s + Number(sl.qty||0); }, 0);
       var uSales = salesLogs.filter(function(sl){ return sl.unitId === u.id; }).reduce(function(s,sl){ return s + Number(sl.total||0); }, 0);
       var st = checklistStatus[u.id] || {};
       var app = 0, comp = 0;
       Object.keys(st).forEach(function(k){ if (st[k] && st[k] !== "N/A") { app++; if (st[k] === "Completed") comp++; } });
       var pct = app > 0 ? Math.round((comp / app) * 100) : 0;
-      return [u.id, u.block, u.gp, u.en, u.phase, u.phaseDate || "-", u.model, Math.max(0, uRmIn - uRmOut), Math.max(0, uFgProd - uFgSold), uSales, u.targetValue || 50000, pct + "%"];
+      var wPct = (u.metrics && u.metrics.wastagePct !== undefined) ? u.metrics.wastagePct : 0;
+      return [u.id, u.block, u.gp, u.en, u.phase, u.phaseDate || "-", u.model, Math.max(0, uRmIn - uRmOut), Math.max(0, uFgProd - uFgSold), uSales, wPct + "%", u.targetValue || 50000, pct + "%"];
     }));
 
-  writeTab("2_RM_and_FG_Stock", ["Type","Unit","Batch","Item","Qty","Waste Qty","Unit Type","Tx Date","Due Date"],
-    rmLogs.map(function(r){ return ["RM-" + r.type, r.unitId, r.batchNo, r.material, r.qty, r.wastageQty || 0, r.unit, r.txDate, r.dueDate || "-"]; })
-      .concat(fgLogs.map(function(f){ return ["FG-PROD", f.unitId, f.batchNo, f.product, f.qty, f.wastageQty || 0, f.unit, f.txDate, "-"]; })));
+  writeTab("2_RM_and_FG_Stock", ["Type","Unit","Batch","Item","Qty","Waste Qty","Waste %","Unit Type","Tx Date","Due Date","Cash Paid","Credit Amt"],
+    rmLogs.map(function(r){ return ["RM-" + r.type, r.unitId, r.batchNo, r.material, r.qty, r.wastageQty || 0, (r.wastagePct || 0) + "%", r.unit, r.txDate, r.dueDate || "-", r.cashPaid ?? r.amount ?? 0, r.creditAmount || 0]; })
+      .concat(fgLogs.map(function(f){ return ["FG-PROD", f.unitId, f.batchNo, f.product, f.qty, f.wastageQty || 0, (f.wastagePct || 0) + "%", f.unit, f.txDate, "-", 0, 0]; })));
 
-  writeTab("3_Sales_and_Trade", ["Date","Unit","Buyer","Channel","Product","Qty","Total","Payment","Due Date"],
-    salesLogs.map(function(s){ return [s.txDate, s.unitId, s.buyer, s.channel, s.product, s.qty, s.total, s.paymentMode, s.dueDate || "-"]; }));
+  writeTab("3_Sales_and_Trade", ["Date","Unit","Buyer","Channel","Product","Qty","Total","Payment","Cash Recv","Credit Amt","Due Date"],
+    salesLogs.map(function(s){ return [s.txDate, s.unitId, s.buyer, s.channel, s.product, s.qty, s.total, s.paymentMode, s.paidAmount ?? s.total, s.creditAmount || 0, s.dueDate || "-"]; }));
 
   writeTab("4_Weekly_Reports", ["Week Date","System Stamp","Unit","Days","Members","Closing RM","Closing FG","Total Sales","Credit"],
     weeklyReports.map(function(w){ return [w.weekDate, w.sysStamp, w.unitId, w.daysOperated, w.activeMembers, w.rmClosing, w.fgClosing, w.salesTotal, w.creditPending]; }));
@@ -4266,6 +4460,7 @@ function doGet(e) {
   var out = {
     status: "OK",
     deletedIds: JSON.parse(props.getProperty("deletedIds") || "[]"),
+    removedUnitIds: JSON.parse(props.getProperty("removedUnitIds") || "[]"),
     blockedUsers: JSON.parse(props.getProperty("blockedUsers") || "[]"),
     units: JSON.parse(props.getProperty("units") || "[]"),
     checklistStatus: JSON.parse(props.getProperty("checklistStatus") || "{}"),
@@ -4385,7 +4580,7 @@ function shareWeeklyReportItem(wrId) {
 }
 
 // ============================================================================
-// SECTION O: TOAST & AUTO-RESTORE PERSISTENT SESSION ON LAUNCH
+// SECTION P: TOAST & AUTO-RESTORE PERSISTENT SESSION ON LAUNCH
 // ============================================================================
 let toastTimer = null;
 function showToast(msg, isError = false) {
