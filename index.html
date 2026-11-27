@@ -2437,9 +2437,9 @@ function renderStockTab() {
             <thead>
               <tr class="civic-muted text-[10px] sm:text-[11px] font-extrabold">
                 <th class="px-2 py-2">${isHi ? "ASHA इकाई" : "ASHA Unit"}</th>
-                <th class="px-1.5 py-2 whitespace-nowrap">${isHi ? "RM" : "RM"}</th>
+                <th class="px-1.5 py-2 whitespace-nowrap">RM</th>
                 <th class="px-1.5 py-2 whitespace-nowrap">${isHi ? "अपव्यय" : "Waste"}</th>
-                <th class="px-1.5 py-2 whitespace-nowrap">${isHi ? "FG" : "FG"}</th>
+                <th class="px-1.5 py-2 whitespace-nowrap">FG</th>
                 <th class="px-2 py-2 text-right whitespace-nowrap">${isHi ? "क्रिया" : "Action"}</th>
               </tr>
             </thead>
@@ -2448,8 +2448,8 @@ function renderStockTab() {
                 const m = getUnitMetrics(u.id);
                 return `
                   <tr>
-                    <td class="px-2 py-2 font-bold capitalize min-w-[125px] max-w-[175px] sm:max-w-none leading-snug">
-                      <div class="line-clamp-2">${escapeHTML(isHi ? u.hi : u.en)}</div>
+                    <td class="px-2 py-2 font-bold capitalize min-w-[115px] max-w-[155px] sm:max-w-none leading-snug">
+                      <div class="truncate">${escapeHTML(isHi ? u.hi : u.en)}</div>
                       <div class="text-[10px] font-normal text-muted-var">${escapeHTML(u.block)}</div>
                     </td>
                     <td class="px-1.5 py-2 font-extrabold whitespace-nowrap ${m.isReorderAlert ? "text-civic-crimson" : "text-civic-blue"}">${m.rmAvailable} ${escapeHTML(u.unitType)}</td>
