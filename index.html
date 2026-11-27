@@ -2417,7 +2417,7 @@ function openDrillDown(type, param = "") {
 }
 
 // ============================================================================
-// SECTION J: TAB 2 — STOCK & PRODUCTION (MOBILE-ALIGNED MULTI-UNIT TABLE)
+// SECTION J: TAB 2 — STOCK & PRODUCTION (MOBILE-FIT MULTI-UNIT LIST)
 // ============================================================================
 function renderStockTab() {
   const isHi = lang === "hi";
@@ -2432,15 +2432,49 @@ function renderStockTab() {
           <h2 class="text-sm font-extrabold">📦 ${isHi ? `समेकित स्टॉक व उत्पादन रजिस्टर (${units.length} इकाइयाँ)` : `Consolidated Stock & Production (${units.length} Units)`}</h2>
           <p class="text-[11px] text-muted-var">${isHi ? "प्रविष्टि दर्ज करने के लिए किसी एक ASHA इकाई पर क्लिक करें" : "Click any ASHA unit below to record RM or Production entries"}</p>
         </div>
-        <div class="overflow-x-auto rounded-xl border" style="border-color: var(--border-subtle);">
-          <table class="w-full text-left border-collapse text-[11px] sm:text-xs">
+
+        <!-- Mobile-First Zero-Overflow Cards (< 640px) -->
+        <div class="sm:hidden space-y-2">
+          ${units.map(u => {
+            const m = getUnitMetrics(u.id);
+            return `
+              <div class="p-3 rounded-xl civic-muted space-y-2">
+                <div class="flex items-start justify-between gap-2">
+                  <div class="min-w-0 flex-1">
+                    <div class="text-xs font-extrabold capitalize leading-snug">${escapeHTML(isHi ? u.hi : u.en)}</div>
+                    <div class="text-[10px] text-muted-var mt-0.5">${escapeHTML(u.block)} • ${escapeHTML(u.gp)}</div>
+                  </div>
+                  <button type="button" onclick="jumpToUnitTab('${u.id}', 'stock')" class="px-3 py-1.5 rounded-lg bg-civic-blue text-white text-[11px] font-extrabold shrink-0 whitespace-nowrap">${isHi ? "खोलें" : "Open"}</button>
+                </div>
+                <div class="grid grid-cols-3 gap-1.5 pt-1.5 border-t text-[11px]" style="border-color: var(--border-subtle);">
+                  <div>
+                    <div class="text-[9px] font-bold text-muted-var uppercase">RM</div>
+                    <div class="font-extrabold ${m.isReorderAlert ? "text-civic-crimson" : "text-civic-blue"} truncate">${m.rmAvailable} ${escapeHTML(u.unitType)}</div>
+                  </div>
+                  <div>
+                    <div class="text-[9px] font-bold text-muted-var uppercase">${isHi ? "अपव्यय" : "Waste"}</div>
+                    <div class="font-extrabold ${m.isWastageAlert ? "text-civic-crimson" : "text-sec-var"}">${m.wastagePct}%</div>
+                  </div>
+                  <div>
+                    <div class="text-[9px] font-bold text-muted-var uppercase">FG</div>
+                    <div class="font-extrabold text-civic-emerald truncate">${m.fgAvailable} ${escapeHTML(u.unitType)}</div>
+                  </div>
+                </div>
+              </div>
+            `;
+          }).join("")}
+        </div>
+
+        <!-- Desktop / Tablet Table (>= 640px) -->
+        <div class="hidden sm:block overflow-x-auto rounded-xl border" style="border-color: var(--border-subtle);">
+          <table class="w-full text-left border-collapse text-xs">
             <thead>
-              <tr class="civic-muted text-[10px] sm:text-[11px] font-extrabold">
-                <th class="px-2 py-2">${isHi ? "ASHA इकाई" : "ASHA Unit"}</th>
-                <th class="px-1.5 py-2 whitespace-nowrap">RM</th>
-                <th class="px-1.5 py-2 whitespace-nowrap">${isHi ? "अपव्यय" : "Waste"}</th>
-                <th class="px-1.5 py-2 whitespace-nowrap">FG</th>
-                <th class="px-2 py-2 text-right whitespace-nowrap">${isHi ? "क्रिया" : "Action"}</th>
+              <tr class="civic-muted text-[11px] font-extrabold">
+                <th class="px-2.5 py-2">${isHi ? "ASHA इकाई" : "ASHA Unit"}</th>
+                <th class="px-2 py-2 whitespace-nowrap">RM</th>
+                <th class="px-2 py-2 whitespace-nowrap">${isHi ? "अपव्यय" : "Waste"}</th>
+                <th class="px-2 py-2 whitespace-nowrap">FG</th>
+                <th class="px-2.5 py-2 text-right whitespace-nowrap">${isHi ? "क्रिया" : "Action"}</th>
               </tr>
             </thead>
             <tbody class="divide-y" style="border-color: var(--border-subtle);">
@@ -2448,15 +2482,15 @@ function renderStockTab() {
                 const m = getUnitMetrics(u.id);
                 return `
                   <tr>
-                    <td class="px-2 py-2 font-bold capitalize min-w-[115px] max-w-[155px] sm:max-w-none leading-snug">
-                      <div class="truncate">${escapeHTML(isHi ? u.hi : u.en)}</div>
+                    <td class="px-2.5 py-2 font-bold capitalize leading-snug">
+                      <div>${escapeHTML(isHi ? u.hi : u.en)}</div>
                       <div class="text-[10px] font-normal text-muted-var">${escapeHTML(u.block)}</div>
                     </td>
-                    <td class="px-1.5 py-2 font-extrabold whitespace-nowrap ${m.isReorderAlert ? "text-civic-crimson" : "text-civic-blue"}">${m.rmAvailable} ${escapeHTML(u.unitType)}</td>
-                    <td class="px-1.5 py-2 font-extrabold whitespace-nowrap ${m.isWastageAlert ? "text-civic-crimson" : "text-sec-var"}">${m.wastagePct}%</td>
-                    <td class="px-1.5 py-2 font-extrabold text-civic-emerald whitespace-nowrap">${m.fgAvailable} ${escapeHTML(u.unitType)}</td>
-                    <td class="px-2 py-2 text-right whitespace-nowrap">
-                      <button type="button" onclick="jumpToUnitTab('${u.id}', 'stock')" class="px-2 py-1.5 rounded-lg bg-civic-blue text-white text-[10px] sm:text-[11px] font-bold whitespace-nowrap">${isHi ? "खोलें" : "Open"}</button>
+                    <td class="px-2 py-2 font-extrabold whitespace-nowrap ${m.isReorderAlert ? "text-civic-crimson" : "text-civic-blue"}">${m.rmAvailable} ${escapeHTML(u.unitType)}</td>
+                    <td class="px-2 py-2 font-extrabold whitespace-nowrap ${m.isWastageAlert ? "text-civic-crimson" : "text-sec-var"}">${m.wastagePct}%</td>
+                    <td class="px-2 py-2 font-extrabold text-civic-emerald whitespace-nowrap">${m.fgAvailable} ${escapeHTML(u.unitType)}</td>
+                    <td class="px-2.5 py-2 text-right whitespace-nowrap">
+                      <button type="button" onclick="jumpToUnitTab('${u.id}', 'stock')" class="px-2.5 py-1.5 rounded-lg bg-civic-blue text-white text-[11px] font-bold whitespace-nowrap">${isHi ? "खोलें" : "Open"}</button>
                     </td>
                   </tr>
                 `;
@@ -2864,7 +2898,7 @@ async function handleSaveFG(ev, unitId) {
 }
 
 // ============================================================================
-// SECTION K: TAB 3 — SALES & 2-PARTY UPI QR (MOBILE-ALIGNED MULTI-UNIT TABLE)
+// SECTION K: TAB 3 — SALES & 2-PARTY UPI QR (MOBILE-FIT MULTI-UNIT LIST)
 // ============================================================================
 function filterSalesByTimeframe(logs) {
   if (salesTimeFilter === "ALL") return logs;
@@ -2949,14 +2983,43 @@ function renderSalesTab() {
           <div class="p-3 rounded-xl civic-muted"><div class="text-muted-var">${isHi ? `ऑफलाइन (${offPct}%)` : `Offline (${offPct}%)`}</div><div class="text-sm sm:text-base font-extrabold text-civic-blue">${formatINR(offRev)}</div></div>
           <div class="p-3 rounded-xl civic-muted"><div class="text-muted-var">${isHi ? `ऑनलाइन (${onPct}%)` : `Online (${onPct}%)`}</div><div class="text-sm sm:text-base font-extrabold text-civic-indigo">${formatINR(onRev)}</div></div>
         </div>
-        <div class="overflow-x-auto rounded-xl border" style="border-color: var(--border-subtle);">
-          <table class="w-full text-left border-collapse text-[11px] sm:text-xs">
+
+        <!-- Mobile-First Zero-Overflow Cards (< 640px) -->
+        <div class="sm:hidden space-y-2">
+          ${units.map(u => {
+            const m = getUnitMetrics(u.id);
+            return `
+              <div class="p-3 rounded-xl civic-muted space-y-2">
+                <div class="flex items-start justify-between gap-2">
+                  <div class="min-w-0 flex-1">
+                    <div class="text-xs font-extrabold capitalize leading-snug">${escapeHTML(isHi ? u.hi : u.en)}</div>
+                    <div class="text-[10px] text-muted-var mt-0.5">${escapeHTML(u.block)} • ${escapeHTML(u.gp)}</div>
+                  </div>
+                  <button type="button" onclick="jumpToUnitTab('${u.id}', 'sales')" class="px-3 py-1.5 rounded-lg bg-civic-ochre text-white text-[11px] font-extrabold shrink-0 whitespace-nowrap">${isHi ? "खोलें" : "Open"}</button>
+                </div>
+                <div class="flex items-center justify-between pt-1.5 border-t text-xs" style="border-color: var(--border-subtle);">
+                  <div>
+                    <span class="text-[10px] text-muted-var font-bold">${isHi ? "बिक्री:" : "Sales:"} </span>
+                    <span class="font-extrabold text-civic-emerald">${formatINR(m.totalSales)}</span>
+                  </div>
+                  <span class="inline-flex items-center px-2 py-0.5 rounded-full whitespace-nowrap ${u.upiPending ? "bg-civic-ochre" : "bg-civic-emerald"} text-white text-[10px] font-bold">
+                    UPI: ${u.upiPending ? "1/2" : "2/2 OK"}
+                  </span>
+                </div>
+              </div>
+            `;
+          }).join("")}
+        </div>
+
+        <!-- Desktop / Tablet Table (>= 640px) -->
+        <div class="hidden sm:block overflow-x-auto rounded-xl border" style="border-color: var(--border-subtle);">
+          <table class="w-full text-left border-collapse text-xs">
             <thead>
-              <tr class="civic-muted text-[10px] sm:text-[11px] font-extrabold">
-                <th class="px-2 py-2">${isHi ? "ASHA इकाई" : "ASHA Unit"}</th>
-                <th class="px-1.5 py-2 whitespace-nowrap">${isHi ? "बिक्री" : "Sales"}</th>
-                <th class="px-1.5 py-2 whitespace-nowrap">UPI QR</th>
-                <th class="px-2 py-2 text-right whitespace-nowrap">${isHi ? "क्रिया" : "Action"}</th>
+              <tr class="civic-muted text-[11px] font-extrabold">
+                <th class="px-2.5 py-2">${isHi ? "ASHA इकाई" : "ASHA Unit"}</th>
+                <th class="px-2 py-2 whitespace-nowrap">${isHi ? "बिक्री" : "Sales"}</th>
+                <th class="px-2 py-2 whitespace-nowrap">UPI QR</th>
+                <th class="px-2.5 py-2 text-right whitespace-nowrap">${isHi ? "क्रिया" : "Action"}</th>
               </tr>
             </thead>
             <tbody class="divide-y" style="border-color: var(--border-subtle);">
@@ -2964,13 +3027,13 @@ function renderSalesTab() {
                 const m = getUnitMetrics(u.id);
                 return `
                   <tr>
-                    <td class="px-2 py-2 font-bold capitalize min-w-[120px] max-w-[160px] sm:max-w-none leading-snug">
-                      <div class="line-clamp-2">${escapeHTML(isHi ? u.hi : u.en)}</div>
+                    <td class="px-2.5 py-2 font-bold capitalize leading-snug">
+                      <div>${escapeHTML(isHi ? u.hi : u.en)}</div>
                     </td>
-                    <td class="px-1.5 py-2 font-extrabold text-civic-emerald whitespace-nowrap">${formatINR(m.totalSales)}</td>
-                    <td class="px-1.5 py-2 whitespace-nowrap"><span class="inline-flex items-center px-2 py-0.5 rounded-full whitespace-nowrap ${u.upiPending ? "bg-civic-ochre" : "bg-civic-emerald"} text-white text-[10px] font-bold">${u.upiPending ? "1/2" : "2/2 OK"}</span></td>
-                    <td class="px-2 py-2 text-right whitespace-nowrap">
-                      <button type="button" onclick="jumpToUnitTab('${u.id}', 'sales')" class="px-2 py-1.5 rounded-lg bg-civic-ochre text-white text-[10px] sm:text-[11px] font-bold whitespace-nowrap">${isHi ? "खोलें" : "Open"}</button>
+                    <td class="px-2 py-2 font-extrabold text-civic-emerald whitespace-nowrap">${formatINR(m.totalSales)}</td>
+                    <td class="px-2 py-2 whitespace-nowrap"><span class="inline-flex items-center px-2 py-0.5 rounded-full whitespace-nowrap ${u.upiPending ? "bg-civic-ochre" : "bg-civic-emerald"} text-white text-[10px] font-bold">${u.upiPending ? "1/2" : "2/2 OK"}</span></td>
+                    <td class="px-2.5 py-2 text-right whitespace-nowrap">
+                      <button type="button" onclick="jumpToUnitTab('${u.id}', 'sales')" class="px-2.5 py-1.5 rounded-lg bg-civic-ochre text-white text-[11px] font-bold whitespace-nowrap">${isHi ? "खोलें" : "Open"}</button>
                     </td>
                   </tr>
                 `;
