@@ -621,7 +621,6 @@ let pendingSignUpPhoto = "";
 let suggestionLimit = 5;
 let showAllUnsubmittedWeekly = false;
 
-// Collapsed Settings Panel Toggles (Hidden behind buttons by default)
 let showUnitMgrPanel = false;
 let showUserBlockPanel = false;
 let showCloudSyncPanel = false;
@@ -2418,7 +2417,7 @@ function openDrillDown(type, param = "") {
 }
 
 // ============================================================================
-// SECTION J: TAB 2 — STOCK & PRODUCTION
+// SECTION J: TAB 2 — STOCK & PRODUCTION (MOBILE-ALIGNED MULTI-UNIT TABLE)
 // ============================================================================
 function renderStockTab() {
   const isHi = lang === "hi";
@@ -2428,20 +2427,20 @@ function renderStockTab() {
 
   if (units.length > 1) {
     return `
-      <div class="civic-card p-3.5 sm:p-4 space-y-3">
+      <div class="civic-card p-3 sm:p-4 space-y-3">
         <div>
           <h2 class="text-sm font-extrabold">📦 ${isHi ? `समेकित स्टॉक व उत्पादन रजिस्टर (${units.length} इकाइयाँ)` : `Consolidated Stock & Production (${units.length} Units)`}</h2>
           <p class="text-[11px] text-muted-var">${isHi ? "प्रविष्टि दर्ज करने के लिए किसी एक ASHA इकाई पर क्लिक करें" : "Click any ASHA unit below to record RM or Production entries"}</p>
         </div>
-        <div class="overflow-x-auto">
+        <div class="overflow-x-auto rounded-xl border" style="border-color: var(--border-subtle);">
           <table class="w-full text-left border-collapse text-[11px] sm:text-xs">
             <thead>
               <tr class="civic-muted text-[10px] sm:text-[11px] font-extrabold">
-                <th class="p-2">${isHi ? "ASHA इकाई" : "ASHA Unit"}</th>
-                <th class="p-2">${isHi ? "उपलब्ध RM" : "Avail. RM"}</th>
-                <th class="p-2">${isHi ? "अपव्यय %" : "Waste %"}</th>
-                <th class="p-2">${isHi ? "उपलब्ध FG" : "Avail. FG"}</th>
-                <th class="p-2 text-right">${isHi ? "क्रिया" : "Action"}</th>
+                <th class="px-2 py-2">${isHi ? "ASHA इकाई" : "ASHA Unit"}</th>
+                <th class="px-1.5 py-2 whitespace-nowrap">${isHi ? "RM" : "RM"}</th>
+                <th class="px-1.5 py-2 whitespace-nowrap">${isHi ? "अपव्यय" : "Waste"}</th>
+                <th class="px-1.5 py-2 whitespace-nowrap">${isHi ? "FG" : "FG"}</th>
+                <th class="px-2 py-2 text-right whitespace-nowrap">${isHi ? "क्रिया" : "Action"}</th>
               </tr>
             </thead>
             <tbody class="divide-y" style="border-color: var(--border-subtle);">
@@ -2449,11 +2448,16 @@ function renderStockTab() {
                 const m = getUnitMetrics(u.id);
                 return `
                   <tr>
-                    <td class="p-2 font-bold capitalize">${escapeHTML(isHi ? u.hi : u.en)}<div class="text-[10px] text-muted-var">${escapeHTML(u.block)}</div></td>
-                    <td class="p-2 font-extrabold whitespace-nowrap ${m.isReorderAlert ? "text-civic-crimson" : "text-civic-blue"}">${m.rmAvailable} ${escapeHTML(u.unitType)}</td>
-                    <td class="p-2 font-extrabold whitespace-nowrap ${m.isWastageAlert ? "text-civic-crimson" : "text-sec-var"}">${m.wastagePct}%</td>
-                    <td class="p-2 font-extrabold text-civic-emerald whitespace-nowrap">${m.fgAvailable} ${escapeHTML(u.unitType)}</td>
-                    <td class="p-2 text-right whitespace-nowrap"><button type="button" onclick="jumpToUnitTab('${u.id}', 'stock')" class="px-2.5 py-1.5 rounded-lg bg-civic-blue text-white text-[10px] sm:text-[11px] font-bold whitespace-nowrap">${isHi ? "खोलें" : "Open"}</button></td>
+                    <td class="px-2 py-2 font-bold capitalize min-w-[125px] max-w-[175px] sm:max-w-none leading-snug">
+                      <div class="line-clamp-2">${escapeHTML(isHi ? u.hi : u.en)}</div>
+                      <div class="text-[10px] font-normal text-muted-var">${escapeHTML(u.block)}</div>
+                    </td>
+                    <td class="px-1.5 py-2 font-extrabold whitespace-nowrap ${m.isReorderAlert ? "text-civic-crimson" : "text-civic-blue"}">${m.rmAvailable} ${escapeHTML(u.unitType)}</td>
+                    <td class="px-1.5 py-2 font-extrabold whitespace-nowrap ${m.isWastageAlert ? "text-civic-crimson" : "text-sec-var"}">${m.wastagePct}%</td>
+                    <td class="px-1.5 py-2 font-extrabold text-civic-emerald whitespace-nowrap">${m.fgAvailable} ${escapeHTML(u.unitType)}</td>
+                    <td class="px-2 py-2 text-right whitespace-nowrap">
+                      <button type="button" onclick="jumpToUnitTab('${u.id}', 'stock')" class="px-2 py-1.5 rounded-lg bg-civic-blue text-white text-[10px] sm:text-[11px] font-bold whitespace-nowrap">${isHi ? "खोलें" : "Open"}</button>
+                    </td>
                   </tr>
                 `;
               }).join("")}
@@ -2860,7 +2864,7 @@ async function handleSaveFG(ev, unitId) {
 }
 
 // ============================================================================
-// SECTION K: TAB 3 — SALES & 2-PARTY UPI QR
+// SECTION K: TAB 3 — SALES & 2-PARTY UPI QR (MOBILE-ALIGNED MULTI-UNIT TABLE)
 // ============================================================================
 function filterSalesByTimeframe(logs) {
   if (salesTimeFilter === "ALL") return logs;
@@ -2933,7 +2937,7 @@ function renderSalesTab() {
 
   if (units.length > 1) {
     return `
-      <div class="civic-card p-3.5 sm:p-4 space-y-3">
+      <div class="civic-card p-3 sm:p-4 space-y-3">
         <div class="flex flex-wrap items-center justify-between gap-2">
           <h2 class="text-sm font-extrabold">📊 ${isHi ? `समेकित व्यापार व बिक्री विश्लेषण (${units.length} इकाइयाँ)` : `Consolidated Sales & Trade Analytics (${units.length} Units)`}</h2>
           <div class="flex flex-wrap gap-1">
@@ -2941,18 +2945,18 @@ function renderSalesTab() {
           </div>
         </div>
         <div class="grid grid-cols-3 gap-2 text-xs">
-          <div class="p-3 rounded-xl civic-muted"><div class="text-muted-var">${isHi ? "कुल बिक्री" : "Total Sales"}</div><div class="text-base font-extrabold text-civic-emerald">${formatINR(totalRev)}</div></div>
-          <div class="p-3 rounded-xl civic-muted"><div class="text-muted-var">${isHi ? `ऑफलाइन (${offPct}%)` : `Offline (${offPct}%)`}</div><div class="text-base font-extrabold text-civic-blue">${formatINR(offRev)}</div></div>
-          <div class="p-3 rounded-xl civic-muted"><div class="text-muted-var">${isHi ? `ऑनलाइन (${onPct}%)` : `Online (${onPct}%)`}</div><div class="text-base font-extrabold text-civic-indigo">${formatINR(onRev)}</div></div>
+          <div class="p-3 rounded-xl civic-muted"><div class="text-muted-var">${isHi ? "कुल बिक्री" : "Total Sales"}</div><div class="text-sm sm:text-base font-extrabold text-civic-emerald">${formatINR(totalRev)}</div></div>
+          <div class="p-3 rounded-xl civic-muted"><div class="text-muted-var">${isHi ? `ऑफलाइन (${offPct}%)` : `Offline (${offPct}%)`}</div><div class="text-sm sm:text-base font-extrabold text-civic-blue">${formatINR(offRev)}</div></div>
+          <div class="p-3 rounded-xl civic-muted"><div class="text-muted-var">${isHi ? `ऑनलाइन (${onPct}%)` : `Online (${onPct}%)`}</div><div class="text-sm sm:text-base font-extrabold text-civic-indigo">${formatINR(onRev)}</div></div>
         </div>
-        <div class="overflow-x-auto">
+        <div class="overflow-x-auto rounded-xl border" style="border-color: var(--border-subtle);">
           <table class="w-full text-left border-collapse text-[11px] sm:text-xs">
             <thead>
               <tr class="civic-muted text-[10px] sm:text-[11px] font-extrabold">
-                <th class="p-2">${isHi ? "ASHA इकाई" : "ASHA Unit"}</th>
-                <th class="p-2">${isHi ? "बिक्री" : "Sales"}</th>
-                <th class="p-2">UPI QR</th>
-                <th class="p-2 text-right">${isHi ? "क्रिया" : "Action"}</th>
+                <th class="px-2 py-2">${isHi ? "ASHA इकाई" : "ASHA Unit"}</th>
+                <th class="px-1.5 py-2 whitespace-nowrap">${isHi ? "बिक्री" : "Sales"}</th>
+                <th class="px-1.5 py-2 whitespace-nowrap">UPI QR</th>
+                <th class="px-2 py-2 text-right whitespace-nowrap">${isHi ? "क्रिया" : "Action"}</th>
               </tr>
             </thead>
             <tbody class="divide-y" style="border-color: var(--border-subtle);">
@@ -2960,10 +2964,14 @@ function renderSalesTab() {
                 const m = getUnitMetrics(u.id);
                 return `
                   <tr>
-                    <td class="p-2 font-bold capitalize">${escapeHTML(isHi ? u.hi : u.en)}</td>
-                    <td class="p-2 font-extrabold text-civic-emerald whitespace-nowrap">${formatINR(m.totalSales)}</td>
-                    <td class="p-2 whitespace-nowrap"><span class="inline-flex items-center px-2 py-0.5 rounded-full whitespace-nowrap ${u.upiPending ? "bg-civic-ochre" : "bg-civic-emerald"} text-white text-[10px] font-bold">${u.upiPending ? "1/2 Pending" : "2/2 Verified"}</span></td>
-                    <td class="p-2 text-right whitespace-nowrap"><button type="button" onclick="jumpToUnitTab('${u.id}', 'sales')" class="px-2.5 py-1.5 rounded-lg bg-civic-ochre text-white text-[10px] sm:text-[11px] font-bold whitespace-nowrap">${isHi ? "खोलें" : "Open"}</button></td>
+                    <td class="px-2 py-2 font-bold capitalize min-w-[120px] max-w-[160px] sm:max-w-none leading-snug">
+                      <div class="line-clamp-2">${escapeHTML(isHi ? u.hi : u.en)}</div>
+                    </td>
+                    <td class="px-1.5 py-2 font-extrabold text-civic-emerald whitespace-nowrap">${formatINR(m.totalSales)}</td>
+                    <td class="px-1.5 py-2 whitespace-nowrap"><span class="inline-flex items-center px-2 py-0.5 rounded-full whitespace-nowrap ${u.upiPending ? "bg-civic-ochre" : "bg-civic-emerald"} text-white text-[10px] font-bold">${u.upiPending ? "1/2" : "2/2 OK"}</span></td>
+                    <td class="px-2 py-2 text-right whitespace-nowrap">
+                      <button type="button" onclick="jumpToUnitTab('${u.id}', 'sales')" class="px-2 py-1.5 rounded-lg bg-civic-ochre text-white text-[10px] sm:text-[11px] font-bold whitespace-nowrap">${isHi ? "खोलें" : "Open"}</button>
+                    </td>
                   </tr>
                 `;
               }).join("")}
@@ -3889,7 +3897,6 @@ function renderSettingsTab() {
   ];
 
   return `
-    <!-- Theme Mode, PIN, Biometric & Backups -->
     <div class="civic-card p-4 space-y-3">
       <div class="flex flex-wrap items-center justify-between gap-2">
         <div>
@@ -3929,7 +3936,6 @@ function renderSettingsTab() {
     </div>
 
     ${isTopAdmin ? `
-      <!-- 1. COLLAPSED ADD / REMOVE UNIT PANEL (PIN / FINGERPRINT REQUIRED TO SAVE) -->
       <div class="civic-card p-4 space-y-3 border-l-4" style="border-left-color: var(--civic-emerald);">
         <div class="flex flex-wrap items-center justify-between gap-2">
           <div>
@@ -3958,7 +3964,6 @@ function renderSettingsTab() {
         ` : ""}
       </div>
 
-      <!-- 2. COLLAPSED USER ACCESS CONTROL & BLOCK MANAGEMENT (PIN / FINGERPRINT REQUIRED) -->
       <div class="civic-card p-4 space-y-3 border-l-4" style="border-left-color: var(--civic-crimson);">
         <div class="flex flex-wrap items-center justify-between gap-2">
           <div>
@@ -3994,7 +3999,6 @@ function renderSettingsTab() {
         ` : ""}
       </div>
 
-      <!-- 3. COLLAPSED GOOGLE SHEETS 2-WAY LIVE SYNC PANEL (PIN / FINGERPRINT REQUIRED TO SAVE) -->
       <div class="civic-card p-4 space-y-3 border-l-4" style="border-left-color: var(--civic-blue);">
         <div class="flex flex-wrap items-center justify-between gap-2">
           <div>
@@ -4388,15 +4392,23 @@ function doPost(e) {
     });
   }
 
-  var incomingUnits = (data.units || []).filter(function(u) { return u && u.id && !remMap[u.id]; });
-  var compactUnits = incomingUnits.map(function(u) {
-    return {
+  var existingUnits = JSON.parse(props.getProperty("units") || "[]").filter(function(u) {
+    return u && u.id && !remMap[u.id];
+  });
+  var unitMap = {};
+  existingUnits.forEach(function(u) { unitMap[u.id] = u; });
+
+  (data.units || []).forEach(function(u) {
+    if (!u || !u.id || remMap[u.id]) return;
+    unitMap[u.id] = {
       id: u.id, block: u.block, gp: u.gp, en: u.en, hi: u.hi || u.en, unitType: u.unitType || "Kg",
       phase: u.phase, phaseDate: u.phaseDate || "", model: u.model || "Standard",
       upiId: u.upiId, upiVerifiedBy: u.upiVerifiedBy, upiPending: u.upiPending || null,
       targetMetric: u.targetMetric, targetValue: u.targetValue, metrics: u.metrics || {}
     };
   });
+
+  var compactUnits = Object.keys(unitMap).map(function(k) { return unitMap[k]; });
   var blockedUsers = data.blockedUsers || JSON.parse(props.getProperty("blockedUsers") || "[]");
 
   props.setProperty("deletedIds", JSON.stringify(uniqueDel));
@@ -4418,20 +4430,27 @@ function doPost(e) {
     rows.forEach(function(r) { sh.appendRow(r); });
   }
 
-  writeTab("1_Unit_Master_Summary", ["Unit ID","Block","GP","Name","Phase","Launch Date","Model","RM Avail","FG Avail","Total Sales","Wastage %","Target","Checklist %"],
-    compactUnits.map(function(u) {
-      var uRmIn = rmLogs.filter(function(r){ return r.unitId === u.id && r.type === "IN"; }).reduce(function(s,r){ return s + Number(r.qty||0); }, 0);
-      var uRmOut = rmLogs.filter(function(r){ return r.unitId === u.id && r.type === "OUT"; }).reduce(function(s,r){ return s + Number(r.qty||0); }, 0);
-      var uFgProd = fgLogs.filter(function(f){ return f.unitId === u.id && f.type === "PROD"; }).reduce(function(s,f){ return s + Number(f.qty||0); }, 0);
-      var uFgSold = salesLogs.filter(function(sl){ return sl.unitId === u.id; }).reduce(function(s,sl){ return s + Number(sl.qty||0); }, 0);
-      var uSales = salesLogs.filter(function(sl){ return sl.unitId === u.id; }).reduce(function(s,sl){ return s + Number(sl.total||0); }, 0);
-      var st = checklistStatus[u.id] || {};
-      var app = 0, comp = 0;
-      Object.keys(st).forEach(function(k){ if (st[k] && st[k] !== "N/A") { app++; if (st[k] === "Completed") comp++; } });
-      var pct = app > 0 ? Math.round((comp / app) * 100) : 0;
-      var wPct = (u.metrics && u.metrics.wastagePct !== undefined) ? u.metrics.wastagePct : 0;
-      return [u.id, u.block, u.gp, u.en, u.phase, u.phaseDate || "-", u.model, Math.max(0, uRmIn - uRmOut), Math.max(0, uFgProd - uFgSold), uSales, wPct + "%", u.targetValue || 50000, pct + "%"];
-    }));
+  var activeSummaryRows = compactUnits.map(function(u) {
+    var uRmIn = rmLogs.filter(function(r){ return r.unitId === u.id && r.type === "IN"; }).reduce(function(s,r){ return s + Number(r.qty||0); }, 0);
+    var uRmOut = rmLogs.filter(function(r){ return r.unitId === u.id && r.type === "OUT"; }).reduce(function(s,r){ return s + Number(r.qty||0); }, 0);
+    var uFgProd = fgLogs.filter(function(f){ return f.unitId === u.id && f.type === "PROD"; }).reduce(function(s,f){ return s + Number(f.qty||0); }, 0);
+    var uFgSold = salesLogs.filter(function(sl){ return sl.unitId === u.id; }).reduce(function(s,sl){ return s + Number(sl.qty||0); }, 0);
+    var uSales = salesLogs.filter(function(sl){ return sl.unitId === u.id; }).reduce(function(s,sl){ return s + Number(sl.total||0); }, 0);
+    var st = checklistStatus[u.id] || {};
+    var app = 0, comp = 0;
+    Object.keys(st).forEach(function(k){ if (st[k] && st[k] !== "N/A") { app++; if (st[k] === "Completed") comp++; } });
+    var pct = app > 0 ? Math.round((comp / app) * 100) : 0;
+    var wPct = (u.metrics && u.metrics.wastagePct !== undefined) ? u.metrics.wastagePct : 0;
+    return [u.id, u.block, u.gp, u.en, "Active", u.phase, u.phaseDate || "-", u.model, Math.max(0, uRmIn - uRmOut), Math.max(0, uFgProd - uFgSold), uSales, wPct + "%", u.targetValue || 50000, pct + "%"];
+  });
+
+  var archivedRows = uniqueRemUnits.map(function(remId) {
+    var uSales = salesLogs.filter(function(sl){ return sl.unitId === remId; }).reduce(function(s,sl){ return s + Number(sl.total||0); }, 0);
+    return [remId, "-", "-", "Removed / Historical Record Kept", "Archived", "-", "-", "-", 0, 0, uSales, "0%", 0, "-"];
+  });
+
+  writeTab("1_Unit_Master_Summary", ["Unit ID","Block","GP","Name","Status","Phase","Launch Date","Model","RM Avail","FG Avail","Total Sales","Wastage %","Target","Checklist %"],
+    activeSummaryRows.concat(archivedRows));
 
   writeTab("2_RM_and_FG_Stock", ["Type","Unit","Batch","Item","Qty","Waste Qty","Waste %","Unit Type","Tx Date","Due Date","Cash Paid","Credit Amt"],
     rmLogs.map(function(r){ return ["RM-" + r.type, r.unitId, r.batchNo, r.material, r.qty, r.wastageQty || 0, (r.wastagePct || 0) + "%", r.unit, r.txDate, r.dueDate || "-", r.cashPaid ?? r.amount ?? 0, r.creditAmount || 0]; })
